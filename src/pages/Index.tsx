@@ -1,4 +1,5 @@
 import Hero from "@/components/sections/Hero";
+import EditableServices from "@/components/editor/EditableServices";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import emuladoresImg from "@/assets/cat-emuladores.jpg";
@@ -54,49 +55,7 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="container py-14" aria-labelledby="servicos-heading">
-          <header className="mb-8 text-center">
-            <h2 id="servicos-heading" className="text-3xl font-bold">
-              Serviços
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Reprogramação, desbloqueio, clonagem, reparações e mais.
-            </p>
-          </header>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              { title: "Reprogramação", id: "reprogramacao" },
-              { title: "Desbloqueio", id: "desbloqueio" },
-              { title: "Clonagem", id: "clonagem" },
-              { title: "Airbag", id: "airbag" },
-              { title: "Depósito de AdBlue", id: "adblue" },
-              { title: "Diagnóstico", id: "diagnostico" },
-              { title: "Chaves", id: "chaves" },
-              { title: "Quadrantes", id: "quadrantes" },
-            ].map((s) => (
-              <Card key={s.id} className="hover:shadow-elev transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">{s.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground">
-                    Soluções rápidas e profissionais para {s.title.toLowerCase()}.
-                  </p>
-                  <Button asChild variant="link" className="mt-2 px-0">
-                    <Link to={`/servicos#${s.id}`}>Saber mais</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center">
-            <Button asChild variant="hero">
-              <Link to="/servicos">Ver todos os serviços</Link>
-            </Button>
-          </div>
-        </section>
+        <EditableServices isEditing={false} />
     </main>
   );
 };

@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    headers: {
+      "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8065",
+      "X-Frame-Options": "ALLOW-FROM http://localhost:8065",
+    },
   },
   plugins: [
     react(),
