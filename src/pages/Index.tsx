@@ -38,7 +38,7 @@ const Index = () => {
                   <Link to={item.href} aria-label={item.title}>
                     <img
                       src={item.img}
-                      alt={`${item.title} – categoria da loja SC Centralinas`}
+                      alt={`${item.title} – categoria da loja Keyprog`}
                       loading="lazy"
                       className="h-40 w-full rounded-md object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                     />

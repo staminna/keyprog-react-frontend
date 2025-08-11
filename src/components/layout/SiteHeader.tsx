@@ -22,8 +22,8 @@ const SiteHeader = () => {
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary-glow))] shadow-elev" />
-          <span className="text-xl font-semibold leading-none text-gradient-primary">
-            SC Centralinas
+          <span className="text-xl font-semibold leading-[1.15] text-gradient-primary pr-2 pb-[0.1em] inline-block" style={{letterSpacing: '0.05em'}}>
+            Keyprog&nbsp;
           </span>
         </Link>
 

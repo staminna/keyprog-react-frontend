@@ -3,7 +3,7 @@ const SiteFooter = () => {
     <footer className="mt-16 border-t bg-background">
       <div className="container py-10 grid gap-8 md:grid-cols-3">
         <div>
-          <h3 className="text-lg font-semibold">SC Centralinas</h3>
+          <h3 className="text-lg font-semibold">Keyprog</h3>
           <p className="mt-2 text-sm text-muted-foreground">
             Clone não-oficial para demonstração. Serviços e loja de soluções
             automóvel focadas em eletrónica e reprogramação.
@@ -27,7 +27,7 @@ const SiteFooter = () => {
         </div>
       </div>
       <div className="border-t py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} SC Centralinas — Clone para uso educativo.
+        © {new Date().getFullYear()} Keyprog — Clone para uso educativo.
       </div>
     </footer>
   );
