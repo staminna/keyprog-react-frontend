@@ -6,8 +6,18 @@ const Admin = () => {
   return (
     <main className="container py-12">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gradient-primary mb-4">
-          <Shield className="inline mr-2 h-8 w-8" />
+        <h1 className="text-4xl font-bold text-gradient-primary mb-4 flex items-center justify-center gap-3">
+          <img 
+            src={`${import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065'}/favicon.ico`}
+            alt="Directus Favicon" 
+            className="h-8 w-8"
+            onError={(e) => {
+              // Fallback to Database icon if favicon fails to load
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          <Database className="h-8 w-8 hidden" />
           Admin Panel
         </h1>
         <p className="text-lg text-muted-foreground">

@@ -394,7 +394,8 @@ export class DirectusService {
       return settings;
     } catch (error) {
       console.error('Error fetching settings:', error);
-      throw error;
+      // Return empty settings object so logo fallback works
+      return { logo: null } as DirectusSettings;
     }
   }
 
@@ -657,67 +658,27 @@ export class DirectusService {
   }
 
   static async getHeaderMenu(): Promise<DirectusHeaderMenu[]> {
-    const fallback: DirectusHeaderMenu[] = [
-      {
-        id: '1',
-        title: 'Loja',
-        link: '/loja',
-        sub_menu: [
-          { title: 'Emuladores', link: '/loja#emuladores' },
-          { title: 'Equipamentos', link: '/loja#equipamentos' },
-          { title: 'Software', link: '/loja#software' },
-          { title: 'Estabilizadores', link: '/loja#estabilizadores' }
-        ]
-      },
-      {
-        id: '2',
-        title: 'Serviços',
-        link: '/servicos',
-        sub_menu: [
-          { title: 'Reprogramação', link: '/servicos#reprogramacao' },
-          { title: 'Desbloqueio', link: '/servicos#desbloqueio' },
-          { title: 'Clonagem', link: '/servicos#clonagem' },
-          { title: 'Airbag', link: '/servicos#airbag' },
-          { title: 'Depósito de AdBlue', link: '/servicos#adblue' },
-          { title: 'Diagnóstico', link: '/servicos#diagnostico' },
-          { title: 'Chaves', link: '/servicos#chaves' },
-          { title: 'Quadrantes', link: '/servicos#quadrantes' }
-        ]
-      },
-      {
-        id: '3',
-        title: 'File Service',
-        link: '/file-service'
-      },
-      {
-        id: '4',
-        title: 'Simulador',
-        link: '/simulador'
-      },
-      {
-        id: '5',
-        title: 'Notícias',
-        link: '/noticias'
-      },
-      {
-        id: '6',
-        title: 'Contactos',
-        link: '/contactos'
-      }
-    ];
-
-    return this.safeRequest(async () => {
+    try {
       const client = this.isInDirectusEditor && this.editorDirectusClient 
         ? this.editorDirectusClient 
         : directus;
       
       const headerMenu = await client.request(readItems('header_menu'));
       
-      return headerMenu.map(item => ({
-        ...item,
-        sub_menu: this.normalizeSubMenu(item.sub_menu)
-      }));
-    }, fallback);
+      if (headerMenu && headerMenu.length > 0) {
+        return headerMenu.map(item => ({
+          ...item,
+          sub_menu: this.normalizeSubMenu(item.sub_menu)
+        }));
+      }
+      
+      // Return empty array if no data, let component handle fallback
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch header menu from Directus:', error);
+      // Return empty array on error, let component handle fallback
+      return [];
+    }
   }
 
   // Helper function to normalize sub_menu data from Directus JSON field

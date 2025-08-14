@@ -18,6 +18,7 @@ import ServiceDetail from "@/components/ServiceDetail";
 import NewsDetail from "@/components/NewsDetail";
 import ProductDetail from '@/components/ProductDetail';
 import Admin from '@/pages/Admin';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -45,7 +46,7 @@ const App = () => (
             <Route path="/noticias/:id" element={<NewsDetail />} />
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/editor" element={<ProtectedEditor />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/pages/:slug" element={<DynamicPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

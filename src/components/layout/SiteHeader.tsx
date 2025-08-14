@@ -9,10 +9,11 @@ import {
   NavigationMenuTrigger,
   NavigationMenuViewport,
 } from "@/components/ui/navigation-menu";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState, useEffect } from "react";
 import { DirectusService } from "@/services/directusService";
 import type { DirectusHeaderMenu } from "@/lib/directus";
@@ -27,18 +28,127 @@ const SiteHeader = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Try to get real Directus data first
         const [settings, menu] = await Promise.all([
           DirectusService.getSettings(),
           DirectusService.getHeaderMenu()
         ]);
         
-        if (settings.logo) {
-          setLogoUrl(DirectusService.getImageUrl(settings.logo));
-        }
+        console.log('Settings received:', settings);
         
-        setHeaderMenu(menu);
+        // Try multiple logo sources in order of preference
+        let logoUrl = '';
+        
+        // 1. Try local Keyprog logo first
+        logoUrl = '/keyprog-logo.png';
+        console.log('Using local Keyprog logo:', logoUrl);
+        
+        // Note: If local logo fails to load, the onError handler will show the fallback circle
+        setLogoUrl(logoUrl);
+        
+        // Use Directus menu if available, otherwise use fallback
+        if (menu && menu.length > 0) {
+          setHeaderMenu(menu);
+        } else {
+          // Use fallback menu only if Directus data is not available
+          setHeaderMenu([
+            {
+              id: 'loja',
+              title: 'Loja',
+              link: '/loja',
+              sub_menu: [
+                { title: 'Emuladores', link: '/loja#emuladores' },
+                { title: 'Equipamentos', link: '/loja#equipamentos' },
+                { title: 'Software', link: '/loja#software' },
+                { title: 'Estabilizadores', link: '/loja#estabilizadores' }
+              ]
+            },
+            {
+              id: 'servicos',
+              title: 'Serviços',
+              link: '/servicos',
+              sub_menu: [
+                { title: 'Reprogramação', link: '/servicos#reprogramacao' },
+                { title: 'Diagnóstico', link: '/servicos#diagnostico' },
+                { title: 'Reparação', link: '/servicos#reparacao' }
+              ]
+            },
+            {
+              id: 'file-service',
+              title: 'File Service',
+              link: '/file-service',
+              sub_menu: []
+            },
+            {
+              id: 'simulador',
+              title: 'Simulador',
+              link: '/simulador',
+              sub_menu: []
+            },
+            {
+              id: 'noticias',
+              title: 'Notícias',
+              link: '/noticias',
+              sub_menu: []
+            },
+            {
+              id: 'contactos',
+              title: 'Contactos',
+              link: '/contactos',
+              sub_menu: []
+            }
+          ]);
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
+        // Use fallback menu on error
+        setHeaderMenu([
+          {
+            id: 'loja',
+            title: 'Loja',
+            link: '/loja',
+            sub_menu: [
+              { title: 'Emuladores', link: '/loja#emuladores' },
+              { title: 'Equipamentos', link: '/loja#equipamentos' },
+              { title: 'Software', link: '/loja#software' },
+              { title: 'Estabilizadores', link: '/loja#estabilizadores' }
+            ]
+          },
+          {
+            id: 'servicos',
+            title: 'Serviços',
+            link: '/servicos',
+            sub_menu: [
+              { title: 'Reprogramação', link: '/servicos#reprogramacao' },
+              { title: 'Diagnóstico', link: '/servicos#diagnostico' },
+              { title: 'Reparação', link: '/servicos#reparacao' }
+            ]
+          },
+          {
+            id: 'file-service',
+            title: 'File Service',
+            link: '/file-service',
+            sub_menu: []
+          },
+          {
+            id: 'simulador',
+            title: 'Simulador',
+            link: '/simulador',
+            sub_menu: []
+          },
+          {
+            id: 'noticias',
+            title: 'Notícias',
+            link: '/noticias',
+            sub_menu: []
+          },
+          {
+            id: 'contactos',
+            title: 'Contactos',
+            link: '/contactos',
+            sub_menu: []
+          }
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -55,7 +165,7 @@ const SiteHeader = () => {
             <img 
               src={logoUrl} 
               alt="Keyprog Logo" 
-              className="h-8 w-8 rounded-full object-cover shadow-elev"
+              className="h-12 w-auto object-contain shadow-elev"
               onError={(e) => {
                 // Fallback to the original styled div if image fails to load
                 e.currentTarget.style.display = 'none';
@@ -65,7 +175,7 @@ const SiteHeader = () => {
             />
           ) : null}
           <div 
-            className="h-8 w-8 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary-glow))] shadow-elev" 
+            className="h-12 w-12 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary-glow))] shadow-elev" 
             style={{ display: logoUrl ? 'none' : 'block' }}
           />
           <span className="text-xl font-semibold leading-[1.15] text-gradient-primary pr-2 pb-[0.1em] inline-block" style={{letterSpacing: '0.05em'}}>
@@ -123,6 +233,7 @@ const SiteHeader = () => {
           <div className="hidden lg:flex items-center gap-2">
             <Input placeholder="Pesquisar..." className="w-64" />
             <Button variant="default">Pesquisar</Button>
+            <ThemeToggle />
           </div>
         </div>
 
