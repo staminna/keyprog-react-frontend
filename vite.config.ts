@@ -7,10 +7,10 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 3000,
     headers: {
-      "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8065",
-      "X-Frame-Options": "ALLOW-FROM http://localhost:8065",
+      "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8065 https://keyprog.varrho.com",
+      "X-Frame-Options": "ALLOW-FROM https://keyprog.varrho.com",
     },
   },
   plugins: [

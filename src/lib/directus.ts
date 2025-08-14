@@ -1,4 +1,4 @@
-import { createDirectus, rest, readItems, readItem, readSingleton, updateSingleton, updateItem, createItem, authentication } from '@directus/sdk';
+import { createDirectus, rest, readItems, readItem, readSingleton, updateSingleton, updateItem, createItem, authentication, staticToken } from '@directus/sdk';
 
 interface DirectusSettings {
   site_title?: string;
@@ -73,10 +73,24 @@ interface DirectusSchema {
 }
 
 const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
+const STATIC_TOKEN = import.meta.env.VITE_DIRECTUS_TOKEN;
 
+// Create Directus client with conditional authentication
 export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
-  .with(rest())
-  .with(authentication());
+  .with(rest({
+    onRequest: (options) => {
+      // Add timeout and better error handling
+      return { ...options, timeout: 10000 };
+    }
+  }))
+  .with(STATIC_TOKEN && STATIC_TOKEN.trim() 
+    ? staticToken(STATIC_TOKEN)
+    : authentication('json', {
+        credentials: 'include',
+        autoRefresh: true,
+        msRefreshBeforeExpires: 30000
+      })
+  );
 
 export { 
   readItems, 
