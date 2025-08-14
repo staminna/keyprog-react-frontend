@@ -12,11 +12,13 @@ import FileService from "./pages/FileService";
 import Simulador from "./pages/Simulador";
 import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
+import Suporte from "./pages/Suporte";
 import ProtectedEditor from "./pages/ProtectedEditor";
 import DynamicPage from "@/components/DynamicPage";
 import ServiceDetail from "@/components/ServiceDetail";
 import NewsDetail from "@/components/NewsDetail";
 import ProductDetail from '@/components/ProductDetail';
+import SubMenuContent from '@/components/SubMenuContent';
 import Admin from '@/pages/Admin';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import SiteHeader from "@/components/layout/SiteHeader";
@@ -37,14 +39,18 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/loja" element={<Loja />} />
-            <Route path="/loja/:slug" element={<ProductDetail />} />
+            <Route path="/loja/produtos/:slug" element={<ProductDetail />} />
+            <Route path="/loja/:slug" element={<SubMenuContent />} />
             <Route path="/servicos" element={<Servicos />} />
-            <Route path="/servicos/:slug" element={<ServiceDetail />} />
+            <Route path="/servicos/detalhes/:slug" element={<ServiceDetail />} />
+            <Route path="/servicos/:slug" element={<SubMenuContent />} />
+            <Route path="/suporte/:slug" element={<SubMenuContent />} />
             <Route path="/file-service" element={<FileService />} />
             <Route path="/simulador" element={<Simulador />} />
             <Route path="/noticias" element={<Noticias />} />
             <Route path="/noticias/:id" element={<NewsDetail />} />
             <Route path="/contactos" element={<Contactos />} />
+            <Route path="/suporte" element={<Suporte />} />
             <Route path="/editor" element={<ProtectedEditor />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/pages/:slug" element={<DynamicPage />} />

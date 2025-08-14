@@ -70,6 +70,18 @@ interface DirectusContacts {
   phone?: string;
 }
 
+export interface DirectusSubMenuContent {
+  id: string;
+  slug: string;
+  category: 'loja' | 'servicos' | 'suporte';
+  title: string;
+  description?: string;
+  content?: string;
+  featured_image?: string;
+  status: 'draft' | 'published' | 'archived';
+  sort?: number;
+}
+
 interface DirectusHero {
   title?: string;
   subtitle?: string;

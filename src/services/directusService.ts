@@ -9,7 +9,6 @@ import {
   updateItem,
   createItem,
   type DirectusSettings,
-  type DirectusPages,
   type DirectusHeaderMenu,
   type DirectusFooterMenu,
   type DirectusServices,
@@ -17,7 +16,8 @@ import {
   type DirectusNews,
   type DirectusContacts,
   type DirectusHero,
-  type DirectusSchema
+  type DirectusSchema,
+  type DirectusSubMenuContent
 } from '@/lib/directus';
 
 import type { User } from '@/types/auth';
@@ -449,7 +449,7 @@ export class DirectusService {
     }
   }
 
-  static async getPages(): Promise<DirectusPages[]> {
+  static async getPages(): Promise<DirectusSubMenuContent[]> {
     try {
       await this.ensureAuthenticated();
       const pages = await directus.request(readItems('pages'));
@@ -460,7 +460,7 @@ export class DirectusService {
     }
   }
 
-  static async getPage(slug: string): Promise<DirectusPages | null> {
+  static async getPage(slug: string): Promise<DirectusSubMenuContent | null> {
     try {
       const pages = await directus.request(
         readItems('pages', {
@@ -677,6 +677,46 @@ export class DirectusService {
     } catch (error) {
       console.error('Failed to fetch header menu from Directus:', error);
       // Return empty array on error, let component handle fallback
+      return [];
+    }
+  }
+
+  // Get sub-menu content by category and slug
+  static async getSubMenuContent(category: string, slug: string): Promise<DirectusSubMenuContent | null> {
+    try {
+      await this.ensureAuthenticated();
+      const content = await directus.request(
+        readItems('sub_menu_content', {
+          filter: { 
+            category: { _eq: category },
+            slug: { _eq: slug },
+            status: { _eq: 'published' }
+          }
+        })
+      );
+      return content[0] || null;
+    } catch (error) {
+      console.error('Error fetching sub-menu content:', error);
+      return null;
+    }
+  }
+
+  // Get all sub-menu content by category
+  static async getSubMenuContentByCategory(category: string): Promise<DirectusSubMenuContent[]> {
+    try {
+      await this.ensureAuthenticated();
+      const content = await directus.request(
+        readItems('sub_menu_content', {
+          filter: { 
+            category: { _eq: category },
+            status: { _eq: 'published' }
+          },
+          sort: ['sort', 'title']
+        })
+      );
+      return content;
+    } catch (error) {
+      console.error('Error fetching sub-menu content by category:', error);
       return [];
     }
   }
