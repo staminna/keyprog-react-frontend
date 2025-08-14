@@ -1,5 +1,6 @@
 import { 
   directus, 
+  sessionDirectus,
   readItems, 
   readItem, 
   readSingleton,
@@ -15,43 +16,95 @@ import {
   type DirectusNews,
   type DirectusContacts,
   type DirectusHero
-} from '../lib/directus';
+} from '@/lib/directus';
 
 export class DirectusService {
   private static isAuthenticated = false;
   private static authPromise: Promise<boolean> | null = null;
   private static useStaticToken = false;
+  private static isInDirectusEditor = false;
 
-  static async authenticate(): Promise<boolean> {
-    // Check if we have a static token first
+  // Check if running inside Directus Visual Editor
+  private static checkDirectusEditor(): boolean {
+    try {
+      // Check if we're in an iframe and the parent has Directus context
+      if (window.parent !== window) {
+        // Check for Directus-specific indicators
+        const isDirectusFrame = 
+          window.location.search.includes('directus') ||
+          document.referrer.includes('directus') ||
+          window.parent.location.href.includes('directus');
+        
+        if (isDirectusFrame) {
+          console.log('🎯 Detected Directus Visual Editor context');
+          return true;
+        }
+      }
+    } catch (error) {
+      // Cross-origin restrictions - likely in iframe but can't access parent
+      // This often happens in Directus Visual Editor
+      if (window.parent !== window) {
+        console.log('🎯 Detected iframe context - likely Directus Visual Editor');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static async authenticate(email?: string, password?: string): Promise<boolean> {
+    // If email and password are provided, force session-based authentication
+    if (email && password) {
+      console.log('Using session-based authentication with provided credentials');
+      this.useStaticToken = false;
+      this.isAuthenticated = false; // Reset to force fresh authentication
+      
+      // Prevent multiple simultaneous authentication attempts
+      if (this.authPromise) {
+        return this.authPromise;
+      }
+      
+      this.authPromise = this.performAuthentication(email, password);
+      const result = await this.authPromise;
+      this.authPromise = null;
+      return result;
+    }
+    
+    // Check if we're in Directus Visual Editor
+    this.isInDirectusEditor = this.checkDirectusEditor();
+    
+    // If in Directus Editor, try to use inherited authentication
+    if (this.isInDirectusEditor) {
+      console.log('🎯 Auto-authenticating for Directus Visual Editor');
+      this.isAuthenticated = true;
+      this.useStaticToken = false; // Use session auth in editor
+      return true;
+    }
+    
+    // Only use static token if no credentials provided (for API calls)
     const staticToken = import.meta.env.VITE_DIRECTUS_TOKEN;
     if (staticToken && staticToken.trim()) {
-      console.log('Using static token authentication');
+      console.log('Using static token authentication for API calls');
       this.isAuthenticated = true;
       this.useStaticToken = true;
       return true;
     }
 
-    // Prevent multiple simultaneous authentication attempts
-    if (this.authPromise) {
-      return this.authPromise;
-    }
-
+    // If already authenticated and no new credentials provided
     if (this.isAuthenticated) return true;
     
-    this.authPromise = this.performAuthentication();
-    const result = await this.authPromise;
-    this.authPromise = null;
-    return result;
+    // No credentials and no static token
+    console.warn('No authentication method available');
+    return false;
   }
 
-  private static async performAuthentication(): Promise<boolean> {
+  private static async performAuthentication(email?: string, password?: string): Promise<boolean> {
     try {
-      const email = import.meta.env.VITE_DIRECTUS_EMAIL;
-      const password = import.meta.env.VITE_DIRECTUS_PASSWORD;
+      // Use provided credentials or fall back to environment
+      const authEmail = email || import.meta.env.VITE_DIRECTUS_EMAIL;
+      const authPassword = password || import.meta.env.VITE_DIRECTUS_PASSWORD;
       
-      if (!email || !password) {
-        console.warn('Directus credentials not found in environment');
+      if (!authEmail || !authPassword) {
+        console.warn('Directus credentials not provided');
         return false;
       }
       
@@ -62,43 +115,72 @@ export class DirectusService {
         return true;
       }
       
-      // Clear any existing authentication state only if we're already authenticated
-      const existingToken = await directus.getToken();
-      if (existingToken && 'logout' in directus) {
+      // Use session-based client for authentication
+      const authClient = sessionDirectus;
+      
+      // Clear any existing authentication state
+      const existingToken = await authClient.getToken();
+      if (existingToken && 'logout' in authClient) {
         try {
-          await (directus as any).logout();
+          await (authClient as { logout: () => Promise<void> }).logout();
           console.log('Logged out existing session');
         } catch (logoutError) {
           console.warn('Logout failed, continuing with fresh login');
         }
       }
       
-      // Perform fresh login only if login method exists
-      if ('login' in directus) {
-        const result = await (directus as any).login({ email, password });
-        console.log('Authentication successful, token received:', !!result.access_token);
+      // CRITICAL: Only authenticate if login method exists, otherwise fail
+      if (!('login' in authClient)) {
+        console.error('Login method not available on session client - authentication cannot proceed');
+        this.isAuthenticated = false;
+        return false;
+      }
+      
+      // Perform fresh login with proper error handling
+      try {
+        console.log('Attempting login with credentials:', { email: authEmail, passwordProvided: !!authPassword });
         
-        // Verify the token is properly set
-        const token = await directus.getToken();
-        console.log('Token verification:', !!token);
+        const result = await (authClient as { login: (credentials: { email: string; password: string }) => Promise<{ access_token?: string }> }).login({ 
+          email: authEmail, 
+          password: authPassword 
+        });
         
+        console.log('Login attempt result:', !!result.access_token);
+        
+        // Verify we actually received a valid token
+        if (!result.access_token) {
+          console.error('No access token received from Directus login');
+          this.isAuthenticated = false;
+          return false;
+        }
+        
+        // Double-check the token is properly set in the client
+        const token = await authClient.getToken();
+        if (!token) {
+          console.error('Token not properly set in Directus client after login');
+          this.isAuthenticated = false;
+          return false;
+        }
+        
+        console.log('Authentication successful - token verified');
         this.isAuthenticated = true;
         return true;
-      } else {
-        console.warn('Login method not available, using static token mode');
-        this.isAuthenticated = true;
-        return true;
+        
+      } catch (loginError) {
+        console.error('Login failed with error:', loginError);
+        this.isAuthenticated = false;
+        return false;
       }
     } catch (error) {
-      console.error('Authentication failed:', error);
+      console.error('Authentication failed with error:', error);
       this.isAuthenticated = false;
       
       // Reset authentication state on failure
-      if ('logout' in directus) {
+      if ('logout' in sessionDirectus) {
         try {
-          await (directus as any).logout();
+          await (sessionDirectus as { logout: () => Promise<void> }).logout();
         } catch (logoutError) {
-          // Ignore logout errors
+          console.warn('Failed to logout after authentication error');
         }
       }
       
@@ -231,15 +313,7 @@ export class DirectusService {
     }
   }
 
-  static async getHeaderMenu(): Promise<DirectusHeaderMenu[]> {
-    try {
-      const menu = await directus.request(readItems('header_menu'));
-      return menu;
-    } catch (error) {
-      console.error('Error fetching header menu:', error);
-      throw error;
-    }
-  }
+
 
   static async getFooterMenu(): Promise<DirectusFooterMenu[]> {
     try {
@@ -371,6 +445,88 @@ export class DirectusService {
       console.error('Error fetching contacts:', error);
       throw error;
     }
+  }
+
+  static async getHeaderMenu(): Promise<DirectusHeaderMenu[]> {
+    const fallback: DirectusHeaderMenu[] = [
+      {
+        id: '1',
+        title: 'Loja',
+        link: '/loja',
+        sub_menu: [
+          { title: 'Emuladores', link: '/loja#emuladores' },
+          { title: 'Equipamentos', link: '/loja#equipamentos' },
+          { title: 'Software', link: '/loja#software' },
+          { title: 'Estabilizadores', link: '/loja#estabilizadores' }
+        ]
+      },
+      {
+        id: '2',
+        title: 'Serviços',
+        link: '/servicos',
+        sub_menu: [
+          { title: 'Reprogramação', link: '/servicos#reprogramacao' },
+          { title: 'Desbloqueio', link: '/servicos#desbloqueio' },
+          { title: 'Clonagem', link: '/servicos#clonagem' },
+          { title: 'Airbag', link: '/servicos#airbag' },
+          { title: 'Depósito de AdBlue', link: '/servicos#adblue' },
+          { title: 'Diagnóstico', link: '/servicos#diagnostico' },
+          { title: 'Chaves', link: '/servicos#chaves' },
+          { title: 'Quadrantes', link: '/servicos#quadrantes' }
+        ]
+      },
+      {
+        id: '3',
+        title: 'File Service',
+        link: '/file-service'
+      },
+      {
+        id: '4',
+        title: 'Simulador',
+        link: '/simulador'
+      },
+      {
+        id: '5',
+        title: 'Notícias',
+        link: '/noticias'
+      },
+      {
+        id: '6',
+        title: 'Contactos',
+        link: '/contactos'
+      }
+    ];
+
+    return this.safeRequest(
+      async () => {
+        const rawMenu = await directus.request(readItems('header_menu'));
+        // Normalize the menu data to handle Directus repeater structure
+        return rawMenu.map(item => ({
+          ...item,
+          sub_menu: this.normalizeSubMenu(item.sub_menu)
+        }));
+      },
+      fallback
+    );
+  }
+
+  // Helper function to normalize sub_menu data from Directus repeater
+  private static normalizeSubMenu(subMenu: unknown): Array<{title: string, link: string}> | undefined {
+    if (!subMenu) return undefined;
+    
+    // If it's already an array (fallback data), return as is
+    if (Array.isArray(subMenu)) {
+      return subMenu;
+    }
+    
+    // If it's a Directus repeater object, convert to array
+    if (typeof subMenu === 'object') {
+      return Object.values(subMenu).filter(item => 
+        item && typeof item === 'object' && 'title' in item && 'link' in item
+      ) as Array<{title: string, link: string}>;
+    }
+    
+    return undefined;
   }
 
   static getImageUrl(imageId: string): string {

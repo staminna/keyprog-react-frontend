@@ -3,6 +3,7 @@ import { createDirectus, rest, readItems, readItem, readSingleton, updateSinglet
 interface DirectusSettings {
   site_title?: string;
   site_description?: string;
+  logo?: string;
 }
 
 interface DirectusPages {
@@ -16,7 +17,10 @@ interface DirectusHeaderMenu {
   id: string;
   title?: string;
   link?: string;
-  sub_menu?: Record<string, unknown>;
+  sub_menu?: Record<string, unknown> | Array<{
+    title: string;
+    link: string;
+  }>;
 }
 
 interface DirectusFooterMenu {
@@ -75,7 +79,7 @@ interface DirectusSchema {
 const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
 const STATIC_TOKEN = import.meta.env.VITE_DIRECTUS_TOKEN;
 
-// Create Directus client with conditional authentication
+// Create Directus client for API calls (with static token if available)
 export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
   .with(rest({
     onRequest: (options) => {
@@ -91,6 +95,19 @@ export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
         msRefreshBeforeExpires: 30000
       })
   );
+
+// Create separate Directus client for session-based authentication
+export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
+  .with(rest({
+    onRequest: (options) => {
+      return { ...options, timeout: 10000 };
+    }
+  }))
+  .with(authentication('json', {
+    credentials: 'include',
+    autoRefresh: true,
+    msRefreshBeforeExpires: 30000
+  }));
 
 export { 
   readItems, 

@@ -11,34 +11,37 @@ import FileService from "./pages/FileService";
 import Simulador from "./pages/Simulador";
 import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
-import Editor from "./pages/Editor";
+import ProtectedEditor from "./pages/ProtectedEditor";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <SiteHeader />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/loja" element={<Loja />} />
-          <Route path="/servicos" element={<Servicos />} />
-          <Route path="/file-service" element={<FileService />} />
-          <Route path="/simulador" element={<Simulador />} />
-          <Route path="/noticias" element={<Noticias />} />
-          <Route path="/contactos" element={<Contactos />} />
-          <Route path="/editor" element={<Editor />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <SiteFooter />
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <SiteHeader />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/loja" element={<Loja />} />
+            <Route path="/servicos" element={<Servicos />} />
+            <Route path="/file-service" element={<FileService />} />
+            <Route path="/simulador" element={<Simulador />} />
+            <Route path="/noticias" element={<Noticias />} />
+            <Route path="/contactos" element={<Contactos />} />
+            <Route path="/editor" element={<ProtectedEditor />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <SiteFooter />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
