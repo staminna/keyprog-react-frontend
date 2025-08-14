@@ -26,7 +26,10 @@ interface DirectusHeaderMenu {
 interface DirectusFooterMenu {
   id: string;
   title?: string;
-  links?: Record<string, unknown>;
+  links?: Array<{
+    title: string;
+    url: string;
+  }>;
 }
 
 interface DirectusServices {
@@ -34,6 +37,11 @@ interface DirectusServices {
   title?: string;
   description?: string;
   slug?: string;
+  image?: string;
+  category?: string;
+  features?: string | string[];
+  price?: number;
+  status?: string;
 }
 
 interface DirectusCategories {
@@ -49,6 +57,11 @@ interface DirectusNews {
   content?: string;
   image?: string;
   published_date?: string;
+  summary?: string;
+  category?: string;
+  tags?: string | string[];
+  author?: string;
+  status?: string;
 }
 
 interface DirectusContacts {

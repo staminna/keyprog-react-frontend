@@ -12,6 +12,10 @@ import Simulador from "./pages/Simulador";
 import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
 import ProtectedEditor from "./pages/ProtectedEditor";
+import DynamicPage from "@/components/DynamicPage";
+import ServiceDetail from "@/components/ServiceDetail";
+import NewsDetail from "@/components/NewsDetail";
+import ProductDetail from "@/components/ProductDetail";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -29,12 +33,16 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/loja" element={<Loja />} />
+            <Route path="/loja/:slug" element={<ProductDetail />} />
             <Route path="/servicos" element={<Servicos />} />
+            <Route path="/servicos/:slug" element={<ServiceDetail />} />
             <Route path="/file-service" element={<FileService />} />
             <Route path="/simulador" element={<Simulador />} />
             <Route path="/noticias" element={<Noticias />} />
+            <Route path="/noticias/:id" element={<NewsDetail />} />
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/editor" element={<ProtectedEditor />} />
+            <Route path="/pages/:slug" element={<DynamicPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

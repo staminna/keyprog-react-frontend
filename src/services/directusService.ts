@@ -476,13 +476,61 @@ export class DirectusService {
 
 
   static async getFooterMenu(): Promise<DirectusFooterMenu[]> {
-    try {
-      const menu = await directus.request(readItems('footer_menu'));
-      return menu;
-    } catch (error) {
-      console.error('Error fetching footer menu:', error);
-      throw error;
-    }
+    const fallback: DirectusFooterMenu[] = [
+      {
+        id: '1',
+        title: 'Serviços',
+        links: [
+          { title: 'Reprogramação ECU', url: '/servicos#reprogramacao' },
+          { title: 'Desbloqueio', url: '/servicos#desbloqueio' },
+          { title: 'Clonagem', url: '/servicos#clonagem' },
+          { title: 'Diagnóstico', url: '/servicos#diagnostico' }
+        ]
+      },
+      {
+        id: '2',
+        title: 'Loja',
+        links: [
+          { title: 'Emuladores', url: '/loja#emuladores' },
+          { title: 'Equipamentos', url: '/loja#equipamentos' },
+          { title: 'Software', url: '/loja#software' },
+          { title: 'Acessórios', url: '/loja#acessorios' }
+        ]
+      },
+      {
+        id: '3',
+        title: 'Suporte',
+        links: [
+          { title: 'Contactos', url: '/contactos' },
+          { title: 'File Service', url: '/file-service' },
+          { title: 'Simulador', url: '/simulador' },
+          { title: 'FAQ', url: '/suporte#faq' }
+        ]
+      },
+      {
+        id: '4',
+        title: 'Empresa',
+        links: [
+          { title: 'Sobre Nós', url: '/sobre' },
+          { title: 'Notícias', url: '/noticias' },
+          { title: 'Política de Privacidade', url: '/privacidade' },
+          { title: 'Termos de Serviço', url: '/termos' }
+        ]
+      }
+    ];
+
+    return this.safeRequest(async () => {
+      const client = this.isInDirectusEditor && this.editorDirectusClient 
+        ? this.editorDirectusClient 
+        : directus;
+      
+      const menu = await client.request(readItems('footer_menu'));
+      
+      return menu.map(item => ({
+        ...item,
+        links: Array.isArray(item.links) ? item.links : []
+      }));
+    }, fallback);
   }
 
   static async getServices(): Promise<DirectusServices[]> {
