@@ -1,38 +1,186 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { DirectusService } from '@/services/directusService';
+import type { DirectusServices } from '@/lib/directus';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowRight, Clock, CheckCircle, Star } from 'lucide-react';
 
 const Servicos = () => {
-  const sections = [
-    { id: "reprogramacao", title: "Reprogramação" },
-    { id: "desbloqueio", title: "Desbloqueio" },
-    { id: "clonagem", title: "Clonagem" },
-    { id: "airbag", title: "Airbag" },
-    { id: "adblue", title: "Depósito de AdBlue" },
-    { id: "diagnostico", title: "Diagnóstico" },
-    { id: "chaves", title: "Chaves" },
-    { id: "quadrantes", title: "Quadrantes" },
-  ];
+  const [services, setServices] = useState<DirectusServices[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setIsLoading(true);
+        const servicesData = await DirectusService.getServices();
+        setServices(servicesData);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  // Helper function to format price
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-PT', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(price);
+  };
 
   return (
     <main className="container py-12">
-      <h1 className="text-3xl font-bold">Serviços</h1>
-      <p className="mt-2 max-w-2xl text-muted-foreground">
-        Soluções especializadas em eletrónica automóvel. Selecione um serviço
-        abaixo para saber mais.
-      </p>
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-gradient-primary mb-4">Serviços Especializados</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          Soluções profissionais em eletrónica automóvel com mais de 10 anos de experiência. 
+          Oferecemos serviços de qualidade com garantia e suporte técnico especializado.
+        </p>
+      </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sections.map((s) => (
-          <section key={s.id} id={s.id} className="rounded-lg border p-6">
-            <h2 className="text-xl font-semibold">{s.title}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Atendimento profissional, diagnóstico avançado e garantia de
-              qualidade.
-            </p>
-            <div className="mt-4">
-              <Button variant="hero">Pedir orçamento</Button>
-            </div>
-          </section>
-        ))}
+      {/* Services Grid */}
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, index) => (
+            <Card key={index} className="overflow-hidden">
+              <CardHeader className="space-y-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {services.map((service) => (
+            <Card key={service.id} className="group hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                      {service.title}
+                    </CardTitle>
+                    {service.category && (
+                      <Badge variant="secondary" className="mt-2">
+                        {service.category}
+                      </Badge>
+                    )}
+                  </div>
+                  {service.price && (
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-primary">
+                        {formatPrice(service.price)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        a partir de
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {service.description && (
+                  <p className="text-sm text-muted-foreground mt-3 line-clamp-3">
+                    {service.description.replace(/<[^>]*>/g, '')}
+                  </p>
+                )}
+              </CardHeader>
+              
+              <CardContent className="pt-0 space-y-4">
+                {/* Features */}
+                {service.features && Array.isArray(service.features) && service.features.length > 0 && (
+                  <div className="space-y-2">
+                    {service.features.slice(0, 3).map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button asChild className="flex-1 group">
+                    <Link to={`/servicos/${service.slug}`}>
+                      Ver Detalhes
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Star className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Additional Information */}
+      <div className="mt-16 grid gap-8 md:grid-cols-3">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="font-semibold mb-2">Atendimento Rápido</h3>
+          <p className="text-sm text-muted-foreground">
+            Diagnóstico e orçamento em 24h. Intervenções rápidas e eficientes.
+          </p>
+        </div>
+        
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="font-semibold mb-2">Garantia de Qualidade</h3>
+          <p className="text-sm text-muted-foreground">
+            Todos os serviços incluem garantia e suporte técnico pós-venda.
+          </p>
+        </div>
+        
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Star className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="font-semibold mb-2">Experiência Comprovada</h3>
+          <p className="text-sm text-muted-foreground">
+            Mais de 10 anos de experiência em eletrónica automóvel.
+          </p>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="mt-16 text-center bg-muted/50 rounded-lg p-8">
+        <h2 className="text-2xl font-bold mb-4">Precisa de um Orçamento?</h2>
+        <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+          Entre em contacto connosco para um orçamento personalizado. 
+          Analisamos o seu caso e apresentamos a melhor solução.
+        </p>
+        <div className="flex gap-4 justify-center flex-wrap">
+          <Button asChild size="lg">
+            <Link to="/contacto">
+              Pedir Orçamento
+            </Link>
+          </Button>
+          <Button variant="outline" size="lg" asChild>
+            <Link to="/sobre">
+              Saber Mais
+            </Link>
+          </Button>
+        </div>
       </div>
     </main>
   );

@@ -1,8 +1,9 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HelmetProvider } from 'react-helmet-async';
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Loja from "./pages/Loja";
@@ -15,7 +16,8 @@ import ProtectedEditor from "./pages/ProtectedEditor";
 import DynamicPage from "@/components/DynamicPage";
 import ServiceDetail from "@/components/ServiceDetail";
 import NewsDetail from "@/components/NewsDetail";
-import ProductDetail from "@/components/ProductDetail";
+import ProductDetail from '@/components/ProductDetail';
+import Admin from '@/pages/Admin';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -23,12 +25,13 @@ import { AuthProvider } from "@/contexts/AuthContext";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <SiteHeader />
           <Routes>
             <Route path="/" element={<Index />} />
@@ -42,6 +45,7 @@ const App = () => (
             <Route path="/noticias/:id" element={<NewsDetail />} />
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/editor" element={<ProtectedEditor />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/pages/:slug" element={<DynamicPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
@@ -51,6 +55,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

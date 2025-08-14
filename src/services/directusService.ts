@@ -584,17 +584,18 @@ export class DirectusService {
   }
 
   static async getService(slug: string): Promise<DirectusServices | null> {
-    try {
-      const services = await directus.request(
+    return this.safeRequest(async () => {
+      const client = this.isInDirectusEditor && this.editorDirectusClient 
+        ? this.editorDirectusClient 
+        : directus;
+      
+      const services = await client.request(
         readItems('services', {
           filter: { slug: { _eq: slug } }
         })
       );
       return services[0] || null;
-    } catch (error) {
-      console.error('Error fetching service:', error);
-      throw error;
-    }
+    }, null);
   }
 
   static async getCategories(): Promise<DirectusCategories[]> {
