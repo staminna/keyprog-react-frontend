@@ -17,7 +17,7 @@ interface DirectusHeaderMenu {
   id: string;
   title?: string;
   link?: string;
-  sub_menu?: Record<string, unknown> | Array<{
+  sub_menu?: Array<{
     title: string;
     link: string;
   }>;
@@ -108,6 +108,24 @@ export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
     autoRefresh: true,
     msRefreshBeforeExpires: 30000
   }));
+
+// Create Directus client for Visual Editor with token inheritance
+export const createEditorDirectus = (token: string) => {
+  return createDirectus<DirectusSchema>(DIRECTUS_URL)
+    .with(rest({
+      onRequest: (options) => {
+        // Add the inherited token to all requests
+        return { 
+          ...options, 
+          timeout: 10000,
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${token}`
+          }
+        };
+      }
+    }));
+};
 
 export { 
   readItems, 

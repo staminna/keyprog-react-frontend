@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DirectusService } from '@/services/directusService';
 import { AuthContext } from '@/contexts/auth-context';
+import { sessionDirectus } from '@/lib/directus';
 import type { User, AuthContextType, AuthProviderProps } from '@/types/auth';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -12,7 +13,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Only check auth if we have stored credentials
+      // First check if we have an active session token
+      try {
+        const token = await sessionDirectus.getToken();
+        if (token) {
+          console.log('Found active session token');
+          // Verify the token is still valid by making a test request
+          const isValid = await DirectusService.verifyToken();
+          if (isValid) {
+            console.log('Session token is valid');
+            // Get user info if available
+            const userInfo = await DirectusService.getCurrentUser();
+            setUser(userInfo || { email: 'session-user', authenticated: true });
+            setIsAuthenticated(true);
+            return true;
+          }
+          console.log('Session token expired or invalid');
+        }
+      } catch (tokenError) {
+        console.warn('Error checking session token:', tokenError);
+      }
+      
+      // If no valid session token, try stored credentials
       const storedEmail = localStorage.getItem('directus_auth_email');
       const storedPassword = localStorage.getItem('directus_auth_password');
       

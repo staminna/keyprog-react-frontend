@@ -1,6 +1,7 @@
 import { 
   directus, 
   sessionDirectus,
+  createEditorDirectus,
   readItems, 
   readItem, 
   readSingleton,
@@ -15,17 +16,22 @@ import {
   type DirectusCategories,
   type DirectusNews,
   type DirectusContacts,
-  type DirectusHero
+  type DirectusHero,
+  type DirectusSchema
 } from '@/lib/directus';
+
+import type { User } from '@/types/auth';
 
 export class DirectusService {
   private static isAuthenticated = false;
   private static authPromise: Promise<boolean> | null = null;
   private static useStaticToken = false;
   private static isInDirectusEditor = false;
+  private static editorDirectusClient: ReturnType<typeof createEditorDirectus> | null = null;
+  private static parentToken: string | null = null;
 
-  // Check if running inside Directus Visual Editor
-  private static checkDirectusEditor(): boolean {
+  // Check if running inside Directus Visual Editor and get parent token
+  private static async checkDirectusEditor(): Promise<{ isEditor: boolean; token?: string }> {
     try {
       // Check if we're in an iframe and the parent has Directus context
       if (window.parent !== window) {
@@ -33,11 +39,34 @@ export class DirectusService {
         const isDirectusFrame = 
           window.location.search.includes('directus') ||
           document.referrer.includes('directus') ||
-          window.parent.location.href.includes('directus');
+          (window.parent as Window & { location?: Location }).location?.href?.includes('directus');
         
         if (isDirectusFrame) {
           console.log('🎯 Detected Directus Visual Editor context');
-          return true;
+          
+          // Try to get the parent Directus token
+          try {
+            // Check if parent has Directus API or token available
+            const parentDirectus = (window.parent as Window & { directus?: { getToken: () => string } }).directus;
+            if (parentDirectus && typeof parentDirectus.getToken === 'function') {
+              const token = await parentDirectus.getToken();
+              if (token) {
+                console.log('🔑 Retrieved parent Directus token for write operations');
+                return { isEditor: true, token };
+              }
+            }
+            
+            // Alternative: check for token in parent localStorage
+            const parentToken = (window.parent as Window & { localStorage?: Storage }).localStorage?.getItem('directus_token');
+            if (parentToken) {
+              console.log('🔑 Retrieved parent Directus token from localStorage');
+              return { isEditor: true, token: parentToken };
+            }
+          } catch (tokenError) {
+            console.warn('Could not retrieve parent Directus token:', tokenError);
+          }
+          
+          return { isEditor: true };
         }
       }
     } catch (error) {
@@ -45,10 +74,10 @@ export class DirectusService {
       // This often happens in Directus Visual Editor
       if (window.parent !== window) {
         console.log('🎯 Detected iframe context - likely Directus Visual Editor');
-        return true;
+        return { isEditor: true };
       }
     }
-    return false;
+    return { isEditor: false };
   }
 
   static async authenticate(email?: string, password?: string): Promise<boolean> {
@@ -70,11 +99,24 @@ export class DirectusService {
     }
     
     // Check if we're in Directus Visual Editor
-    this.isInDirectusEditor = this.checkDirectusEditor();
+    const editorContext = await this.checkDirectusEditor();
+    this.isInDirectusEditor = editorContext.isEditor;
     
     // If in Directus Editor, try to use inherited authentication
     if (this.isInDirectusEditor) {
       console.log('🎯 Auto-authenticating for Directus Visual Editor');
+      
+      // If we have a parent token, create a dedicated editor client
+      if (editorContext.token) {
+        try {
+          this.parentToken = editorContext.token;
+          this.editorDirectusClient = createEditorDirectus(editorContext.token);
+          console.log('🔑 Created Directus client with parent token for write operations');
+        } catch (tokenError) {
+          console.warn('Failed to create editor client with parent token:', tokenError);
+        }
+      }
+      
       this.isAuthenticated = true;
       this.useStaticToken = false; // Use session auth in editor
       return true;
@@ -111,6 +153,13 @@ export class DirectusService {
       // Check if we're using static token (no login/logout methods available)
       if (this.useStaticToken) {
         console.log('Using static token, skipping login');
+        this.isAuthenticated = true;
+        return true;
+      }
+      
+      // If in Directus Editor, assume authentication is inherited
+      if (this.isInDirectusEditor) {
+        console.log('🎯 Using inherited Directus Editor authentication');
         this.isAuthenticated = true;
         return true;
       }
@@ -188,12 +237,112 @@ export class DirectusService {
     }
   }
 
-  private static async ensureAuthenticated(): Promise<void> {
-    if (!this.isAuthenticated) {
-      const success = await this.authenticate();
-      if (!success) {
-        throw new Error('Authentication failed');
+  // Verify if the current token is valid without full re-authentication
+  static async verifyToken(): Promise<boolean> {
+    try {
+      // If in Directus Editor, assume token is valid
+      if (this.isInDirectusEditor) {
+        return true;
       }
+      
+      // Check if we have a token in the session client
+      const token = await sessionDirectus.getToken();
+      if (!token) {
+        return false;
+      }
+      
+      // Make a lightweight request to verify token validity
+      // Using the /users/me endpoint is a good way to verify token
+      try {
+        // Use raw fetch to avoid SDK typing issues
+        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=email`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          return false;
+        }
+        
+        const data = await response.json();
+        return !!data && !!data.data;
+      } catch (error) {
+        // If we get a 401/403, token is invalid
+        console.warn('Token verification failed:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      return false;
+    }
+  }
+  
+  // Get current user information
+  static async getCurrentUser(): Promise<User | null> {
+    try {
+      // If in Directus Editor, return a placeholder user
+      if (this.isInDirectusEditor) {
+        return { email: 'directus-editor-user', authenticated: true };
+      }
+      
+      // Check if we have a token
+      const token = await sessionDirectus.getToken();
+      if (!token) {
+        return null;
+      }
+      
+      // Get user info using fetch to avoid SDK typing issues
+      try {
+        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=email,first_name,last_name`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          return null;
+        }
+        
+        const result = await response.json();
+        if (result && result.data) {
+          return {
+            email: result.data.email,
+            firstName: result.data.first_name,
+            lastName: result.data.last_name,
+            authenticated: true
+          };
+        }
+        return null;
+      } catch (error) {
+        console.warn('Failed to get user info:', error);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
+    }
+  }
+
+  private static async ensureAuthenticated(): Promise<void> {
+    // If in Directus Editor, skip authentication check
+    if (this.isInDirectusEditor) {
+      console.log('🎯 Skipping authentication check - using Directus Editor context');
+      this.isAuthenticated = true;
+      return;
+    }
+    
+    // First try to verify if we have a valid token
+    const tokenValid = await this.verifyToken();
+    if (tokenValid) {
+      this.isAuthenticated = true;
+      return;
+    }
+    
+    // If token is not valid, try to authenticate
+    const authenticated = await this.authenticate();
+    if (!authenticated) {
+      throw new Error('Authentication failed');
     }
   }
 
@@ -201,12 +350,9 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       
-      // Verify we have a valid token before making the request
-      const token = await directus.getToken();
-      if (!token) {
-        console.warn('No authentication token found, re-authenticating...');
-        this.isAuthenticated = false;
-        await this.ensureAuthenticated();
+      // If in Directus Editor with parent token, use the editor client for requests
+      if (this.isInDirectusEditor && this.editorDirectusClient && this.parentToken) {
+        console.log('🎯 Using editor Directus client with inherited token');
       }
       
       return await requestFn();
@@ -255,7 +401,14 @@ export class DirectusService {
   static async updateSettings(data: Partial<DirectusSettings>): Promise<DirectusSettings> {
     try {
       await this.ensureAuthenticated();
-      const updatedSettings = await directus.request(updateSingleton('settings', data));
+      
+      // Use editor client if available (for Directus Visual Editor context)
+      const client = this.isInDirectusEditor && this.editorDirectusClient 
+        ? this.editorDirectusClient 
+        : directus;
+      
+      console.log('🔄 Updating settings with client:', this.isInDirectusEditor ? 'editor' : 'default');
+      const updatedSettings = await client.request(updateSingleton('settings', data));
       return updatedSettings;
     } catch (error) {
       console.error('Error updating settings:', error);
@@ -280,7 +433,14 @@ export class DirectusService {
   static async updateHero(data: Partial<DirectusHero>): Promise<DirectusHero> {
     try {
       await this.ensureAuthenticated();
-      const updatedHero = await directus.request(updateSingleton('hero', data));
+      
+      // Use editor client if available (for Directus Visual Editor context)
+      const client = this.isInDirectusEditor && this.editorDirectusClient 
+        ? this.editorDirectusClient 
+        : directus;
+      
+      console.log('🔄 Updating hero with client:', this.isInDirectusEditor ? 'editor' : 'default');
+      const updatedHero = await client.request(updateSingleton('hero', data));
       return updatedHero;
     } catch (error) {
       console.error('Error updating hero:', error);
@@ -497,31 +657,27 @@ export class DirectusService {
       }
     ];
 
-    return this.safeRequest(
-      async () => {
-        const rawMenu = await directus.request(readItems('header_menu'));
-        // Normalize the menu data to handle Directus repeater structure
-        return rawMenu.map(item => ({
-          ...item,
-          sub_menu: this.normalizeSubMenu(item.sub_menu)
-        }));
-      },
-      fallback
-    );
+    return this.safeRequest(async () => {
+      const client = this.isInDirectusEditor && this.editorDirectusClient 
+        ? this.editorDirectusClient 
+        : directus;
+      
+      const headerMenu = await client.request(readItems('header_menu'));
+      
+      return headerMenu.map(item => ({
+        ...item,
+        sub_menu: this.normalizeSubMenu(item.sub_menu)
+      }));
+    }, fallback);
   }
 
-  // Helper function to normalize sub_menu data from Directus repeater
+  // Helper function to normalize sub_menu data from Directus JSON field
   private static normalizeSubMenu(subMenu: unknown): Array<{title: string, link: string}> | undefined {
     if (!subMenu) return undefined;
     
-    // If it's already an array (fallback data), return as is
+    // If it's already an array (from JSON field), return as is
     if (Array.isArray(subMenu)) {
-      return subMenu;
-    }
-    
-    // If it's a Directus repeater object, convert to array
-    if (typeof subMenu === 'object') {
-      return Object.values(subMenu).filter(item => 
+      return subMenu.filter(item => 
         item && typeof item === 'object' && 'title' in item && 'link' in item
       ) as Array<{title: string, link: string}>;
     }
