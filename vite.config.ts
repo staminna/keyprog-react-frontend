@@ -9,8 +9,8 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 3000,
     headers: {
-      "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8065 https://keyprog.varrho.com",
-      "X-Frame-Options": "ALLOW-FROM https://keyprog.varrho.com",
+      "Content-Security-Policy": "default-src 'self'; connect-src 'self' http://localhost:8065 ws: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: http://localhost:8065; font-src 'self' data: https://fonts.gstatic.com; frame-ancestors 'self' http://localhost:8065 https://keyprog.varrho.com; child-src 'self' blob:; frame-src 'self' http://localhost:8065",
+      "X-Frame-Options": "ALLOWALL",
     },
   },
   plugins: [

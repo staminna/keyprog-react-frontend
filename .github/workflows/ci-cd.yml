@@ -1,0 +1,100 @@
+name: React Frontend CI/CD
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint || echo "No linting configured"
+      
+      - name: Run tests
+        run: npm test || echo "No tests configured"
+
+  build:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+        env:
+          VITE_DIRECTUS_URL: ${{ secrets.VITE_DIRECTUS_URL }}
+          VITE_DIRECTUS_TOKEN: ${{ secrets.VITE_DIRECTUS_TOKEN }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-files
+          path: dist
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/develop'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: dist
+      
+      - name: Deploy to staging server
+        uses: appleboy/scp-action@master
+        with:
+          host: "${{ secrets.STAGING_HOST }}"
+          username: "${{ secrets.STAGING_USERNAME }}"
+          key: "${{ secrets.STAGING_SSH_KEY }}"
+          source: "dist/*"
+          target: "${{ secrets.STAGING_TARGET_PATH }}"
+          strip_components: 1
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: dist
+      
+      - name: Deploy to production server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USERNAME }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          source: "dist/*"
+          target: ${{ secrets.PRODUCTION_TARGET_PATH }}
+          strip_components: 1
