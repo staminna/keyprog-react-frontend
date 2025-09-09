@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  react-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - VITE_DIRECTUS_URL=http://directus:8055
+    depends_on:
+      - directus
+    networks:
+      - keyprog-network
+
+  directus:
+    image: directus/directus:latest
+    ports:
+      - "8055:8055"
+    volumes:
+      - directus-database:/directus/database
+      - directus-uploads:/directus/uploads
+    environment:
+      - KEY=your-secret-key
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=password
+      - DB_CLIENT=sqlite3
+      - DB_FILENAME=/directus/database/data.db
+    networks:
+      - keyprog-network
+
+networks:
+  keyprog-network:
+    driver: bridge
+
+volumes:
+  directus-database:
+  directus-uploads:
