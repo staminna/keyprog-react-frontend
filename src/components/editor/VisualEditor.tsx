@@ -6,6 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Save, Eye, Edit, Settings } from "lucide-react";
 import EditableHero from "./EditableHero";
 import EditableServices from "./EditableServices";
+import { InlineEditProvider } from "@/components/inline/InlineEditProvider";
+import { InlineEditToolbar } from "@/components/inline/InlineEditToolbar";
 import type { DirectusHero, DirectusServices } from "@/lib/directus";
 
 interface VisualEditorProps {
@@ -13,67 +15,20 @@ interface VisualEditorProps {
 }
 
 const VisualEditor = ({ initialEditMode = false }: VisualEditorProps) => {
-  const [isEditing, setIsEditing] = useState(initialEditMode);
   const [activeTab, setActiveTab] = useState("hero");
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const handleHeroSave = (data: DirectusHero) => {
     console.log("Hero data saved:", data);
-    setHasUnsavedChanges(false);
-    // Show success notification
-    alert('Hero section saved successfully!');
   };
 
   const handleServicesSave = (data: DirectusServices[]) => {
     console.log("Services data saved:", data);
-    setHasUnsavedChanges(false);
-    // Show success notification  
-    alert('Services saved successfully!');
-  };
-
-  const toggleEditMode = () => {
-    if (isEditing && hasUnsavedChanges) {
-      const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to exit edit mode?");
-      if (!confirmLeave) return;
-    }
-    setIsEditing(!isEditing);
-    setHasUnsavedChanges(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white sticky top-0 z-50">
-        <div className="container flex items-center justify-between py-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold">Visual Content Editor</h1>
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4" />
-              <Switch
-                checked={isEditing}
-                onCheckedChange={toggleEditMode}
-                id="edit-mode"
-              />
-              <Edit className="w-4 h-4" />
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {hasUnsavedChanges && (
-              <span className="text-sm text-orange-600 font-medium">
-                Unsaved changes
-              </span>
-            )}
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-            <Button size="sm">
-              <Save className="w-4 h-4 mr-2" />
-              Publish
-            </Button>
-          </div>
-        </div>
-      </div>
+    <InlineEditProvider initialEditMode={initialEditMode}>
+      <div className="min-h-screen bg-gray-50">
+        <InlineEditToolbar />
 
       <div className="container py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -92,15 +47,12 @@ const VisualEditor = ({ initialEditMode = false }: VisualEditorProps) => {
                   Hero Section
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {isEditing 
-                    ? "Edit the main hero section content and call-to-action buttons"
-                    : "Preview the hero section as visitors will see it"
-                  }
+                  Edit the main hero section content and call-to-action buttons with inline editing
                 </p>
               </CardHeader>
               <CardContent>
                 <EditableHero 
-                  isEditing={isEditing} 
+                  isEditing={false}
                   onSave={handleHeroSave}
                 />
               </CardContent>
@@ -115,15 +67,12 @@ const VisualEditor = ({ initialEditMode = false }: VisualEditorProps) => {
                   Services Section
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {isEditing 
-                    ? "Manage your services: add, edit, or remove service items"
-                    : "Preview your services section"
-                  }
+                  Manage your services with inline editing capabilities
                 </p>
               </CardHeader>
               <CardContent>
                 <EditableServices 
-                  isEditing={isEditing} 
+                  isEditing={false}
                   onSave={handleServicesSave}
                 />
               </CardContent>
@@ -164,6 +113,7 @@ const VisualEditor = ({ initialEditMode = false }: VisualEditorProps) => {
         </Tabs>
       </div>
     </div>
+    </InlineEditProvider>
   );
 };
 

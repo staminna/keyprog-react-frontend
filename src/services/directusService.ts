@@ -1,3 +1,4 @@
+import { deleteItem } from '@directus/sdk';
 import { 
   directus, 
   sessionDirectus,
@@ -449,10 +450,10 @@ export class DirectusService {
     }
   }
 
-  static async getPages(): Promise<DirectusSubMenuContent[]> {
+  static async getPages(): Promise<Record<string, unknown>[]> {
     try {
       await this.ensureAuthenticated();
-      const pages = await directus.request(readItems('pages'));
+      const pages = await directus.request(readItems('pages' as 'pages'));
       return pages;
     } catch (error) {
       console.error('Error fetching pages:', error);
@@ -460,10 +461,10 @@ export class DirectusService {
     }
   }
 
-  static async getPage(slug: string): Promise<DirectusSubMenuContent | null> {
+  static async getPage(slug: string): Promise<Record<string, unknown> | null> {
     try {
       const pages = await directus.request(
-        readItems('pages', {
+        readItems('pages' as 'pages', {
           filter: { slug: { _eq: slug } }
         })
       );
@@ -686,7 +687,7 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
-        readItems('sub_menu_content', {
+        readItems('sub_menu_content' as any, {
           filter: { 
             category: { _eq: category },
             slug: { _eq: slug },
@@ -694,7 +695,7 @@ export class DirectusService {
           }
         })
       );
-      return content[0] || null;
+      return (content[0] || null) as unknown as DirectusSubMenuContent | null;
     } catch (error) {
       console.error('Error fetching sub-menu content:', error);
       return null;
@@ -706,7 +707,7 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
-        readItems('sub_menu_content', {
+        readItems('sub_menu_content' as any, {
           filter: { 
             category: { _eq: category },
             status: { _eq: 'published' }
@@ -714,7 +715,7 @@ export class DirectusService {
           sort: ['sort', 'title']
         })
       );
-      return content;
+      return content as unknown as DirectusSubMenuContent[];
     } catch (error) {
       console.error('Error fetching sub-menu content by category:', error);
       return [];
@@ -739,5 +740,57 @@ export class DirectusService {
     if (!imageId) return '';
     const baseUrl = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
     return `${baseUrl}/assets/${imageId}`;
+  }
+
+  // Generic collection item methods for inline editing
+  static async getCollectionItem(collection: string, id: string | number): Promise<Record<string, unknown>> {
+    try {
+      await this.ensureAuthenticated();
+      const item = await directus.request(
+        readItem(collection as any, id)
+      );
+      return item as Record<string, unknown>;
+    } catch (error) {
+      console.error(`Error fetching ${collection} item:`, error);
+      throw error;
+    }
+  }
+
+  static async updateCollectionItem(collection: string, id: string | number, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    try {
+      await this.ensureAuthenticated();
+      const updatedItem = await directus.request(
+        updateItem(collection as any, id, data)
+      );
+      return updatedItem as Record<string, unknown>;
+    } catch (error) {
+      console.error(`Error updating ${collection} item:`, error);
+      throw error;
+    }
+  }
+
+  static async createCollectionItem(collection: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+    try {
+      await this.ensureAuthenticated();
+      const newItem = await directus.request(
+        createItem(collection as any, data)
+      );
+      return newItem as Record<string, unknown>;
+    } catch (error) {
+      console.error(`Error creating ${collection} item:`, error);
+      throw error;
+    }
+  }
+
+  static async deleteCollectionItem(collection: string, id: string | number): Promise<void> {
+    try {
+      await this.ensureAuthenticated();
+      await directus.request(
+        deleteItem(collection as any, id)
+      );
+    } catch (error) {
+      console.error(`Error deleting ${collection} item:`, error);
+      throw error;
+    }
   }
 }

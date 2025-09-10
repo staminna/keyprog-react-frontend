@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { DirectusService } from "@/services/directusService";
+import { InlineText } from "@/components/inline";
+import { useInlineEditContext } from "@/components/inline/InlineEditProvider";
 import type { DirectusHero } from "@/lib/directus";
 
 interface EditableHeroProps {
@@ -20,6 +22,8 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
     primary_button_link: "",
   });
   const [loading, setLoading] = useState(true);
+  const [heroId, setHeroId] = useState<string | null>(null);
+  const { showEditMode } = useInlineEditContext();
 
   useEffect(() => {
     const loadHeroData = async () => {
@@ -27,6 +31,7 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
         setLoading(true);
         const data = await DirectusService.getHero();
         setHeroData(data);
+        setHeroId('1'); // Use fixed ID for hero collection
         console.log('Hero data loaded successfully:', data);
       } catch (error) {
         console.error("Error loading hero data:", error);
@@ -142,16 +147,53 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
           <p className="mb-2 inline-flex items-center rounded-full border px-3 py-1 text-xs tracking-wide text-primary">
             Especialistas em eletrónica automóvel
           </p>
-          <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em]" style={{letterSpacing: '0.05em'}}>
-            {heroData.title || "Performance, diagnóstico e soluções para a sua centralina"}&nbsp;
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-            {heroData.subtitle || "Reprogramação, desbloqueio, clonagem, reparações e uma loja completa de equipamentos, emuladores e software."}
-          </p>
+          
+          {showEditMode && heroId ? (
+            <InlineText
+              collection="hero"
+              itemId={heroId}
+              field="title"
+              value={heroData.title}
+              placeholder="Hero title"
+              className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em]"
+            />
+          ) : (
+            <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em]" style={{letterSpacing: '0.05em'}}>
+              {heroData.title || "Performance, diagnóstico e soluções para a sua centralina"}&nbsp;
+            </h1>
+          )}
+          
+          {showEditMode && heroId ? (
+            <InlineText
+              collection="hero"
+              itemId={heroId}
+              field="subtitle"
+              value={heroData.subtitle}
+              placeholder="Hero subtitle"
+              multiline
+              className="mt-4 max-w-2xl text-lg text-muted-foreground"
+            />
+          ) : (
+            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+              {heroData.subtitle || "Reprogramação, desbloqueio, clonagem, reparações e uma loja completa de equipamentos, emuladores e software."}
+            </p>
+          )}
+          
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" variant="hero">
               <Link to={heroData.primary_button_link || "/servicos"}>
-                {heroData.primary_button_text || "Ver Serviços"}
+                {showEditMode && heroId ? (
+                  <InlineText
+                    collection="hero"
+                    itemId={heroId}
+                    field="primary_button_text"
+                    value={heroData.primary_button_text}
+                    placeholder="Button text"
+                    showEditIcon={false}
+                  />
+                ) : (
+                  heroData.primary_button_text || "Ver Serviços"
+                )}
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">

@@ -14,6 +14,8 @@ import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
 import Suporte from "./pages/Suporte";
 import ProtectedEditor from "./pages/ProtectedEditor";
+import SearchPage from './pages/SearchPage';
+import InlineEditDemo from './pages/InlineEditDemo';
 import DynamicPage from "@/components/DynamicPage";
 import ServiceDetail from "@/components/ServiceDetail";
 import NewsDetail from "@/components/NewsDetail";
@@ -51,6 +53,8 @@ const App = () => (
             <Route path="/noticias/:id" element={<NewsDetail />} />
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/suporte" element={<Suporte />} />
+            <Route path="/pesquisa" element={<SearchPage />} />
+            <Route path="/inline-demo" element={<InlineEditDemo />} />
             <Route path="/editor" element={<ProtectedEditor />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/pages/:slug" element={<DynamicPage />} />

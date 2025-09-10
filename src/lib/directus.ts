@@ -99,6 +99,24 @@ interface DirectusSchema {
   news: DirectusNews[];
   contacts: DirectusContacts[];
   hero: DirectusHero;
+  products: DirectusProduct[];
+}
+
+export interface DirectusProduct {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  slug: string;
+  category?: string;
+  images?: string[];
+  status: 'draft' | 'published' | 'archived';
+  inventory_count?: number;
+  sku?: string;
+  featured?: boolean;
+  tags?: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
