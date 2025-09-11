@@ -1,5 +1,6 @@
 import { directus, type DirectusSchema, type DirectusProduct } from '@/lib/directus';
 import { DirectusService } from './directusService';
+import { FallbackService } from './fallbackService';
 import { readItems, readItem, createItem, updateItem } from '@directus/sdk';
 
 export interface Product {
@@ -85,7 +86,40 @@ export class ProductService {
       return products as unknown as Product[];
     } catch (error) {
       console.error('Error fetching products:', error);
-      return [];
+      // Use fallback data when Directus is down
+      console.log('Using fallback product data');
+      const fallbackProducts = FallbackService.getProducts();
+      
+      // Apply filters to fallback data
+      let filteredProducts = [...fallbackProducts];
+      
+      if (filter) {
+        if (filter.category) {
+          filteredProducts = filteredProducts.filter(p => p.category?.toString() === filter.category);
+        }
+        if (filter.price_min !== undefined) {
+          filteredProducts = filteredProducts.filter(p => p.price >= filter.price_min!);
+        }
+        if (filter.price_max !== undefined) {
+          filteredProducts = filteredProducts.filter(p => p.price <= filter.price_max!);
+        }
+        if (filter.featured !== undefined) {
+          filteredProducts = filteredProducts.filter(p => p.featured === filter.featured);
+        }
+        if (filter.status) {
+          filteredProducts = filteredProducts.filter(p => p.status === filter.status);
+        }
+        if (filter.search) {
+          const searchLower = filter.search.toLowerCase();
+          filteredProducts = filteredProducts.filter(p => 
+            p.name.toLowerCase().includes(searchLower) || 
+            p.description?.toLowerCase().includes(searchLower)
+          );
+        }
+      }
+      
+      // Apply pagination
+      return filteredProducts.slice(offset, offset + limit) as unknown as Product[];
     }
   }
 
@@ -103,7 +137,11 @@ export class ProductService {
       return product as Product;
     } catch (error) {
       console.error('Error fetching product:', error);
-      return null;
+      // Use fallback data when Directus is down
+      console.log('Using fallback product data');
+      const fallbackProducts = FallbackService.getProducts();
+      const product = fallbackProducts.find(p => p.id === slug || p.slug === slug);
+      return product as Product || null;
     }
   }
 
@@ -201,7 +239,16 @@ export class ProductService {
       })) as ProductCategory[];
     } catch (error) {
       console.error('Error fetching categories:', error);
-      return [];
+      // Use fallback data when Directus is down
+      console.log('Using fallback category data');
+      const fallbackCategories = FallbackService.getCategories();
+      return fallbackCategories.map(category => ({
+        id: category.id as string,
+        name: category.title || '',
+        title: category.title || '',
+        slug: category.slug as string,
+        image: category.image as string
+      })) as ProductCategory[];
     }
   }
 
@@ -227,7 +274,18 @@ export class ProductService {
       } as ProductCategory;
     } catch (error) {
       console.error('Error fetching category:', error);
-      return null;
+      // Use fallback data when Directus is down
+      console.log('Using fallback category data');
+      const fallbackCategory = FallbackService.getCategory(slug);
+      if (!fallbackCategory) return null;
+      
+      return {
+        id: fallbackCategory.id as string,
+        name: fallbackCategory.title || '',
+        title: fallbackCategory.title || '',
+        slug: fallbackCategory.slug as string,
+        image: fallbackCategory.image as string
+      } as ProductCategory;
     }
   }
 

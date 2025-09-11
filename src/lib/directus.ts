@@ -89,6 +89,35 @@ interface DirectusHero {
   primary_button_link?: string;
 }
 
+interface DirectusOrder {
+  id: string;
+  customer: string | number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  total: number;
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  date_created?: string;
+  date_updated?: string;
+  items?: DirectusOrderItem[];
+}
+
+interface DirectusOrderItem {
+  id: string;
+  order: string | number;
+  product: string | number;
+  quantity: number;
+  price: number;
+}
+
+interface DirectusCustomer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  date_created?: string;
+}
+
 interface DirectusSchema {
   settings: DirectusSettings;
   pages: DirectusPages[];
@@ -100,6 +129,9 @@ interface DirectusSchema {
   contacts: DirectusContacts[];
   hero: DirectusHero;
   products: DirectusProduct[];
+  orders: DirectusOrder[];
+  customers: DirectusCustomer[];
+  order_items: DirectusOrderItem[];
 }
 
 export interface DirectusProduct {
@@ -186,5 +218,8 @@ export {
   type DirectusNews,
   type DirectusContacts,
   type DirectusHero,
-  type DirectusSchema
+  type DirectusSchema,
+  type DirectusOrder,
+  type DirectusCustomer,
+  type DirectusOrderItem
 };

@@ -6,7 +6,7 @@
 echo "🚀 Importing Directus Schema..."
 
 # Check if schema file exists
-SCHEMA_FILE="/Users/jorgenunes/2025/keyprog/keyprog-directus/keyprog_schema_import.json"
+SCHEMA_FILE="/Users/jorgenunes/2026/keyprog/keyprog-directus/keyprog_schema_import.json"
 
 if [ ! -f "$SCHEMA_FILE" ]; then
     echo "❌ Schema file not found: $SCHEMA_FILE"

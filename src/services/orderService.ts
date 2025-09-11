@@ -1,4 +1,5 @@
 import { DirectusService } from './directusService';
+import { FallbackService } from './fallbackService';
 import { directus, readItems, readItem, createItem, updateItem } from '@/lib/directus';
 
 export interface Order {
@@ -67,7 +68,7 @@ export class OrderService {
     try {
       await DirectusService.authenticate();
       
-      const queryFilter: any = {};
+      const queryFilter: Record<string, unknown> = {};
       
       if (filter) {
         if (filter.status) queryFilter.status = { _eq: filter.status };
@@ -77,7 +78,7 @@ export class OrderService {
         }
         if (filter.date_to) {
           queryFilter.created_at = { 
-            ...queryFilter.created_at, 
+            ...queryFilter.created_at as Record<string, unknown>, 
             _lte: filter.date_to 
           };
         }
@@ -96,7 +97,41 @@ export class OrderService {
       return orders;
     } catch (error) {
       console.error('Error fetching orders:', error);
-      return [];
+      // Use fallback data when Directus is down
+      console.log('Using fallback order data');
+      const fallbackOrders = FallbackService.getOrders();
+      
+      // Apply filters to fallback data
+      let filteredOrders = [...fallbackOrders];
+      
+      if (filter) {
+        if (filter.status) {
+          filteredOrders = filteredOrders.filter(o => o.status === filter.status);
+        }
+        if (filter.customer_id) {
+          filteredOrders = filteredOrders.filter(o => o.customer === filter.customer_id);
+        }
+        if (filter.date_from) {
+          const fromDate = new Date(filter.date_from).getTime();
+          filteredOrders = filteredOrders.filter(o => {
+            const orderDate = new Date(o.date_created as string).getTime();
+            return orderDate >= fromDate;
+          });
+        }
+        if (filter.date_to) {
+          const toDate = new Date(filter.date_to).getTime();
+          filteredOrders = filteredOrders.filter(o => {
+            const orderDate = new Date(o.date_created as string).getTime();
+            return orderDate <= toDate;
+          });
+        }
+      }
+      
+      // Transform to Order interface
+      const mappedOrders = filteredOrders.map(order => this.mapFallbackOrderToOrder(order));
+      
+      // Apply pagination
+      return mappedOrders.slice(offset, offset + limit);
     }
   }
 
@@ -113,7 +148,12 @@ export class OrderService {
       return order;
     } catch (error) {
       console.error('Error fetching order:', error);
-      return null;
+      // Use fallback data when Directus is down
+      console.log('Using fallback order data');
+      const fallbackOrder = FallbackService.getOrder(id);
+      if (!fallbackOrder) return null;
+      
+      return this.mapFallbackOrderToOrder(fallbackOrder);
     }
   }
 
@@ -186,7 +226,15 @@ export class OrderService {
       return customers;
     } catch (error) {
       console.error('Error fetching customers:', error);
-      return [];
+      // Use fallback data when Directus is down
+      console.log('Using fallback customer data');
+      const fallbackCustomers = FallbackService.getCustomers();
+      
+      // Transform to Customer interface
+      const mappedCustomers = fallbackCustomers.map(customer => this.mapFallbackCustomerToCustomer(customer));
+      
+      // Apply pagination
+      return mappedCustomers.slice(offset, offset + limit);
     }
   }
 
@@ -201,7 +249,12 @@ export class OrderService {
       return customer;
     } catch (error) {
       console.error('Error fetching customer:', error);
-      return null;
+      // Use fallback data when Directus is down
+      console.log('Using fallback customer data');
+      const fallbackCustomer = FallbackService.getCustomer(id);
+      if (!fallbackCustomer) return null;
+      
+      return this.mapFallbackCustomerToCustomer(fallbackCustomer);
     }
   }
 
@@ -256,5 +309,62 @@ export class OrderService {
         average_order_value: 0
       };
     }
+  }
+  
+  // Helper methods to map fallback data to proper interfaces
+  private static mapFallbackOrderToOrder(fallbackOrder: Record<string, unknown>): Order {
+    // Get order items for this order
+    const orderItems = FallbackService.getOrderItemsByOrder(fallbackOrder.id as string);
+    
+    // Map order items to OrderItem interface
+    const mappedItems: OrderItem[] = orderItems.map(item => ({
+      id: item.id as string,
+      product_id: item.product as string,
+      product_name: 'Product ' + item.product, // Fallback product name
+      quantity: item.quantity as number,
+      unit_price: item.price as number,
+      total_price: (item.price as number) * (item.quantity as number)
+    }));
+    
+    // Get customer data
+    const customer = FallbackService.getCustomer(fallbackOrder.customer as string);
+    
+    // Create a default shipping address
+    const shippingAddress: Address = {
+      name: customer ? `${customer.first_name} ${customer.last_name}` : 'Customer',
+      address_line_1: '123 Main St',
+      city: 'Anytown',
+      postal_code: '12345',
+      country: 'Portugal'
+    };
+    
+    return {
+      id: fallbackOrder.id as string,
+      order_number: `ORD-${fallbackOrder.id}`,
+      customer_id: fallbackOrder.customer as string,
+      customer_email: customer?.email as string || 'customer@example.com',
+      customer_name: customer ? `${customer.first_name} ${customer.last_name}` : 'Customer',
+      status: fallbackOrder.status as Order['status'] || 'pending',
+      total_amount: fallbackOrder.total as number,
+      currency: 'EUR',
+      items: mappedItems,
+      shipping_address: shippingAddress,
+      payment_status: fallbackOrder.payment_status as Order['payment_status'] || 'pending',
+      created_at: fallbackOrder.date_created as string || new Date().toISOString(),
+      updated_at: fallbackOrder.date_updated as string || new Date().toISOString()
+    };
+  }
+  
+  private static mapFallbackCustomerToCustomer(fallbackCustomer: Record<string, unknown>): Customer {
+    return {
+      id: fallbackCustomer.id as string,
+      email: fallbackCustomer.email as string,
+      first_name: fallbackCustomer.first_name as string,
+      last_name: fallbackCustomer.last_name as string,
+      phone: fallbackCustomer.phone as string,
+      created_at: fallbackCustomer.date_created as string || new Date().toISOString(),
+      total_orders: 0,
+      total_spent: 0
+    };
   }
 }
