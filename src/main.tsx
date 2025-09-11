@@ -4,8 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App.tsx';
 import './index.css';
+import { initializeDirectusAutoLogin } from './services/autoLogin';
 
 const queryClient = new QueryClient()
+
+// Initialize Directus autologin
+initializeDirectusAutoLogin().catch(error => {
+  console.error('Failed to initialize Directus autologin:', error);
+});
 
 // Add postMessage handler for Directus Visual Editor
 if (window.parent !== window) {

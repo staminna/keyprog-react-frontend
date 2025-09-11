@@ -26,6 +26,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { InlineEditProvider } from "@/components/inline/InlineEditProvider";
 
 const queryClient = new QueryClient();
 
@@ -33,37 +34,39 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <SiteHeader />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/loja" element={<Loja />} />
-            <Route path="/loja/produtos/:slug" element={<ProductDetail />} />
-            <Route path="/loja/:slug" element={<SubMenuContent />} />
-            <Route path="/servicos" element={<Servicos />} />
-            <Route path="/servicos/detalhes/:slug" element={<ServiceDetail />} />
-            <Route path="/servicos/:slug" element={<SubMenuContent />} />
-            <Route path="/suporte/:slug" element={<SubMenuContent />} />
-            <Route path="/file-service" element={<FileService />} />
-            <Route path="/simulador" element={<Simulador />} />
-            <Route path="/noticias" element={<Noticias />} />
-            <Route path="/noticias/:id" element={<NewsDetail />} />
-            <Route path="/contactos" element={<Contactos />} />
-            <Route path="/suporte" element={<Suporte />} />
-            <Route path="/pesquisa" element={<SearchPage />} />
-            <Route path="/inline-demo" element={<InlineEditDemo />} />
-            <Route path="/editor" element={<ProtectedEditor />} />
-            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-            <Route path="/pages/:slug" element={<DynamicPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <SiteFooter />
-        </BrowserRouter>
-      </TooltipProvider>
+        <InlineEditProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <SiteHeader />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/loja" element={<Loja />} />
+              <Route path="/loja/produtos/:slug" element={<ProductDetail />} />
+              <Route path="/loja/:slug" element={<SubMenuContent />} />
+              <Route path="/servicos" element={<Servicos />} />
+              <Route path="/servicos/detalhes/:slug" element={<ServiceDetail />} />
+              <Route path="/servicos/:slug" element={<SubMenuContent />} />
+              <Route path="/suporte/:slug" element={<SubMenuContent />} />
+              <Route path="/file-service" element={<FileService />} />
+              <Route path="/simulador" element={<Simulador />} />
+              <Route path="/noticias" element={<Noticias />} />
+              <Route path="/noticias/:id" element={<NewsDetail />} />
+              <Route path="/contactos" element={<Contactos />} />
+              <Route path="/suporte" element={<Suporte />} />
+              <Route path="/pesquisa" element={<SearchPage />} />
+              <Route path="/inline-demo" element={<InlineEditDemo />} />
+              <Route path="/editor" element={<ProtectedEditor />} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/pages/:slug" element={<DynamicPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <SiteFooter />
+          </BrowserRouter>
+        </TooltipProvider>
+      </InlineEditProvider>
     </AuthProvider>
   </QueryClientProvider>
   </HelmetProvider>

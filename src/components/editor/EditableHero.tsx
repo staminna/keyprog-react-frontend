@@ -158,7 +158,7 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
               className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em]"
             />
           ) : (
-            <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em]" style={{letterSpacing: '0.05em'}}>
+            <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em] tracking-wider">
               {heroData.title || "Performance, diagnóstico e soluções para a sua centralina"}&nbsp;
             </h1>
           )}

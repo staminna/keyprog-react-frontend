@@ -30,6 +30,8 @@ export class DirectusService {
   private static isInDirectusEditor = false;
   private static editorDirectusClient: ReturnType<typeof createEditorDirectus> | null = null;
   private static parentToken: string | null = null;
+  private static autoLoginAttempted = false;
+  private static initPromise: Promise<boolean> | null = null;
 
   // Check if running inside Directus Visual Editor and get parent token
   private static async checkDirectusEditor(): Promise<{ isEditor: boolean; token?: string }> {
@@ -81,6 +83,70 @@ export class DirectusService {
     return { isEditor: false };
   }
 
+  // Initialize autologin - called automatically when service is first used
+  static async initialize(): Promise<boolean> {
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this.performInitialization();
+    return this.initPromise;
+  }
+
+  private static async performInitialization(): Promise<boolean> {
+    try {
+      // Check if we're in Directus Visual Editor first
+      const editorContext = await this.checkDirectusEditor();
+      this.isInDirectusEditor = editorContext.isEditor;
+      
+      if (this.isInDirectusEditor) {
+        console.log('🎯 Detected Directus Visual Editor - using inherited authentication');
+        if (editorContext.token) {
+          this.parentToken = editorContext.token;
+          this.editorDirectusClient = createEditorDirectus(editorContext.token);
+        }
+        this.isAuthenticated = true;
+        return true;
+      }
+
+      // Try static token first
+      const staticToken = import.meta.env.VITE_DIRECTUS_TOKEN;
+      if (staticToken && staticToken.trim()) {
+        console.log('🔑 Using static token for authentication');
+        this.isAuthenticated = true;
+        this.useStaticToken = true;
+        return true;
+      }
+
+      // Attempt autologin with environment credentials
+      const email = import.meta.env.VITE_DIRECTUS_EMAIL;
+      const password = import.meta.env.VITE_DIRECTUS_PASSWORD;
+      
+      if (email && password && !this.autoLoginAttempted) {
+        console.log('🚀 Attempting autologin with environment credentials');
+        this.autoLoginAttempted = true;
+        const success = await this.performAuthentication(email, password);
+        if (success) {
+          console.log('✅ Autologin successful');
+          return true;
+        } else {
+          console.warn('❌ Autologin failed');
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Initialization failed:', error);
+      return false;
+    }
+  }
+
+  // Public method to trigger autologin
+  static async autoLogin(): Promise<boolean> {
+    console.log('🚀 Triggering autologin...');
+    return await this.initialize();
+  }
+
   static async authenticate(email?: string, password?: string): Promise<boolean> {
     // If email and password are provided, force session-based authentication
     if (email && password) {
@@ -97,6 +163,11 @@ export class DirectusService {
       const result = await this.authPromise;
       this.authPromise = null;
       return result;
+    }
+    
+    // If not initialized yet, initialize first
+    if (!this.initPromise) {
+      return await this.initialize();
     }
     
     // Check if we're in Directus Visual Editor
@@ -326,10 +397,20 @@ export class DirectusService {
   }
 
   private static async ensureAuthenticated(): Promise<void> {
+    // Initialize if not already done
+    if (!this.isAuthenticated && !this.initPromise) {
+      await this.initialize();
+    }
+    
     // If in Directus Editor, skip authentication check
     if (this.isInDirectusEditor) {
       console.log('🎯 Skipping authentication check - using Directus Editor context');
       this.isAuthenticated = true;
+      return;
+    }
+    
+    // If using static token, we're already authenticated
+    if (this.useStaticToken && this.isAuthenticated) {
       return;
     }
     

@@ -22,14 +22,14 @@ export default defineConfig(({ mode }) => {
       },
       headers: {
         "Content-Security-Policy": "default-src 'self'; " +
-          "connect-src 'self' http://directus:8055 ws: wss: blob:; " +
+          "connect-src 'self' http://localhost:8065 ws: wss: blob:; " +
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-          "img-src 'self' data: blob: http://directus:8055; " +
+          "img-src 'self' data: blob: http://localhost:8065; " +
           "font-src 'self' data: https://fonts.gstatic.com; " +
-          "frame-ancestors 'self' http://directus:8055; " +
+          "frame-ancestors 'self' http://localhost:8065; " +
           "child-src 'self' blob:; " +
-          "frame-src 'self' http://directus:8055",
+          "frame-src 'self' http://localhost:8065",
         "X-Frame-Options": "ALLOWALL",
       },
     },
