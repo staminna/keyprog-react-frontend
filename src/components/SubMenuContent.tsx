@@ -1,36 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { DirectusService } from '@/services/directusService';
+import { MenuService } from '@/services/menuService';
+import { DirectusSubMenuContent } from '@/lib/directus';
+import NotFoundContent from '@/components/NotFoundContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import SEOHead from '@/components/SEOHead';
 
 const SubMenuContent: React.FC = () => {
   const { category, slug } = useParams<{ category: string; slug: string }>();
+  const [contentData, setContentData] = useState<Record<string, unknown> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const { data: content, isLoading, error } = useQuery({
-    queryKey: ['sub-menu-content', category, slug],
-    queryFn: async () => {
-      if (!category || !slug) return null;
+  useEffect(() => {
+    const fetchContent = async () => {
+      setLoading(true);
       try {
-        // Use a more flexible approach to fetch content
-        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/sub_menu_content?filter[category][_eq]=${category}&filter[slug][_eq]=${slug}&filter[status][_eq]=published`, {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_DIRECTUS_TOKEN}`
-          }
-        });
-        const result = await response.json();
-        return result.data?.[0] || null;
-      } catch (error) {
-        console.error('Error fetching sub-menu content:', error);
-        return null;
+        const content = await MenuService.getSubMenuContent(category, slug);
+        setContentData(content);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching submenu content:', err);
+        setError('Failed to load content');
+      } finally {
+        setLoading(false);
       }
-    },
-    enabled: !!category && !!slug
-  });
+    };
 
-  if (isLoading) {
+    if (category && slug) {
+      fetchContent();
+    }
+  }, [category, slug]);
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -46,7 +49,20 @@ const SubMenuContent: React.FC = () => {
     );
   }
 
-  if (error || !content) {
+  if (error) {
+    return (
+      <div className="container py-12">
+        <NotFoundContent 
+          title="Erro ao carregar conteúdo"
+          message={error}
+          backLink={`/${category}`}
+          backText={`Voltar para ${category === 'servicos' ? 'Serviços' : category === 'loja' ? 'Loja' : 'Suporte'}`}
+        />
+      </div>
+    );
+  }
+
+  if (!contentData) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -66,29 +82,29 @@ const SubMenuContent: React.FC = () => {
   return (
     <>
       <SEOHead 
-        title={`${content.title} - Keyprog`}
-        description={content.description || `${content.title} - Keyprog`}
-        keywords={`${content.title}, ${category}, keyprog`}
+        title={`${contentData.title as string} - Keyprog`}
+        description={(contentData.description as string) || `${contentData.title as string} - Keyprog`}
+        keywords={`${contentData.title as string}, ${category}, keyprog`}
       />
       
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">{content.title}</h1>
-            {content.description && (
+            <h1 className="text-4xl font-bold mb-4">{contentData.title as string}</h1>
+            {contentData.description && (
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                {content.description}
+                {contentData.description as string}
               </p>
             )}
           </div>
 
           {/* Featured Image */}
-          {content.featured_image && (
+          {contentData.featured_image && (
             <div className="mb-8">
               <img 
-                src={`${import.meta.env.VITE_DIRECTUS_URL}/assets/${content.featured_image}`}
-                alt={content.title}
+                src={`${import.meta.env.VITE_DIRECTUS_URL}/assets/${contentData.featured_image as string}`}
+                alt={contentData.title as string}
                 className="w-full h-64 object-cover rounded-lg shadow-lg"
               />
             </div>
@@ -97,14 +113,14 @@ const SubMenuContent: React.FC = () => {
           {/* Content */}
           <Card>
             <CardContent className="p-8">
-              {content.content ? (
+              {contentData.content ? (
                 <div 
                   className="prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: content.content }}
+                  dangerouslySetInnerHTML={{ __html: contentData.content as string }}
                 />
               ) : (
                 <div className="text-center py-12">
-                  <h2 className="text-2xl font-semibold mb-4">{content.title}</h2>
+                  <h2 className="text-2xl font-semibold mb-4">{contentData.title as string}</h2>
                   <p className="text-muted-foreground">
                     Conteúdo em desenvolvimento. Em breve teremos mais informações disponíveis.
                   </p>

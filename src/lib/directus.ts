@@ -80,6 +80,7 @@ export interface DirectusSubMenuContent {
   featured_image?: string;
   status: 'draft' | 'published' | 'archived';
   sort?: number;
+  not_found_message?: string;
 }
 
 interface DirectusHero {
