@@ -42,15 +42,42 @@ export class MenuService {
    */
   static async getSubMenuContent(category: string, slug: string): Promise<Record<string, unknown>> {
     try {
+      console.log(`MenuService: Original request for category=${category}, slug=${slug}`);
+      
+      if (!category || !slug) {
+        console.error(`MenuService: Missing parameters - category=${category}, slug=${slug}`);
+        throw new Error('Missing category or slug parameter');
+      }
+      
       // Fix the category and slug if needed
       const correctPath = MenuFixer.getCorrectPath(`/${category}/${slug}`);
-      const [, correctCategory, correctSlug] = correctPath.split('/');
+      const pathParts = correctPath.split('/');
+      const correctCategory = pathParts.length > 1 ? pathParts[1] : category;
+      const correctSlug = pathParts.length > 2 ? pathParts[2] : slug;
+      
+      console.log(`MenuService: Corrected path: ${correctPath}`);
+      console.log(`MenuService: Corrected category=${correctCategory}, slug=${correctSlug}`);
       
       // Get content from Directus
       const content = await DirectusService.getSubMenuContent(correctCategory, correctSlug);
+      console.log(`MenuService: Directus content result:`, content ? 'Found' : 'Not found');
       
-      // Apply corrections and fallbacks
-      return MenuFixer.getSubMenuContent(correctCategory, correctSlug, content);
+      // If content exists in Directus, return it with fallback properties if needed
+      if (content) {
+        console.log(`MenuService: Found content in Directus for ${correctCategory}/${correctSlug}`);
+        // Convert to unknown first to avoid type error
+        const typedContent = content as unknown as Record<string, unknown>;
+        return {
+          ...typedContent,
+          not_found_message: (typedContent.not_found_message as string) || DEFAULT_NOT_FOUND_MESSAGE
+        };
+      }
+      
+      // If no content in Directus, apply corrections and fallbacks from menuCorrections
+      console.log(`MenuService: No content in Directus for ${correctCategory}/${correctSlug}, using fallbacks from menuCorrections`);
+      const fallbackContent = MenuFixer.getSubMenuContent(correctCategory, correctSlug, null);
+      console.log(`MenuService: Fallback content:`, fallbackContent ? 'Found' : 'Not found');
+      return fallbackContent;
     } catch (error) {
       console.error(`Error fetching submenu content for ${category}/${slug}:`, error);
       return {

@@ -28,6 +28,13 @@ import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { InlineEditProvider } from "@/components/inline/InlineEditProvider";
 
+// Service Pages
+import DiagnosticoPage from "./pages/servicos/DiagnosticoPage";
+import ReparacaoPage from "./pages/servicos/ReparacaoPage";
+import ReprogramacaoPage from "./pages/servicos/ReprogramacaoPage";
+import DesbloqueioPage from "./pages/servicos/DesbloqueioPage";
+import ClonagemPage from "./pages/servicos/ClonagemPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -47,6 +54,11 @@ const App = () => (
               <Route path="/loja/:slug" element={<SubMenuContent />} />
               <Route path="/servicos" element={<Servicos />} />
               <Route path="/servicos/detalhes/:slug" element={<ServiceDetail />} />
+              <Route path="/servicos/diagnostico" element={<DiagnosticoPage />} />
+              <Route path="/servicos/reparacao" element={<ReparacaoPage />} />
+              <Route path="/servicos/reprogramacao" element={<ReprogramacaoPage />} />
+              <Route path="/servicos/desbloqueio" element={<DesbloqueioPage />} />
+              <Route path="/servicos/clonagem" element={<ClonagemPage />} />
               <Route path="/servicos/:slug" element={<SubMenuContent />} />
               <Route path="/suporte/:slug" element={<SubMenuContent />} />
               <Route path="/file-service" element={<FileService />} />

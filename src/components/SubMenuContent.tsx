@@ -8,7 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import SEOHead from '@/components/SEOHead';
 
 const SubMenuContent: React.FC = () => {
-  const { category, slug } = useParams<{ category: string; slug: string }>();
+  // Extract parameters from URL
+  const params = useParams<{ slug: string; category?: string }>();
+  const slug = params.slug;
+  // For routes like /servicos/:slug, the category is not in the params but in the URL path
+  // So we need to extract it from the URL
+  const pathname = window.location.pathname;
+  const pathParts = pathname.split('/');
+  const category = params.category || (pathParts.length > 1 ? pathParts[1] : undefined);
   const [contentData, setContentData] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,7 +24,9 @@ const SubMenuContent: React.FC = () => {
     const fetchContent = async () => {
       setLoading(true);
       try {
+        console.log(`SubMenuContent: Fetching content for category=${category}, slug=${slug}`);
         const content = await MenuService.getSubMenuContent(category, slug);
+        console.log('SubMenuContent: Received content:', content);
         setContentData(content);
         setError(null);
       } catch (err) {
@@ -29,7 +38,12 @@ const SubMenuContent: React.FC = () => {
     };
 
     if (category && slug) {
+      console.log(`SubMenuContent: Starting fetch for ${category}/${slug}`);
       fetchContent();
+    } else {
+      console.error(`SubMenuContent: Missing parameters - category=${category}, slug=${slug}`);
+      setError('Missing URL parameters');
+      setLoading(false);
     }
   }, [category, slug]);
 

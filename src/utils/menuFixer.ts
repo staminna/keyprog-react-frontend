@@ -159,18 +159,40 @@ export class MenuFixer {
    * @returns Corrected path
    */
   static getCorrectPath(path: string): string {
+    console.log(`MenuFixer.getCorrectPath: Original path=${path}`);
+    
     // Special case for loja -> servicos/reprogramacao issue
     if (path === '/loja/reprogramacao') {
-      return '/servicos/reprogramacao-ecu';
+      return '/servicos/reprogramacao';
+    }
+    
+    // Special cases for service pages
+    if (path === '/servicos/reprogramacao-ecu') {
+      return '/servicos/reprogramacao';
     }
     
     // Check if path exists in our structure
     if (this.isValidPath(path)) {
+      console.log(`MenuFixer.getCorrectPath: Path is valid: ${path}`);
       return path;
     }
     
-    // Try to find a similar path
+    console.log(`MenuFixer.getCorrectPath: Path is not valid: ${path}`);
+    
+    // Parse path parts
     const pathParts = path.split('/').filter(Boolean);
+    
+    // Special handling for service pages
+    if (pathParts.length >= 2 && pathParts[0] === 'servicos') {
+      const slug = pathParts[1];
+      // Check if we have a direct match in our corrections
+      if (subMenuContentCorrections.servicos && slug in subMenuContentCorrections.servicos) {
+        console.log(`MenuFixer.getCorrectPath: Found direct match for service: ${slug}`);
+        return `/servicos/${slug}`;
+      }
+    }
+    
+    // Try to find a similar path
     if (pathParts.length >= 2) {
       const category = pathParts[0];
       const slug = pathParts[1];
