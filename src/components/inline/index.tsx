@@ -1,33 +1,34 @@
-// Compatibility layer for Remirror implementation
-// This file provides backward compatibility with the old inline editor API
-import * as React from 'react';
+import React from 'react';
 
 // Import from the new Remirror implementation
-import type { 
+import {
   InlineTextEditor as RemirrorInlineTextEditor,
   InlineRichTextEditor as RemirrorInlineRichTextEditor,
   RemirrorEditorProvider,
-  RemirrorEditorToolbar
+  RemirrorEditorToolbar,
+  useRemirrorEditorContext
 } from '../remirror';
 
 // Re-export with the old names for backward compatibility
-export const InlineText: typeof RemirrorInlineTextEditor = require('../remirror').InlineTextEditor;
-export const InlineRichText: typeof RemirrorInlineRichTextEditor = require('../remirror').InlineRichTextEditor;
-export const InlineEditProvider: typeof RemirrorEditorProvider = require('../remirror').RemirrorEditorProvider;
-export const InlineEditToolbar: typeof RemirrorEditorToolbar = require('../remirror').RemirrorEditorToolbar;
+export const InlineText = RemirrorInlineTextEditor;
+export const InlineRichText = RemirrorInlineRichTextEditor;
+export const InlineEditProvider = RemirrorEditorProvider;
+export const InlineEditToolbar = RemirrorEditorToolbar;
 
 // Stub for InlineImage until we implement it in Remirror
-export const InlineImage: React.FC<{children?: React.ReactNode}> = (props) => {
-  return React.createElement('div', null, props.children);
+export const InlineImage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return <div>{children}</div>;
 };
 
 // Stub for InlineSelect until we implement it in Remirror
-export const InlineSelect: React.FC<{children?: React.ReactNode}> = (props) => {
-  return React.createElement('div', null, props.children);
+export const InlineSelect: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return <div>{children}</div>;
 };
 
 // Compatibility hook for useInlineEdit
 export const useInlineEdit = () => {
+  const context = useRemirrorEditorContext();
+  
   return {
     value: '',
     originalValue: '',
