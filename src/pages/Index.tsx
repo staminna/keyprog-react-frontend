@@ -1,6 +1,8 @@
 import Hero from "@/components/sections/Hero";
 import EditableServices from "@/components/editor/EditableServices";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UniversalContentEditor } from "@/components/universal/UniversalContentEditor";
+import { UniversalImageEditor } from "@/components/universal/UniversalImageEditor";
 import { Button } from "@/components/ui/button";
 import emuladoresImg from "@/assets/cat-emuladores.jpg";
 import equipamentosImg from "@/assets/cat-equipamentos.jpg";
@@ -15,12 +17,23 @@ const Index = () => {
 
         <section className="container py-14" aria-labelledby="categorias-heading">
           <header className="mb-8 text-center">
-            <h2 id="categorias-heading" className="text-3xl font-bold">
-              Categorias Principais
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Produtos e softwares selecionados para profissionais de diagnóstico.
-            </p>
+            <UniversalContentEditor
+              collection="settings"
+              itemId="settings"
+              field="categories_section_title"
+              tag="h2"
+              id="categorias-heading"
+              className="text-3xl font-bold"
+              value="Categorias Principais"
+            />
+            <UniversalContentEditor
+              collection="settings"
+              itemId="settings"
+              field="categories_section_description"
+              tag="p"
+              className="mt-2 text-muted-foreground"
+              value="Produtos e softwares selecionados para profissionais de diagnóstico."
+            />
           </header>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -32,11 +45,21 @@ const Index = () => {
             ].map((item) => (
               <Card key={item.title} className="group overflow-hidden transition-all hover:shadow-elev">
                 <CardHeader>
-                  <CardTitle>{item.title}</CardTitle>
+                  <UniversalContentEditor
+                    collection="categories"
+                    itemId={item.title.toLowerCase().replace(/ /g, '-')}
+                    field="title"
+                    tag="h3"
+                    className="text-xl font-semibold"
+                    value={item.title}
+                  />
                 </CardHeader>
                 <CardContent className="pt-0">
                   <Link to={item.href} aria-label={item.title}>
-                    <img
+                    <UniversalImageEditor
+                      collection="categories"
+                      itemId={item.title.toLowerCase().replace(/ /g, '-')}
+                      field="image"
                       src={item.img}
                       alt={`${item.title} – categoria da loja Keyprog`}
                       loading="lazy"
@@ -55,7 +78,7 @@ const Index = () => {
           </div>
         </section>
 
-        <EditableServices isEditing={false} />
+        <EditableServices />
     </main>
   );
 };

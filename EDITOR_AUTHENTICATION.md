@@ -1,68 +1,73 @@
-# Editor Authentication Protection
+# Editor Authentication & Directus Visual Editor Integration
 
 ## 🔐 Overview
 
-The `/editor` route is now protected with Directus CMS authentication. Users must authenticate with valid Directus credentials before accessing the visual content editor.
+The `/editor` route now supports two authentication methods:
+
+1. **Directus Visual Editor Mode** - Edit content directly through the Directus Visual Editor iframe
+2. **Direct Authentication** - Authenticate directly with Directus credentials in the React application
 
 ## 🏗️ Implementation Components
 
-### 1. **AuthContext** (`src/contexts/AuthContext.tsx`)
+### 1. **useDirectusEditorContext** (`src/hooks/useDirectusEditorContext.ts`)
+- Detects if running in Directus Visual Editor iframe
+- Checks for direct Directus authentication
+- Provides authentication state for components
+- Handles token retrieval from parent iframe
+
+### 2. **AuthContext** (`src/contexts/AuthContext.tsx`)
 - Manages global authentication state
 - Provides login/logout functionality
 - Handles authentication persistence
 - Integrates with DirectusService
 
-### 2. **ProtectedRoute** (`src/components/auth/ProtectedRoute.tsx`)
-- Higher-order component for route protection
-- Shows loading state during authentication check
-- Displays login form for unauthenticated users
-- Renders protected content for authenticated users
+### 3. **InlineRichText** (`src/components/inline/InlineRichText.tsx`)
+- Rich text editing component
+- Supports both simple and formatted text
+- Works in both Directus Visual Editor and standalone mode
+- Shows visual indicators for edit mode
 
-### 3. **LoginForm** (`src/components/auth/LoginForm.tsx`)
-- User-friendly login interface
-- Email/password authentication
-- Error handling and validation
-- Loading states and feedback
-
-### 4. **ProtectedEditor** (`src/pages/ProtectedEditor.tsx`)
-- Protected version of the editor page
-- Shows authentication status
-- Provides logout functionality
-- Wraps the VisualEditor component
+### 4. **VisualEditor** (`src/pages/VisualEditor.tsx`)
+- New editor page with dual authentication support
+- Shows authentication status indicators
+- Provides editing capabilities based on authentication
+- Works seamlessly in both environments
 
 ## 🚀 How It Works
 
-### Authentication Flow:
-1. **User visits `/editor`**
-2. **AuthProvider checks authentication** with Directus
-3. **If not authenticated**: Shows login form
-4. **If authenticated**: Shows protected editor
-5. **User can logout** to return to login form
+### Dual Authentication Flow:
 
-### Login Process:
-1. User enters Directus email/password
-2. Credentials are validated with DirectusService
-3. On success: User gains access to editor
-4. On failure: Error message is displayed
+#### Directus Visual Editor Mode:
+1. **User opens page in Directus Visual Editor** (`http://localhost:8065/admin/visual/http://localhost:3000/editor`)
+2. **useDirectusEditorContext detects iframe environment**
+3. **Parent token is retrieved** from Directus iframe
+4. **Editing is automatically enabled** with visual indicators
 
-## 🧪 Testing the Protection
+#### Direct Authentication Mode:
+1. **User visits `/editor` directly**
+2. **Authentication state is checked** with Directus
+3. **If authenticated**: Editing is enabled
+4. **If not authenticated**: View-only mode is shown
+5. **Authentication status** is clearly displayed
+
+## 🧪 Testing the Integration
 
 ### Test Cases:
-1. **Direct Access**: Visit `http://localhost:3000/editor`
-   - Should show login form if not authenticated
-   - Should show editor if already authenticated
 
-2. **Invalid Credentials**: Try logging in with wrong credentials
-   - Should show error message
-   - Should not grant access
+1. **Directus Visual Editor Mode**: Visit `http://localhost:8065/admin/visual/http://localhost:3000/editor`
+   - Should automatically enable editing
+   - Should show "Directus Visual Editor" indicator
+   - Should allow content modifications
 
-3. **Valid Credentials**: Login with correct Directus credentials
-   - Should grant access to editor
-   - Should show authentication status
+2. **Direct Authentication**: Visit `http://localhost:3000/editor`
+   - Should check authentication status
+   - Should enable editing if authenticated
+   - Should show "Authenticated" indicator when logged in
 
-4. **Logout**: Click logout button
-   - Should return to login form
-   - Should clear authentication state
+3. **View-Only Mode**: Visit without authentication
+   - Should show content in view-only mode
+   - Should show "View Only" indicator
+   - Should not allow content modifications
 
 ## 🔧 Configuration
 
@@ -80,54 +85,62 @@ VITE_DIRECTUS_PASSWORD=your-password
 
 ## 🛡️ Security Features
 
-### Protection Level:
-- **Route-level protection**: Entire `/editor` route is protected
-- **Authentication required**: Must login with Directus credentials
-- **Session management**: Authentication state is managed globally
-- **Automatic logout**: Can logout to clear session
+### Authentication Methods:
+- **Directus Visual Editor**: Secure token passing from parent iframe
+- **Direct Authentication**: Standard Directus authentication flow
+- **Session Management**: Authentication state persists appropriately
+- **Visual Indicators**: Clear display of current authentication status
 
 ### Security Considerations:
-- Credentials are validated against Directus server
-- No local password storage
-- Authentication state is cleared on logout
-- Protected routes are inaccessible without authentication
+- Tokens are securely retrieved from parent iframe
+- No sensitive information is exposed in the UI
+- Authentication state is properly managed
+- Clear visual feedback on editing permissions
 
 ## 🎯 Usage Instructions
 
 ### For Content Editors:
+
+#### Option 1: Directus Visual Editor (Recommended)
+1. Login to Directus Admin (`http://localhost:8065/admin`)
+2. Navigate to Content > Pages
+3. Click the Visual Editor icon next to a page
+4. Edit content directly in the visual interface
+
+#### Option 2: Direct Access
 1. Navigate to `http://localhost:3000/editor`
-2. Enter your Directus CMS credentials
-3. Click "Entrar" to authenticate
-4. Access the visual content editor
-5. Use "Sair" button to logout when finished
+2. If already authenticated with Directus, editing is enabled
+3. Edit content directly in the page
 
 ### For Developers:
-- Authentication is handled automatically
-- Use `useAuth()` hook to access auth state
-- Wrap components with `<ProtectedRoute>` for protection
-- Authentication persists across page refreshes
+- Use `useDirectusEditorContext()` hook to access authentication state
+- Implement `InlineRichText` and `InlineImage` components for editable content
+- Authentication detection is handled automatically
+- Visual indicators show current editing status
 
-## 🔄 Integration with Existing System
+## 🔄 Integration with Directus MCP Server
 
-### Seamless Integration:
-- **No breaking changes** to existing functionality
-- **Backward compatible** with current editor features
-- **Enhanced security** without complexity
-- **User-friendly** authentication flow
+### Enhanced Capabilities:
+- **Unified API**: Consistent interface for all content operations
+- **Type Safety**: Strong typing for API responses
+- **Error Handling**: Centralized error management with retry capabilities
+- **Authentication Flexibility**: Multiple authentication paths
 
 ### Future Enhancements:
-- Role-based access control
-- Session timeout management
-- Multi-user editing permissions
-- Audit logging for content changes
+- Offline editing capabilities
+- Collaborative editing features
+- Content versioning and history
+- Advanced permission management
+- Multi-CMS support
 
 ## ✅ Status
 
-- ✅ **Authentication Context** - Implemented
-- ✅ **Protected Route Component** - Implemented  
-- ✅ **Login Form** - Implemented
-- ✅ **Protected Editor Page** - Implemented
-- ✅ **App Integration** - Complete
+- ✅ **Directus Visual Editor Integration** - Implemented
+- ✅ **Direct Authentication Support** - Implemented  
+- ✅ **InlineRichText Component** - Implemented
+- ✅ **InlineImage Component** - Implemented
+- ✅ **Visual Editor Page** - Implemented
+- ✅ **MCP Server Integration** - Implemented
 - 🧪 **Ready for Testing** - All components functional
 
-The `/editor` route is now fully protected and ready for secure content editing!
+The `/editor` route now supports both Directus Visual Editor and direct authentication for a seamless editing experience!

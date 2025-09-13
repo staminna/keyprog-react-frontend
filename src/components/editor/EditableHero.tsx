@@ -5,8 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { DirectusService } from "@/services/directusService";
-import { InlineText } from "@/components/inline";
-import { useInlineEditContext } from "@/components/inline/InlineEditProvider";
+import { UniversalContentEditor } from "@/components/universal/UniversalContentEditor";
+import useDirectusEditorContext from "@/hooks/useDirectusEditorContext";
 import type { DirectusHero } from "@/lib/directus";
 
 interface EditableHeroProps {
@@ -14,7 +14,7 @@ interface EditableHeroProps {
   onSave?: (data: DirectusHero) => void;
 }
 
-const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
+const EditableHero = () => {
   const [heroData, setHeroData] = useState<DirectusHero>({
     title: "",
     subtitle: "",
@@ -23,7 +23,8 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
   });
   const [loading, setLoading] = useState(true);
   const [heroId, setHeroId] = useState<string | null>(null);
-  const { showEditMode } = useInlineEditContext();
+  const { isInDirectusEditor, isAuthenticated } = useDirectusEditorContext();
+  const canEdit = isInDirectusEditor || isAuthenticated;
 
   useEffect(() => {
     const loadHeroData = async () => {
@@ -50,95 +51,11 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
     loadHeroData();
   }, []);
 
-  const handleInputChange = (field: keyof DirectusHero, value: string) => {
-    setHeroData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      await DirectusService.updateHero(heroData);
-      if (onSave) {
-        onSave(heroData);
-      }
-      // Show success message
-      console.log('Hero data saved successfully!');
-    } catch (error) {
-      console.error('Failed to save hero data:', error);
-      // Show error message
-      alert('Failed to save changes. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
   }
 
-  if (isEditing) {
-    return (
-      <Card className="w-full max-w-4xl mx-auto my-8">
-        <CardHeader>
-          <CardTitle>Edit Hero Section</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Title</label>
-            <Input
-              value={heroData.title || ""}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Hero title"
-            />
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-2 block">Subtitle</label>
-            <Textarea
-              value={heroData.subtitle || ""}
-              onChange={(e) => handleInputChange("subtitle", e.target.value)}
-              placeholder="Hero subtitle"
-              rows={3}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Primary Button Text</label>
-              <Input
-                value={heroData.primary_button_text || ""}
-                onChange={(e) => handleInputChange("primary_button_text", e.target.value)}
-                placeholder="Button text"
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Primary Button Link</label>
-              <Input
-                value={heroData.primary_button_link || ""}
-                onChange={(e) => handleInputChange("primary_button_link", e.target.value)}
-                placeholder="Button link (e.g., /servicos)"
-              />
-            </div>
-          </div>
-          
-          <Button onClick={handleSave} className="w-full" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
-          
-          <div className="mt-6 border-t pt-4">
-            <h3 className="text-sm font-medium mb-2">Preview:</h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <EditableHero isEditing={false} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <section className="relative isolate overflow-hidden">
@@ -148,52 +65,34 @@ const EditableHero = ({ isEditing = false, onSave }: EditableHeroProps) => {
             Especialistas em eletrónica automóvel
           </p>
           
-          {showEditMode && heroId ? (
-            <InlineText
-              collection="hero"
-              itemId={heroId}
-              field="title"
-              value={heroData.title}
-              placeholder="Hero title"
-              className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em]"
-            />
-          ) : (
-            <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em] tracking-wider">
-              {heroData.title || "Performance, diagnóstico e soluções para a sua centralina"}&nbsp;
-            </h1>
-          )}
+          <UniversalContentEditor
+            collection="hero"
+            itemId={heroId || '1'}
+            field="title"
+            value={heroData.title || ''}
+            tag="h1"
+            className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em] tracking-wider"
+          />
           
-          {showEditMode && heroId ? (
-            <InlineText
-              collection="hero"
-              itemId={heroId}
-              field="subtitle"
-              value={heroData.subtitle}
-              placeholder="Hero subtitle"
-              multiline
-              className="mt-4 max-w-2xl text-lg text-muted-foreground"
-            />
-          ) : (
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-              {heroData.subtitle || "Reprogramação, desbloqueio, clonagem, reparações e uma loja completa de equipamentos, emuladores e software."}
-            </p>
-          )}
+          <UniversalContentEditor
+            collection="hero"
+            itemId={heroId || '1'}
+            field="subtitle"
+            value={heroData.subtitle || ''}
+            tag="p"
+            className="mt-4 max-w-2xl text-lg text-muted-foreground"
+          />
           
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" variant="hero">
               <Link to={heroData.primary_button_link || "/servicos"}>
-                {showEditMode && heroId ? (
-                  <InlineText
-                    collection="hero"
-                    itemId={heroId}
-                    field="primary_button_text"
-                    value={heroData.primary_button_text}
-                    placeholder="Button text"
-                    showEditIcon={false}
-                  />
-                ) : (
-                  heroData.primary_button_text || "Ver Serviços"
-                )}
+                <UniversalContentEditor
+                  collection="hero"
+                  itemId={heroId || '1'}
+                  field="primary_button_text"
+                  value={heroData.primary_button_text || ''}
+                  tag="span"
+                />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">

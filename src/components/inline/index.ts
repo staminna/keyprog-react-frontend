@@ -1,75 +1,44 @@
-// Compatibility layer for Remirror implementation
-// This file provides backward compatibility with the old inline editor API
-import * as React from 'react';
+// Direct export of Remirror implementation
+// This file provides the main inline editing API
+import type { ReactNode } from 'react';
 
-// Import from the new Remirror implementation
-import type { 
-  InlineTextEditor as RemirrorInlineTextEditor,
-  InlineRichTextEditor as RemirrorInlineRichTextEditor,
-  RemirrorEditorProvider,
-  RemirrorEditorToolbar
+// Export Remirror components directly
+export { 
+  InlineRichTextEditor as InlineRichText,
+  RemirrorEditorProvider as InlineEditProvider,
+  RemirrorEditorToolbar as InlineEditToolbar
 } from '../remirror';
 
-// Re-export with the old names for backward compatibility
-export const InlineText: typeof RemirrorInlineTextEditor = require('../remirror').InlineTextEditor;
-export const InlineRichText: typeof RemirrorInlineRichTextEditor = require('../remirror').InlineRichTextEditor;
-export const InlineEditProvider: typeof RemirrorEditorProvider = require('../remirror').RemirrorEditorProvider;
-export const InlineEditToolbar: typeof RemirrorEditorToolbar = require('../remirror').RemirrorEditorToolbar;
+// Export enhanced components with upload support
+export { InlineImage } from '../remirror/InlineImage';
+export { InlineSelect } from './stubs';
 
-// Stub for InlineImage until we implement it in Remirror
-export const InlineImage: React.FC<{children?: React.ReactNode}> = (props) => {
-  return React.createElement('div', null, props.children);
-};
+// Export collection mapper component
+export { CollectionMapper } from './CollectionMapper';
+export type { CollectionMapperProps } from './CollectionMapper';
 
-// Stub for InlineSelect until we implement it in Remirror
-export const InlineSelect: React.FC<{children?: React.ReactNode}> = (props) => {
-  return React.createElement('div', null, props.children);
-};
+// Export floating edit icon and editable content components
+export { FloatingEditIcon } from './FloatingEditIcon';
+export { EditableContent } from './EditableContent';
+export type { EditableContentProps } from './EditableContent';
+export { EditableImage } from './EditableImage';
+export type { EditableImageProps } from './EditableImage';
 
-// Compatibility hook for useInlineEdit
-export const useInlineEdit = () => {
-  return {
-    value: '',
-    originalValue: '',
-    isEditing: false,
-    isSaving: false,
-    hasChanges: false,
-    error: null,
-    updateValue: () => {},
-    save: () => {},
-    revert: () => {},
-    startEditing: () => {},
-    stopEditing: () => {}
-  };
-};
+// Import types from stubs
+import { SelectOption } from './stubs';
 
-// Export types for backward compatibility
-export interface InlineTextProps {
-  field: string;
-  value: string;
-  collection: string;
-  itemId: string;
-  canEdit?: boolean;
-  children?: React.ReactNode;
-}
+// Direct export of Remirror context
+export { useRemirrorContext as useInlineEdit } from '@remirror/react';
 
-export interface InlineRichTextProps {
-  field: string;
-  value: string;
-  collection: string;
-  itemId: string;
-  canEdit?: boolean;
-  richText?: boolean;
-  children?: React.ReactNode;
-}
-
+// Export interface types for backward compatibility
 export interface InlineImageProps {
   field: string;
   value: string;
   collection: string;
   itemId: string;
   canEdit?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
+  onUpload?: (fileId: string) => void;
 }
 
 export interface InlineSelectProps {
@@ -79,10 +48,13 @@ export interface InlineSelectProps {
   itemId: string;
   options: SelectOption[];
   canEdit?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
-export interface SelectOption {
-  value: string;
-  label: string;
-}
+// Re-export types from remirror with aliases
+export type { 
+  InlineRichTextEditorProps as InlineRichTextProps 
+} from '../remirror';
+
+// Re-export SelectOption type for backward compatibility
+export type { SelectOption };

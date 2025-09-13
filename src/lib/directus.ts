@@ -70,6 +70,16 @@ interface DirectusContacts {
   phone?: string;
 }
 
+interface DirectusContactInfo {
+  id: string;
+  title: string;
+  email: string;
+  phone: string;
+  chat_hours: string;
+  contact_form_text: string;
+  contact_form_link: string;
+}
+
 export interface DirectusSubMenuContent {
   id: string;
   slug: string;
@@ -133,6 +143,7 @@ interface DirectusSchema {
   orders: DirectusOrder[];
   customers: DirectusCustomer[];
   order_items: DirectusOrderItem[];
+  contact_info: DirectusContactInfo;
 }
 
 export interface DirectusProduct {
@@ -160,13 +171,19 @@ export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
   .with(rest({
     onRequest: (options) => {
       // Add timeout and better error handling
-      return { ...options, timeout: 10000 };
+      return { 
+        ...options, 
+        timeout: 10000,
+        // Fix CORS issue by using 'same-origin' instead of 'include'
+        credentials: 'same-origin'
+      };
     }
   }))
   .with(STATIC_TOKEN && STATIC_TOKEN.trim() 
     ? staticToken(STATIC_TOKEN)
     : authentication('json', {
-        credentials: 'include',
+        // Fix CORS issue by using 'same-origin' instead of 'include'
+        credentials: 'same-origin',
         autoRefresh: true,
         msRefreshBeforeExpires: 30000
       })
@@ -176,11 +193,17 @@ export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
 export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
   .with(rest({
     onRequest: (options) => {
-      return { ...options, timeout: 10000 };
+      return { 
+        ...options, 
+        timeout: 10000,
+        // Fix CORS issue by using 'same-origin' instead of 'include'
+        credentials: 'same-origin'
+      };
     }
   }))
   .with(authentication('json', {
-    credentials: 'include',
+    // Fix CORS issue by using 'same-origin' instead of 'include'
+    credentials: 'same-origin',
     autoRefresh: true,
     msRefreshBeforeExpires: 30000
   }));
@@ -194,6 +217,8 @@ export const createEditorDirectus = (token: string) => {
         return { 
           ...options, 
           timeout: 10000,
+          // Fix CORS issue by using 'same-origin' instead of 'include'
+          credentials: 'same-origin',
           headers: {
             ...options.headers,
             Authorization: `Bearer ${token}`
@@ -218,6 +243,7 @@ export {
   type DirectusCategories,
   type DirectusNews,
   type DirectusContacts,
+  type DirectusContactInfo,
   type DirectusHero,
   type DirectusSchema,
   type DirectusOrder,

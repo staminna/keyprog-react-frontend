@@ -1,0 +1,75 @@
+/* Hover edit styles */
+
+.hover-editable {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.hover-editable:hover {
+  outline: 1px dashed #3b82f6;
+  outline-offset: 2px;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.edit-icon-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.edit-icon-button:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* For mobile touch devices */
+@media (hover: none) {
+  .hover-editable:hover {
+    outline: none;
+    background-color: transparent;
+  }
+  
+  /* Always show edit button on touch devices */
+  .hover-editable .edit-icon-button {
+    display: flex;
+    opacity: 0.7;
+  }
+}
+
+/* Ensure proper positioning for different element types */
+p.hover-editable, h1.hover-editable, h2.hover-editable, 
+h3.hover-editable, h4.hover-editable, h5.hover-editable, h6.hover-editable {
+  padding-right: 30px; /* Make room for the edit button */
+}
+
+/* Remirror editor styles */
+.remirror-editor-wrapper {
+  margin: 0;
+  padding: 0;
+}
+
+.remirror-editor {
+  min-height: 2em;
+  padding: 0.5em;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: white;
+}
+
+.remirror-editor:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

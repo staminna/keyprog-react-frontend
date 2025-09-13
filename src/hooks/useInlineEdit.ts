@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { DirectusService } from '@/services/directusService';
+import { DirectusServiceExtension } from '@/services/directusServiceExtension';
 import { RealTimeService, type RealTimeEvent } from '@/services/realTimeService';
 
 export interface InlineEditOptions<T = unknown> {
@@ -50,7 +51,8 @@ export const useInlineEdit = <T = unknown>(options: InlineEditOptions<T>) => {
       if (!itemId) return;
       
       try {
-        const data = await DirectusService.getCollectionItem(collection, itemId);
+        // Use DirectusServiceExtension to handle permissions properly
+        const data = await DirectusServiceExtension.getCollectionItemSafe(collection, itemId, 'settings');
         const fieldValue = (data[field] || '') as T;
         setState(prev => ({
           ...prev,
@@ -115,8 +117,8 @@ export const useInlineEdit = <T = unknown>(options: InlineEditOptions<T>) => {
 
       const savePromise = (async () => {
         try {
-          const updateData = { [field]: newValue };
-          await DirectusService.updateCollectionItem(collection, itemId, updateData);
+          // Use DirectusServiceExtension to handle permissions properly
+          await DirectusServiceExtension.updateField(collection, itemId, field, newValue);
           
           setState(prev => ({
             ...prev,
@@ -179,8 +181,8 @@ export const useInlineEdit = <T = unknown>(options: InlineEditOptions<T>) => {
     setState(prev => ({ ...prev, isSaving: true, error: null }));
 
     try {
-      const updateData = { [field]: state.value };
-      await DirectusService.updateCollectionItem(collection, itemId, updateData);
+      // Use DirectusServiceExtension to handle permissions properly
+      await DirectusServiceExtension.updateField(collection, itemId, field, state.value);
       
       setState(prev => ({
         ...prev,

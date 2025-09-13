@@ -12,11 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Edit3, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState, useEffect } from "react";
 import { DirectusService } from "@/services/directusService";
 import type { DirectusHeaderMenu } from "@/lib/directus";
+import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
+import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
 const menuLinkClasses = "text-sm";
 
@@ -24,6 +26,8 @@ const SiteHeader = () => {
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [headerMenu, setHeaderMenu] = useState<DirectusHeaderMenu[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isInlineEditingEnabled, setInlineEditingEnabled } = useInlineEditor();
+  const { isAuthenticated } = useDirectusEditorContext();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -234,6 +238,15 @@ const SiteHeader = () => {
             <Input placeholder="Pesquisar..." className="w-64" />
             <Button variant="default">Pesquisar</Button>
             <ThemeToggle />
+            {isAuthenticated && (
+              <Button 
+                variant="outline" 
+                onClick={() => setInlineEditingEnabled(!isInlineEditingEnabled)}
+                title={isInlineEditingEnabled ? 'Disable Inline Editing' : 'Enable Inline Editing'}
+              >
+                {isInlineEditingEnabled ? <X size={16} /> : <Edit3 size={16} />}
+              </Button>
+            )}
           </div>
         </div>
 

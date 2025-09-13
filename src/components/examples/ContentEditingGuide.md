@@ -5,8 +5,7 @@ This guide shows you how to use the existing inline editing system for content e
 ## Overview
 
 Your application already has a complete inline editing system with:
-- ✅ **InlineText** - Edit text fields inline
-- ✅ **InlineRichText** - Rich text editor with formatting
+- ✅ **InlineRichText** - Rich text editor for all text editing needs (simple and formatted)
 - ✅ **InlineImage** - Image upload and editing
 - ✅ **InlineSelect** - Dropdown selection editing
 - ✅ **Real-time synchronization** - Changes sync across users
@@ -35,32 +34,31 @@ function MyPage() {
 ### 2. Use inline editing components
 
 ```tsx
-import { InlineText } from '@/components/inline/InlineText';
+import { InlineRichText } from '@/components/inline';
 
 // Edit a service title
-<InlineText
+<InlineRichText
   collection="services"
   itemId="1"
   field="title"
-  placeholder="Enter service title..."
+  value=""
   className="text-2xl font-bold"
 />
 
 // Edit multi-line description
-<InlineText
+<InlineRichText
   collection="services"
   itemId="1"
   field="description"
-  placeholder="Enter description..."
-  multiline
+  value=""
   className="text-gray-600"
 />
 ```
 
-### 3. Rich text editing
+### 3. Rich text editing with formatting
 
 ```tsx
-import { InlineRichText } from '@/components/inline/InlineRichText';
+import { InlineRichText } from '@/components/inline';
 
 <InlineRichText
   collection="news"
@@ -133,10 +131,11 @@ User Input → React State → Debounced Save → Directus API → WebSocket →
 ### Custom Error Handling
 
 ```tsx
-<InlineText
+<InlineRichText
   collection="services"
   itemId="1"
   field="title"
+  value=""
   onError={(error) => {
     console.error('Save failed:', error);
     toast.error('Failed to save changes');
@@ -152,10 +151,11 @@ User Input → React State → Debounced Save → Directus API → WebSocket →
 
 ```tsx
 // Faster saves for critical fields
-<InlineText
+<InlineRichText
   collection="orders"
   itemId="1"
   field="status"
+  value=""
   debounceMs={200}
 />
 
@@ -172,10 +172,11 @@ User Input → React State → Debounced Save → Directus API → WebSocket →
 
 ```tsx
 // Wait for server confirmation before showing changes
-<InlineText
+<InlineRichText
   collection="critical_data"
   itemId="1"
   field="value"
+  value=""
   optimistic={false}
 />
 ```
@@ -184,20 +185,22 @@ User Input → React State → Debounced Save → Directus API → WebSocket →
 
 ### Hero Section (Singleton)
 ```tsx
-<InlineText
+<InlineRichText
   collection="hero"
   itemId="hero"  // Singleton uses collection name as ID
   field="title"
+  value=""
   className="text-4xl font-bold"
 />
 ```
 
 ### Services
 ```tsx
-<InlineText
+<InlineRichText
   collection="services"
   itemId={serviceId}
   field="title"
+  value=""
   className="text-xl font-semibold"
 />
 ```
@@ -214,10 +217,11 @@ User Input → React State → Debounced Save → Directus API → WebSocket →
 
 ### Settings
 ```tsx
-<InlineText
+<InlineRichText
   collection="settings"
   itemId="settings"
   field="site_title"
+  value=""
   className="text-lg font-medium"
 />
 ```
@@ -239,8 +243,7 @@ The `InlineEditToolbar` provides:
 ## Best Practices
 
 ### 1. Use Appropriate Components
-- `InlineText` for short text fields
-- `InlineRichText` for formatted content
+- `InlineRichText` for all text fields (both simple and formatted content)
 - `InlineImage` for image uploads
 - `InlineSelect` for predefined options
 
@@ -269,11 +272,11 @@ You can easily add inline editing to existing components:
 <h1 className="text-2xl font-bold">{service.title}</h1>
 
 // After
-<InlineText
+<InlineRichText
   collection="services"
   itemId={service.id}
   field="title"
-  value={service.title}  // Optional: provide initial value
+  value={service.title}  // Required: provide initial value
   className="text-2xl font-bold"
 />
 ```

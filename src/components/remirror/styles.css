@@ -1,0 +1,264 @@
+/* Custom Remirror Editor Styles */
+
+/* Editor container */
+.remirror-editor-container {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
+}
+
+.remirror-editor-container:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Editor content area */
+.remirror-editor-content {
+  padding: 1rem;
+  min-height: 100px;
+  background-color: white;
+}
+
+/* Toolbar */
+.remirror-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: linear-gradient(to right, #4f46e5, #6366f1);
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+/* Toolbar buttons */
+.remirror-toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.remirror-toolbar-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.remirror-toolbar-button.active {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Toolbar button groups */
+.remirror-toolbar-group {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 0.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.remirror-toolbar-group:last-child {
+  border-right: none;
+}
+
+/* Editor states */
+.remirror-editor-container.editing {
+  border: 2px solid #4f46e5;
+}
+
+.remirror-editor-container.saving {
+  border: 2px solid #f59e0b;
+}
+
+/* Authentication status indicators */
+.auth-status-indicator {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  z-index: 10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.auth-status-directus {
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.auth-status-authenticated {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.auth-status-editable {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+/* Placeholder text */
+.remirror-editor-content p.is-empty:first-of-type::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  float: left;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Heading styles */
+.remirror-editor-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.remirror-editor-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+.remirror-editor-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+/* List styles */
+.remirror-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.remirror-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+/* Link styles */
+.remirror-editor-content a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.remirror-editor-content a:hover {
+  color: #6366f1;
+}
+
+/* Action buttons */
+.remirror-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.remirror-action-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.remirror-cancel-button {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.remirror-cancel-button:hover {
+  background-color: #e5e7eb;
+}
+
+.remirror-save-button {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+}
+
+.remirror-save-button:hover {
+  background-color: #4338ca;
+}
+
+.remirror-save-button:disabled {
+  background-color: #a5b4fc;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.remirror-saving-indicator {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Focus styles */
+.remirror-editor-content:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Image styles */
+.remirror-editor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Image dialog overlay */
+.remirror-image-dialog {
+  z-index: 9999;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Image resize handles */
+.ProseMirror-selectednode {
+  outline: 2px solid #4f46e5;
+}
+
+/* Image captions */
+.remirror-editor-content figure {
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.remirror-editor-content figcaption {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  text-align: center;
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DirectusService } from '@/services/directusService';
 import type { DirectusServices } from '@/lib/directus';
+import { PageSection, PageImage, PageButton } from '@/components/editable';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,11 +41,22 @@ const Servicos = () => {
     <main className="container py-12">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gradient-primary mb-4">Serviços Especializados</h1>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          Soluções profissionais em eletrónica automóvel com mais de 10 anos de experiência. 
-          Oferecemos serviços de qualidade com garantia e suporte técnico especializado.
-        </p>
+        <PageSection
+          id="1"
+          collection="settings"
+          field="services_title"
+          value="Serviços Especializados"
+          tag="h1"
+          className="text-4xl font-bold text-gradient-primary mb-4"
+        />
+        <PageSection
+          id="1"
+          collection="settings"
+          field="services_description"
+          value="Soluções profissionais em eletrónica automóvel com mais de 10 anos de experiência. Oferecemos serviços de qualidade com garantia e suporte técnico especializado."
+          tag="p"
+          className="text-lg text-muted-foreground max-w-3xl mx-auto"
+        />
       </div>
 
       {/* Services Grid */}
@@ -135,51 +147,105 @@ const Servicos = () => {
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Clock className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="font-semibold mb-2">Atendimento Rápido</h3>
-          <p className="text-sm text-muted-foreground">
-            Diagnóstico e orçamento em 24h. Intervenções rápidas e eficientes.
-          </p>
+          <PageSection
+            id="1"
+            collection="settings"
+            field="services_feature1_title"
+            value="Atendimento Rápido"
+            tag="h3"
+            className="font-semibold mb-2"
+          />
+          <PageSection
+            id="1"
+            collection="settings"
+            field="services_feature1_description"
+            value="Diagnóstico e orçamento em 24h. Intervenções rápidas e eficientes."
+            tag="p"
+            className="text-sm text-muted-foreground"
+          />
         </div>
         
         <div className="text-center">
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="font-semibold mb-2">Garantia de Qualidade</h3>
-          <p className="text-sm text-muted-foreground">
-            Todos os serviços incluem garantia e suporte técnico pós-venda.
-          </p>
+          <PageSection
+            id="1"
+            collection="settings"
+            field="services_feature2_title"
+            value="Garantia de Qualidade"
+            tag="h3"
+            className="font-semibold mb-2"
+          />
+          <PageSection
+            id="1"
+            collection="settings"
+            field="services_feature2_description"
+            value="Todos os serviços incluem garantia e suporte técnico pós-venda."
+            tag="p"
+            className="text-sm text-muted-foreground"
+          />
         </div>
         
         <div className="text-center">
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Star className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="font-semibold mb-2">Experiência Comprovada</h3>
-          <p className="text-sm text-muted-foreground">
-            Mais de 10 anos de experiência em eletrónica automóvel.
-          </p>
+          <PageSection
+            id="1"
+            collection="settings"
+            field="services_feature3_title"
+            value="Experiência Comprovada"
+            tag="h3"
+            className="font-semibold mb-2"
+          />
+          <PageSection
+            id="1"
+            collection="settings"
+            field="services_feature3_description"
+            value="Mais de 10 anos de experiência em eletrónica automóvel."
+            tag="p"
+            className="text-sm text-muted-foreground"
+          />
         </div>
       </div>
 
       {/* CTA Section */}
       <div className="mt-16 text-center bg-muted/50 rounded-lg p-8">
-        <h2 className="text-2xl font-bold mb-4">Precisa de um Orçamento?</h2>
-        <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-          Entre em contacto connosco para um orçamento personalizado. 
-          Analisamos o seu caso e apresentamos a melhor solução.
-        </p>
+        <PageSection
+          id="1"
+          collection="settings"
+          field="services_cta_title"
+          value="Precisa de um Orçamento?"
+          tag="h2"
+          className="text-2xl font-bold mb-4"
+        />
+        <PageSection
+          id="1"
+          collection="settings"
+          field="services_cta_description"
+          value="Entre em contacto connosco para um orçamento personalizado. Analisamos o seu caso e apresentamos a melhor solução."
+          tag="p"
+          className="text-muted-foreground mb-6 max-w-2xl mx-auto"
+        />
         <div className="flex gap-4 justify-center flex-wrap">
-          <Button asChild size="lg">
-            <Link to="/contacto">
-              Pedir Orçamento
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild>
-            <Link to="/sobre">
-              Saber Mais
-            </Link>
-          </Button>
+          <PageButton
+            id="1"
+            collection="settings"
+            field="services_cta_button1"
+            value="Pedir Orçamento"
+            linkTo="/contacto"
+            size="lg"
+          />
+          <PageButton
+            id="1"
+            collection="settings"
+            field="services_cta_button2"
+            value="Saber Mais"
+            linkTo="/sobre"
+            variant="outline"
+            size="lg"
+          />
         </div>
       </div>
     </main>

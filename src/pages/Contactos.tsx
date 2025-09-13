@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { DirectusService } from '@/services/directusService';
 import { DirectusContacts } from '@/lib/directus';
 import { Skeleton } from '@/components/ui/skeleton';
+import ContactInfo from '@/components/ContactInfo';
 import SEOHead from '@/components/SEOHead';
 
 const Contactos = () => {
@@ -46,8 +47,14 @@ const Contactos = () => {
           Fale connosco para pedidos, dúvidas e parcerias.
         </p>
         
+        {/* Enhanced Contact Info Component with Directus Integration */}
+        <div className="mt-8 max-w-3xl mx-auto">
+          <ContactInfo className="shadow-md" />
+        </div>
+        
+        {/* Original Contact Display - Kept as Fallback */}
         {loading ? (
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
             <div className="rounded-lg border p-6">
               <Skeleton className="h-6 w-24 mb-4" />
               <Skeleton className="h-4 w-48" />
@@ -58,11 +65,11 @@ const Contactos = () => {
             </div>
           </div>
         ) : error ? (
-          <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-lg">
+          <div className="mt-12 p-4 bg-red-50 text-red-700 rounded-lg">
             {error}
           </div>
         ) : (
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
             <div className="rounded-lg border p-6">
               <h2 className="text-lg font-semibold">Email</h2>
               <p className="mt-2 text-sm">{contacts?.email || fallbackEmail}</p>

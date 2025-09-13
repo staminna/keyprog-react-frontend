@@ -2,8 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import { InlineEditorProvider } from '@/components/universal/InlineEditorProvider';
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Loja from "./pages/Loja";
@@ -13,9 +14,8 @@ import Simulador from "./pages/Simulador";
 import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
 import Suporte from "./pages/Suporte";
-import ProtectedEditor from "./pages/ProtectedEditor";
+// Old editor removed
 import SearchPage from './pages/SearchPage';
-import InlineEditDemo from './pages/InlineEditDemo';
 import DynamicPage from "@/components/DynamicPage";
 import ServiceDetail from "@/components/ServiceDetail";
 import NewsDetail from "@/components/NewsDetail";
@@ -26,7 +26,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { InlineEditProvider } from "@/components/inline/InlineEditProvider";
+import { EditableContentProvider } from "@/contexts/EditableContentProvider";
+import EditableContentWrapper from "@/components/layout/EditableContentWrapper";
 
 // Service Pages
 import DiagnosticoPage from "./pages/servicos/DiagnosticoPage";
@@ -41,46 +42,49 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <InlineEditProvider>
+        <EditableContentProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <SiteHeader />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/loja" element={<Loja />} />
-              <Route path="/loja/produtos/:slug" element={<ProductDetail />} />
-              <Route path="/loja/:slug" element={<SubMenuContent />} />
-              <Route path="/servicos" element={<Servicos />} />
-              <Route path="/servicos/detalhes/:slug" element={<ServiceDetail />} />
-              <Route path="/servicos/diagnostico" element={<DiagnosticoPage />} />
-              <Route path="/servicos/reparacao" element={<ReparacaoPage />} />
-              <Route path="/servicos/reprogramacao" element={<ReprogramacaoPage />} />
-              <Route path="/servicos/desbloqueio" element={<DesbloqueioPage />} />
-              <Route path="/servicos/clonagem" element={<ClonagemPage />} />
-              <Route path="/servicos/:slug" element={<SubMenuContent />} />
-              <Route path="/suporte/:slug" element={<SubMenuContent />} />
-              <Route path="/file-service" element={<FileService />} />
-              <Route path="/simulador" element={<Simulador />} />
-              <Route path="/noticias" element={<Noticias />} />
-              <Route path="/noticias/:id" element={<NewsDetail />} />
-              <Route path="/contactos" element={<Contactos />} />
-              <Route path="/suporte" element={<Suporte />} />
-              <Route path="/pesquisa" element={<SearchPage />} />
-              <Route path="/inline-demo" element={<InlineEditDemo />} />
-              <Route path="/editor" element={<ProtectedEditor />} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/pages/:slug" element={<DynamicPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <SiteFooter />
-          </BrowserRouter>
-        </TooltipProvider>
-      </InlineEditProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+            <InlineEditorProvider>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <SiteHeader />
+                <EditableContentWrapper>
+                  <Routes>
+                    <Route path="/editor" element={<Navigate to="/" replace />} />
+                    <Route path="/" element={<Index />} />
+                    <Route path="/loja" element={<Loja />} />
+                    <Route path="/loja/produtos/:slug" element={<ProductDetail />} />
+                    <Route path="/loja/:slug" element={<SubMenuContent />} />
+                    <Route path="/servicos" element={<Servicos />} />
+                    <Route path="/servicos/detalhes/:slug" element={<ServiceDetail />} />
+                    <Route path="/servicos/diagnostico" element={<DiagnosticoPage />} />
+                    <Route path="/servicos/reparacao" element={<ReparacaoPage />} />
+                    <Route path="/servicos/reprogramacao" element={<ReprogramacaoPage />} />
+                    <Route path="/servicos/desbloqueio" element={<DesbloqueioPage />} />
+                    <Route path="/servicos/clonagem" element={<ClonagemPage />} />
+                    <Route path="/servicos/:slug" element={<SubMenuContent />} />
+                    <Route path="/suporte/:slug" element={<SubMenuContent />} />
+                    <Route path="/file-service" element={<FileService />} />
+                    <Route path="/simulador" element={<Simulador />} />
+                    <Route path="/noticias" element={<Noticias />} />
+                    <Route path="/noticias/:id" element={<NewsDetail />} />
+                    <Route path="/contactos" element={<Contactos />} />
+                    <Route path="/suporte" element={<Suporte />} />
+                    <Route path="/pesquisa" element={<SearchPage />} />
+                    <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                    <Route path="/pages/:slug" element={<DynamicPage />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <SiteFooter />
+                </EditableContentWrapper>
+              </BrowserRouter>
+            </InlineEditorProvider>
+          </TooltipProvider>
+        </EditableContentProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </HelmetProvider>
 );
 

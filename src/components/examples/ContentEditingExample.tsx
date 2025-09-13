@@ -1,8 +1,7 @@
 import React from 'react';
 import { InlineEditProvider } from '@/components/inline/InlineEditProvider';
 import { InlineEditToolbar } from '@/components/inline/InlineEditToolbar';
-import { InlineText } from '@/components/inline/InlineText';
-import { InlineRichText } from '@/components/inline/InlineRichText';
+import { InlineRichText } from '@/components/inline';
 import { InlineImage } from '@/components/inline/InlineImage';
 import { InlineSelect } from '@/components/inline/InlineSelect';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,45 +42,44 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
             <CardContent className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Title</label>
-                <InlineText
+                <InlineRichText
                   collection="hero"
                   itemId="hero"
                   field="title"
-                  placeholder="Enter hero title..."
+                  value=""
                   className="text-3xl font-bold"
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium mb-2">Subtitle</label>
-                <InlineText
+                <InlineRichText
                   collection="hero"
                   itemId="hero"
                   field="subtitle"
-                  placeholder="Enter hero subtitle..."
-                  multiline
+                  value=""
                   className="text-lg text-gray-600"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Primary Button Text</label>
-                <InlineText
+                <InlineRichText
                   collection="hero"
                   itemId="hero"
                   field="primary_button_text"
-                  placeholder="Button text..."
+                  value=""
                   className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Primary Button Link</label>
-                <InlineText
+                <InlineRichText
                   collection="hero"
                   itemId="hero"
                   field="primary_button_link"
-                  placeholder="/link-url"
+                  value=""
                   className="text-blue-600 underline"
                 />
               </div>
@@ -98,11 +96,11 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Service Title</label>
-                <InlineText
+                <InlineRichText
                   collection="services"
                   itemId={serviceId}
                   field="title"
-                  placeholder="Enter service title..."
+                  value=""
                   className="text-xl font-semibold"
                 />
               </div>
@@ -120,12 +118,11 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
 
             <div>
               <label className="block text-sm font-medium mb-2">Description</label>
-              <InlineText
+              <InlineRichText
                 collection="services"
                 itemId={serviceId}
                 field="description"
-                placeholder="Enter service description..."
-                multiline
+                value=""
                 className="text-gray-600"
               />
             </div>
@@ -147,18 +144,18 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
                 collection="services"
                 itemId={serviceId}
                 field="content"
-                placeholder="Enter detailed service content..."
+                value=""
                 className="min-h-[200px] prose max-w-none"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Price</label>
-              <InlineText
+              <InlineRichText
                 collection="services"
                 itemId={serviceId}
                 field="price"
-                placeholder="0.00"
+                value=""
                 className="text-lg font-bold text-green-600"
               />
             </div>
@@ -173,23 +170,22 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Article Title</label>
-              <InlineText
+              <InlineRichText
                 collection="news"
                 itemId={newsId}
                 field="title"
-                placeholder="Enter article title..."
+                value=""
                 className="text-2xl font-bold"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Summary</label>
-              <InlineText
+              <InlineRichText
                 collection="news"
                 itemId={newsId}
                 field="summary"
-                placeholder="Enter article summary..."
-                multiline
+                value=""
                 className="text-gray-600 italic"
               />
             </div>
@@ -211,7 +207,7 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
                 collection="news"
                 itemId={newsId}
                 field="content"
-                placeholder="Write your article content here..."
+                value=""
                 className="min-h-[300px] prose max-w-none"
               />
             </div>
@@ -219,22 +215,22 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Author</label>
-                <InlineText
+                <InlineRichText
                   collection="news"
                   itemId={newsId}
                   field="author"
-                  placeholder="Author name..."
+                  value=""
                   className="font-medium"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Category</label>
-                <InlineText
+                <InlineRichText
                   collection="news"
                   itemId={newsId}
                   field="category"
-                  placeholder="Article category..."
+                  value=""
                   className="text-blue-600"
                 />
               </div>
@@ -242,11 +238,11 @@ export const ContentEditingExample: React.FC<ContentEditingExampleProps> = ({
 
             <div>
               <label className="block text-sm font-medium mb-2">Tags</label>
-              <InlineText
+              <InlineRichText
                 collection="news"
                 itemId={newsId}
                 field="tags"
-                placeholder="tag1, tag2, tag3..."
+                value=""
                 className="text-sm text-gray-500"
               />
             </div>

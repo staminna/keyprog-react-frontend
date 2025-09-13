@@ -1,0 +1,63 @@
+.floating-edit-icon-container {
+  position: relative;
+  display: inline-block;
+}
+
+.floating-edit-icon {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #6366f1;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.9;
+  transform: scale(1);
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.floating-edit-icon.always-visible {
+  opacity: 0.9;
+  transform: scale(1);
+}
+
+.floating-edit-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.floating-edit-icon.disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* Editable content container styles */
+.editable-content-container {
+  position: relative;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  border: 2px dashed rgba(99, 102, 241, 0.2);
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.editable-content-container:active {
+  background-color: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* Edit indicator for editable content */
+.editable-content-hover-indicator {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  pointer-events: none;
+}

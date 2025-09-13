@@ -18,9 +18,11 @@ import {
   type DirectusContacts,
   type DirectusHero,
   type DirectusSchema,
-  type DirectusSubMenuContent
+  type DirectusSubMenuContent,
+  type DirectusContactInfo
 } from '@/lib/directus';
 
+import { parseDirectusError, logDirectusError, DirectusErrorType } from './directusErrorHandler';
 import type { User } from '@/types/auth';
 
 export class DirectusService {
@@ -434,18 +436,22 @@ export class DirectusService {
       
       // If in Directus Editor with parent token, use the editor client for requests
       if (this.isInDirectusEditor && this.editorDirectusClient && this.parentToken) {
-        console.log('🎯 Using editor Directus client with inherited token');
+        // Use debug level to reduce console noise
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('🎯 Using editor Directus client with inherited token');
+        }
       }
       
       return await requestFn();
     } catch (error: unknown) {
-      console.error('Request failed:', error);
-      
-      const errorObj = error as { response?: { status?: number }; isRetry?: boolean };
+      // Parse and log the error properly
+      const parsedError = parseDirectusError(error);
+      logDirectusError(parsedError, 'safeRequest');
       
       // If it's a 403, try to re-authenticate once as the token might be expired
-      if (errorObj?.response?.status === 403 && !errorObj?.isRetry) {
-        console.log('403 error - token might be expired, re-authenticating...');
+      if (parsedError.statusCode === 403 && !(error as { isRetry?: boolean })?.isRetry) {
+        // Use info level to reduce console noise
+        console.info('403 error - token might be expired, re-authenticating...');
         this.isAuthenticated = false;
         try {
           await this.ensureAuthenticated();
@@ -453,19 +459,13 @@ export class DirectusService {
           retryError.isRetry = true;
           return await requestFn();
         } catch (retryError) {
-          console.error('Re-authentication retry failed, using fallback data');
+          const parsedRetryError = parseDirectusError(retryError);
+          logDirectusError(parsedRetryError, 'safeRequest:retry');
           return fallback;
         }
       }
       
-      // If it's a 404, the collection might not exist
-      if (errorObj?.response?.status === 404) {
-        console.warn('Collection not found, using fallback data');
-        return fallback;
-      }
-      
-      // For other errors or already retried 403s, use fallback
-      console.warn('Using fallback data due to error:', errorObj?.response?.status);
+      // For all other errors, use fallback
       return fallback;
     }
   }
@@ -835,6 +835,52 @@ export class DirectusService {
       console.error(`Error fetching ${collection} item:`, error);
       throw error;
     }
+  }
+  
+  // Get contact information
+  static async getContactInfo(): Promise<DirectusContactInfo> {
+    const fallback: DirectusContactInfo = {
+      id: '1',
+      title: 'Como Podemos Ajudar?',
+      email: 'suporte@keyprog.pt',
+      phone: '+351 XXX XXX XXX',
+      chat_hours: 'Seg-Sex: 9h-18h',
+      contact_form_text: 'Formulário de Contacto',
+      contact_form_link: '/contactos'
+    };
+
+    return this.safeRequest(
+      async () => {
+        const client = this.isInDirectusEditor && this.editorDirectusClient 
+          ? this.editorDirectusClient 
+          : directus;
+        
+        try {
+          // First try to get as a singleton (preferred approach)
+          try {
+            const contactInfo = await client.request(readSingleton('contact_info'));
+            return contactInfo as DirectusContactInfo;
+          } catch (singletonError) {
+            // If singleton approach fails, try as a regular item
+            const parsedError = parseDirectusError(singletonError);
+            
+            // Only log if it's not a 404 (not found) error
+            if (parsedError.type !== DirectusErrorType.NOT_FOUND) {
+              logDirectusError(parsedError, 'getContactInfo:singleton');
+            }
+            
+            // Try as regular item
+            const contactInfo = await client.request(readItem('contact_info', '1'));
+            return contactInfo as DirectusContactInfo;
+          }
+        } catch (error) {
+          const parsedError = parseDirectusError(error);
+          logDirectusError(parsedError, 'getContactInfo');
+          throw error; // Rethrow for fallback handling
+        }
+      },
+      fallback
+    );
   }
 
   static async updateCollectionItem(collection: string, id: string | number, data: Record<string, unknown>): Promise<Record<string, unknown>> {

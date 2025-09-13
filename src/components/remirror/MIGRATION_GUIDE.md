@@ -55,15 +55,22 @@ import { InlineText, InlineRichText, InlineEditProvider } from '@/components/inl
 **New imports:**
 ```tsx
 import { 
-  InlineTextEditor, 
+  InlineRichText, 
+  InlineEditProvider 
+} from '@/components/inline';
+
+// Or directly from remirror components:
+import { 
   InlineRichTextEditor, 
   RemirrorEditorProvider 
 } from '@/components/remirror';
 ```
 
+> **Important Note**: The `InlineText` component has been removed. Use `InlineRichText` instead for all text editing needs.
+
 ### Step 3: Update Component Usage
 
-#### Basic Editor
+#### Basic Text Editor (Updated)
 
 **Old:**
 ```tsx
@@ -78,9 +85,9 @@ import {
 </InlineText>
 ```
 
-**New:**
+**New (using InlineRichText):**
 ```tsx
-<InlineTextEditor
+<InlineRichText
   value={content.title}
   collection="posts"
   itemId="123"
@@ -89,7 +96,21 @@ import {
   onSave={(value) => console.log('Saved:', value)}
 >
   {content.title}
-</InlineTextEditor>
+</InlineRichText>
+```
+
+**New (using direct Remirror component):**
+```tsx
+<InlineRichTextEditor
+  value={content.title}
+  collection="posts"
+  itemId="123"
+  field="title"
+  canEdit={isAuthenticated}
+  onSave={(value) => console.log('Saved:', value)}
+>
+  {content.title}
+</InlineRichTextEditor>
 ```
 
 #### Rich Text Editor
@@ -194,7 +215,9 @@ function MyPage() {
 
 ## Known Issues and Limitations
 
-- The `InlineImage` and `InlineSelect` components are currently stubs and will be implemented in a future update.
+- The `InlineText` component has been removed. Use `InlineRichText` for all text editing needs.
+- The `InlineImage` component has been implemented with full upload support.
+- The `InlineSelect` component is available for dropdown selection.
 - Collaborative editing requires additional setup with YJS.
 - Some advanced formatting options may require additional extensions.
 
