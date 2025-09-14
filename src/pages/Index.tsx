@@ -30,7 +30,7 @@ const Index = () => {
               collection="settings"
               itemId="settings"
               field="categories_section_description"
-              tag="p"
+              tag="div"
               className="mt-2 text-muted-foreground"
               value="Produtos e softwares selecionados para profissionais de diagnóstico."
             />

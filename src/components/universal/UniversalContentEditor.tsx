@@ -107,7 +107,7 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
   // If editing, show the rich text editor
   if (isEditing) {
     return (
-      <div className="relative border-2 border-blue-300 rounded-md p-2 bg-blue-50/20">
+      <div className="relative">
         <TrueInlineEditor
           value={content || ''}
           onSave={handleSave}
@@ -123,7 +123,7 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
       {/* Content display */}
       <Tag
         {...rest}
-        className={`${rest.className || ''} ${canEdit ? 'hover:bg-gray-50 rounded transition-colors duration-200' : ''}`}
+        className={`${rest.className || ''} ${canEdit ? 'cursor-text' : ''}`}
         onClick={canEdit ? handleEdit : undefined}
       >
         {parsedContent ? (
@@ -132,32 +132,6 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
           <span className="text-gray-400">{placeholder}</span>
         )}
       </Tag>
-      
-      <div className="absolute top-0 right-0 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        {canEdit && showEditIcon && (
-          <button
-            onClick={handleEdit}
-            className="p-1 bg-white rounded-full shadow-sm"
-            title="Edit content"
-          >
-            <Edit3 size={16} className="text-blue-500" />
-          </button>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); refresh(); }}
-          className="p-1 bg-white rounded-full shadow-sm"
-          title="Refresh content"
-          disabled={isRefreshing}
-        >
-          <RefreshCw size={16} className={`text-gray-500 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-      
-      {(isLoading || isUpdating) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
-          <Loader2 size={24} className="text-blue-500 animate-spin" />
-        </div>
-      )}
     </div>
   );
 };

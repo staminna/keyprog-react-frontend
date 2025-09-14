@@ -83,7 +83,7 @@ const EditableServices = () => {
                   collection="services"
                   itemId={service.id}
                   field="description"
-                  tag="p"
+                  tag="div"
                   className="text-muted-foreground"
                   value={service.description}
                 />

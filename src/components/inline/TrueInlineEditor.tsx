@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, X } from 'lucide-react';
 
 interface TrueInlineEditorProps {
   value: string;
@@ -23,24 +22,27 @@ export const TrueInlineEditor: React.FC<TrueInlineEditorProps> = ({ value, onSav
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      onCancel();
+    }
+  };
+
   return (
     <div className="relative">
       <div
         ref={editorRef}
         contentEditable={true}
         suppressContentEditableWarning={true}
-        className="outline-none border-2 border-blue-500 rounded-md p-2 bg-white"
-        onBlur={(e) => setContent(e.currentTarget.innerText)}
+        className="outline-none cursor-text"
+        onBlur={handleSave}
+        onKeyDown={handleKeyDown}
       >
         {value}
-      </div>
-      <div className="absolute top-0 right-0 -mt-8 flex space-x-1">
-        <button onClick={handleSave} className="p-1 bg-green-500 text-white rounded-full shadow-lg">
-          <Check size={16} />
-        </button>
-        <button onClick={onCancel} className="p-1 bg-red-500 text-white rounded-full shadow-lg">
-          <X size={16} />
-        </button>
       </div>
     </div>
   );
