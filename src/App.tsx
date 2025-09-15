@@ -5,6 +5,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { InlineEditorProvider } from '@/components/universal/InlineEditorProvider';
+import { GlobalEditingProvider } from '@/hooks/useGlobalEditingState.tsx';
+import SEOEditor from '@/components/SEOEditor';
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Loja from "./pages/Loja";
@@ -43,10 +45,11 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EditableContentProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <InlineEditorProvider>
+          <GlobalEditingProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <InlineEditorProvider>
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <SiteHeader />
                 <EditableContentWrapper>
@@ -79,9 +82,11 @@ const App = () => (
                   </Routes>
                   <SiteFooter />
                 </EditableContentWrapper>
+                <SEOEditor />
               </BrowserRouter>
-            </InlineEditorProvider>
-          </TooltipProvider>
+              </InlineEditorProvider>
+            </TooltipProvider>
+          </GlobalEditingProvider>
         </EditableContentProvider>
       </AuthProvider>
     </QueryClientProvider>

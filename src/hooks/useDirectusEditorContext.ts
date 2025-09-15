@@ -123,7 +123,6 @@ export function useDirectusEditorContext() {
         // This often happens in Directus Visual Editor
         if (window.parent !== window) {
           console.log('🎯 Detected iframe context - likely Directus Visual Editor');
-          setIsInDirectusEditor(true);
         }
       } finally {
         setIsLoading(false);

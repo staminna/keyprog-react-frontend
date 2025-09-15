@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import NotFoundContent from '@/components/NotFoundContent';
 import SEOHead from '@/components/SEOHead';
 import { AuthContext } from '@/contexts/auth-context';
+import { EditablePage } from '@/components/universal/EditablePage';
+import { SimpleEditableText } from '@/components/universal/SimpleEditableText';
 
 interface ReprogramacaoContent {
   id: string;
@@ -130,25 +132,25 @@ const ReprogramacaoPage: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">
-              {isAuthenticated ? (
-                <span className="border-b border-dashed border-gray-300 cursor-pointer">
-                  {content.title}
-                </span>
-              ) : (
-                content.title
-              )}
-            </h1>
+            <SimpleEditableText
+              collection="sub_menu_content"
+              itemId="reprogramacao"
+              field="title"
+              value={content.title}
+              tag="h1"
+              className="text-4xl font-bold mb-4"
+              placeholder="Enter service title..."
+            />
             
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {isAuthenticated ? (
-                <span className="border-b border-dashed border-gray-300 cursor-pointer">
-                  {content.description}
-                </span>
-              ) : (
-                content.description
-              )}
-            </p>
+            <SimpleEditableText
+              collection="sub_menu_content"
+              itemId="reprogramacao"
+              field="description"
+              value={content.description}
+              tag="p"
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
+              placeholder="Enter service description..."
+            />
           </div>
 
           {/* Featured Image */}
@@ -165,10 +167,17 @@ const ReprogramacaoPage: React.FC = () => {
           {/* Content */}
           <Card>
             <CardContent className="p-8">
-              <div 
+              <SimpleEditableText
+                collection="sub_menu_content"
+                itemId="reprogramacao"
+                field="content"
+                value={content.content}
+                tag="div"
                 className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: content.content }}
-              />
+                placeholder="Enter service content..."
+              >
+                <div dangerouslySetInnerHTML={{ __html: content.content }} />
+              </SimpleEditableText>
             </CardContent>
           </Card>
 

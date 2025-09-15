@@ -18,8 +18,8 @@ const Index = () => {
         <section className="container py-14" aria-labelledby="categorias-heading">
           <header className="mb-8 text-center">
             <UniversalContentEditor
-              collection="settings"
-              itemId="settings"
+              collection="hero"
+              itemId="1"
               field="categories_section_title"
               tag="h2"
               id="categorias-heading"
@@ -27,8 +27,8 @@ const Index = () => {
               value="Categorias Principais"
             />
             <UniversalContentEditor
-              collection="settings"
-              itemId="settings"
+              collection="hero"
+              itemId="1"
               field="categories_section_description"
               tag="div"
               className="mt-2 text-muted-foreground"
@@ -38,16 +38,16 @@ const Index = () => {
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { title: "Emuladores", img: emuladoresImg, href: "/loja#emuladores" },
-              { title: "Equipamentos", img: equipamentosImg, href: "/loja#equipamentos" },
-              { title: "Software", img: softwareImg, href: "/loja#software" },
-              { title: "Estabilizadores", img: estabilizadoresImg, href: "/loja#estabilizadores" },
+              { title: "Emuladores", img: emuladoresImg, href: "/loja#emuladores", id: "1" },
+              { title: "Equipamentos", img: equipamentosImg, href: "/loja#equipamentos", id: "2" },
+              { title: "Software", img: softwareImg, href: "/loja#software", id: "4" },
+              { title: "Estabilizadores", img: estabilizadoresImg, href: "/loja#estabilizadores", id: "1" },
             ].map((item) => (
               <Card key={item.title} className="group overflow-hidden transition-all hover:shadow-elev">
                 <CardHeader>
                   <UniversalContentEditor
                     collection="categories"
-                    itemId={item.title.toLowerCase().replace(/ /g, '-')}
+                    itemId={item.id}
                     field="title"
                     tag="h3"
                     className="text-xl font-semibold"
@@ -58,7 +58,7 @@ const Index = () => {
                   <Link to={item.href} aria-label={item.title}>
                     <UniversalImageEditor
                       collection="categories"
-                      itemId={item.title.toLowerCase().replace(/ /g, '-')}
+                      itemId={item.id}
                       field="image"
                       src={item.img}
                       alt={`${item.title} – categoria da loja Keyprog`}

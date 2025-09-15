@@ -32,19 +32,11 @@ const SiteHeader = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Try to get real Directus data first
-        const [settings, menu] = await Promise.all([
-          DirectusService.getSettings(),
-          DirectusService.getHeaderMenu()
-        ]);
+        // Get header menu from Directus
+        const menu = await DirectusService.getHeaderMenu();
         
-        console.log('Settings received:', settings);
-        
-        // Try multiple logo sources in order of preference
-        let logoUrl = '';
-        
-        // 1. Try local Keyprog logo first
-        logoUrl = '/keyprog-logo.png';
+        // Use local Keyprog logo
+        const logoUrl = '/keyprog-logo.png';
         console.log('Using local Keyprog logo:', logoUrl);
         
         // Note: If local logo fails to load, the onError handler will show the fallback circle

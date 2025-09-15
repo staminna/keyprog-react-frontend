@@ -1,26 +1,33 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { DirectusService } from "@/services/directusService";
-import type { DirectusFooterMenu, DirectusContacts, DirectusSettings } from "@/lib/directus";
+import { DirectusServiceExtension } from "@/services/directusServiceExtension";
+import type { DirectusFooterMenu, DirectusContacts } from "@/lib/directus";
 
 const SiteFooter = () => {
   const [footerMenu, setFooterMenu] = useState<DirectusFooterMenu[]>([]);
   const [contacts, setContacts] = useState<DirectusContacts[]>([]);
-  const [settings, setSettings] = useState<DirectusSettings | null>(null);
+  const [heroData, setHeroData] = useState<{ title?: string; description?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [menuData, contactsData, settingsData] = await Promise.all([
+        const [menuData, contactsData] = await Promise.all([
           DirectusService.getFooterMenu(),
-          DirectusService.getContacts(),
-          DirectusService.getSettings()
+          DirectusService.getContacts()
         ]);
         
         setFooterMenu(menuData);
         setContacts(contactsData);
-        setSettings(settingsData);
+
+        // Try to get hero data for site title and description
+        try {
+          const hero = await DirectusServiceExtension.getCollectionItemSafe('hero', 1);
+          setHeroData(hero);
+        } catch (heroError) {
+          console.log('Hero data not available, using fallback');
+        }
       } catch (error) {
         console.error('Failed to fetch footer data:', error);
       } finally {
@@ -50,10 +57,10 @@ const SiteFooter = () => {
         {/* Company Info Section */}
         <div>
           <h3 className="text-lg font-semibold">
-            {settings?.site_title || "Keyprog"}
+            {heroData?.title || "Keyprog"}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            {settings?.site_description || 
+            {heroData?.description || 
               "Serviços e loja de soluções automóvel focadas em eletrónica e reprogramação."
             }
           </p>
@@ -121,7 +128,7 @@ const SiteFooter = () => {
       </div>
       
       <div className="border-t py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} {settings?.site_title || "Keyprog"} — (c) 2025 Keyprog.
+        © {new Date().getFullYear()} {heroData?.title || "Keyprog"} — (c) 2025 Keyprog.
       </div>
     </footer>
   );

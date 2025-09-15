@@ -158,13 +158,13 @@ export function useDirectusContent<T = Record<string, unknown>>(
           throw slugError;
         }
       }
-      // For singletons or settings
+      // Settings collection has been removed, use hero collection instead
       else if (collection === 'settings') {
         try {
-          rawData = await DirectusService.getSettings();
-        } catch (settingsError) {
-          console.error('Error fetching settings:', settingsError);
-          throw settingsError;
+          rawData = await DirectusServiceExtension.getCollectionItemSafe('hero', 1);
+        } catch (heroError) {
+          console.error('Error fetching hero data as settings replacement:', heroError);
+          throw heroError;
         }
       }
       
@@ -190,8 +190,8 @@ export function useDirectusContent<T = Record<string, unknown>>(
     
     try {
       if (collection === 'settings') {
-        // Update settings singleton
-        await DirectusService.updateSettings({ [field]: value });
+        // Update hero collection instead of settings
+        await DirectusServiceExtension.updateCollectionItemSafe('hero', 1, { [field]: value });
       } else if (itemId) {
         // Update regular item with fallback
         try {
@@ -212,7 +212,7 @@ export function useDirectusContent<T = Record<string, unknown>>(
         const item = items.find(item => item.slug === slug);
         
         if (item && item.id) {
-          await DirectusServiceExtension.updateField(collection, item.id, field, value);
+          await DirectusServiceExtension.updateField(collection, String(item.id), field, value);
         } else {
           throw new Error(`Item with slug ${slug} not found`);
         }
@@ -245,8 +245,8 @@ export function useDirectusContent<T = Record<string, unknown>>(
       const fieldsToUpdate = fields as Record<string, unknown>;
       
       if (collection === 'settings') {
-        // Update settings singleton
-        await DirectusService.updateSettings(fieldsToUpdate);
+        // Update hero collection instead of settings
+        await DirectusServiceExtension.updateCollectionItemSafe('hero', 1, fieldsToUpdate);
       } else if (itemId) {
         // Update regular item
         await DirectusService.updateCollectionItem(collection, itemId, fieldsToUpdate);
@@ -256,7 +256,7 @@ export function useDirectusContent<T = Record<string, unknown>>(
         const item = items.find(item => item.slug === slug);
         
         if (item && item.id) {
-          await DirectusService.updateCollectionItem(collection, item.id, fieldsToUpdate);
+          await DirectusService.updateCollectionItem(collection, String(item.id), fieldsToUpdate);
         } else {
           throw new Error(`Item with slug ${slug} not found`);
         }

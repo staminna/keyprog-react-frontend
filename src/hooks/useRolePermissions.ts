@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DirectusService } from '@/services/directusService';
 
 export type UserRole = 'admin' | 'editor' | 'author' | 'viewer' | 'public';
@@ -88,8 +88,9 @@ export const useRolePermissions = () => {
   
   /**
    * Check if the current user can edit a specific collection and field
+   * Memoized to prevent excessive re-computations
    */
-  const canEditContent = (collection: string, field?: string): boolean => {
+  const canEditContent = useCallback((collection: string, field?: string): boolean => {
     // Admins can edit everything
     if (userRole === 'admin') return true;
     
@@ -119,12 +120,13 @@ export const useRolePermissions = () => {
     );
     
     return collectionPermission ? collectionPermission.allowedRoles.includes(userRole) : false;
-  };
+  }, [userRole, permissions]);
   
   /**
    * Check if the current user can edit any field in a collection
+   * Memoized to prevent excessive re-computations
    */
-  const canEditCollection = (collection: string): boolean => {
+  const canEditCollection = useCallback((collection: string): boolean => {
     // Admins can edit everything
     if (userRole === 'admin') return true;
     
@@ -143,7 +145,7 @@ export const useRolePermissions = () => {
     );
     
     return collectionPermission ? collectionPermission.allowedRoles.includes(userRole) : false;
-  };
+  }, [userRole, permissions]);
   
   // Computed properties for convenience
   const isAdmin = userRole === 'admin';

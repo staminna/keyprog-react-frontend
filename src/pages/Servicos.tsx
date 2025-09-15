@@ -43,15 +43,15 @@ const Servicos = () => {
       <div className="text-center mb-12">
         <PageSection
           id="1"
-          collection="settings"
+          collection="hero"
           field="services_title"
           value="Serviços Especializados"
           tag="h1"
-          className="text-4xl font-bold text-gradient-primary mb-4"
+          className="text-4xl font-bold mb-4"
         />
         <PageSection
           id="1"
-          collection="settings"
+          collection="hero"
           field="services_description"
           value="Soluções profissionais em eletrónica automóvel com mais de 10 anos de experiência. Oferecemos serviços de qualidade com garantia e suporte técnico especializado."
           tag="p"
@@ -149,19 +149,19 @@ const Servicos = () => {
           </div>
           <PageSection
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_feature1_title"
             value="Atendimento Rápido"
             tag="h3"
-            className="font-semibold mb-2"
+            className="text-xl font-semibold mb-2"
           />
           <PageSection
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_feature1_description"
             value="Diagnóstico e orçamento em 24h. Intervenções rápidas e eficientes."
             tag="p"
-            className="text-sm text-muted-foreground"
+            className="text-muted-foreground"
           />
         </div>
         
@@ -171,19 +171,19 @@ const Servicos = () => {
           </div>
           <PageSection
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_feature2_title"
             value="Garantia de Qualidade"
             tag="h3"
-            className="font-semibold mb-2"
+            className="text-xl font-semibold mb-2"
           />
           <PageSection
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_feature2_description"
             value="Todos os serviços incluem garantia e suporte técnico pós-venda."
             tag="p"
-            className="text-sm text-muted-foreground"
+            className="text-muted-foreground"
           />
         </div>
         
@@ -193,19 +193,19 @@ const Servicos = () => {
           </div>
           <PageSection
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_feature3_title"
             value="Experiência Comprovada"
             tag="h3"
-            className="font-semibold mb-2"
+            className="text-xl font-semibold mb-2"
           />
           <PageSection
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_feature3_description"
             value="Mais de 10 anos de experiência em eletrónica automóvel."
             tag="p"
-            className="text-sm text-muted-foreground"
+            className="text-muted-foreground"
           />
         </div>
       </div>
@@ -214,37 +214,36 @@ const Servicos = () => {
       <div className="mt-16 text-center bg-muted/50 rounded-lg p-8">
         <PageSection
           id="1"
-          collection="settings"
+          collection="hero"
           field="services_cta_title"
           value="Precisa de um Orçamento?"
           tag="h2"
-          className="text-2xl font-bold mb-4"
+          className="text-3xl font-bold mb-4"
         />
         <PageSection
           id="1"
-          collection="settings"
+          collection="hero"
           field="services_cta_description"
           value="Entre em contacto connosco para um orçamento personalizado. Analisamos o seu caso e apresentamos a melhor solução."
           tag="p"
-          className="text-muted-foreground mb-6 max-w-2xl mx-auto"
+          className="text-lg text-muted-foreground mb-6"
         />
         <div className="flex gap-4 justify-center flex-wrap">
           <PageButton
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_cta_button1"
             value="Pedir Orçamento"
             linkTo="/contacto"
-            size="lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           />
           <PageButton
             id="1"
-            collection="settings"
+            collection="hero"
             field="services_cta_button2"
             value="Saber Mais"
             linkTo="/sobre"
-            variant="outline"
-            size="lg"
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
           />
         </div>
       </div>

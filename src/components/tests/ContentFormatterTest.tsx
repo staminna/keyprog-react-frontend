@@ -23,9 +23,9 @@ export const ContentFormatterTest: React.FC = () => {
       try {
         setIsLoading(true);
         
-        // Load settings
-        const settingsData = await DirectusServiceWrapper.getSettings();
-        setSettings(settingsData as unknown as Record<string, unknown>);
+        // Load hero data as settings replacement
+        const settingsData = await DirectusServiceWrapper.getHero();
+        setSettings(settingsData as Record<string, unknown>);
         
         // Load hero
         const heroData = await DirectusServiceWrapper.getHero();

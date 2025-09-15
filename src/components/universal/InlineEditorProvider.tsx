@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
 interface InlineEditorContextType {
@@ -26,6 +26,13 @@ export const InlineEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const canEverEnableEditing = isInDirectusEditor || isAuthenticated;
 
   const [isInlineEditingEnabled, setInlineEditingEnabled] = useState(false);
+
+  // Enable inline editing when authentication is available
+  useEffect(() => {
+    if (canEverEnableEditing && !isInlineEditingEnabled) {
+      setInlineEditingEnabled(true);
+    }
+  }, [canEverEnableEditing, isInlineEditingEnabled]);
 
   const value = useMemo(() => ({
     isInlineEditingEnabled: canEverEnableEditing && isInlineEditingEnabled,

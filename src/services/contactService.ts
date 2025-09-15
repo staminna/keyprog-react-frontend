@@ -19,22 +19,21 @@ export class ContactService {
       } catch (singletonError) {
         console.warn('Error getting contact_info singleton:', singletonError);
         
-        // Try to get from settings
+        // Try to get from hero collection
         try {
-          const settings = await DirectusService.getSettings();
+          const hero = await DirectusServiceExtension.getCollectionItemSafe('hero', 1);
           
-          // Extract contact-related fields from settings
-          // Using Record<string, unknown> to access custom fields not in DirectusSettings type
-          const settingsRecord = settings as Record<string, unknown>;
+          // Extract contact-related fields from hero collection
+          const heroRecord = hero as Record<string, unknown>;
           
           const extractedInfo: DirectusContactInfo = {
             id: 'contact_info',
-            title: typeof settingsRecord.contact_title === 'string' ? settingsRecord.contact_title : 'Contact Us',
-            email: typeof settingsRecord.contact_email === 'string' ? settingsRecord.contact_email : '',
-            phone: typeof settingsRecord.contact_phone === 'string' ? settingsRecord.contact_phone : '',
-            chat_hours: typeof settingsRecord.contact_hours === 'string' ? settingsRecord.contact_hours : '',
-            contact_form_text: typeof settingsRecord.contact_form_text === 'string' ? settingsRecord.contact_form_text : 'Contact Form',
-            contact_form_link: typeof settingsRecord.contact_form_link === 'string' ? settingsRecord.contact_form_link : '/contact'
+            title: typeof heroRecord.contact_title === 'string' ? heroRecord.contact_title : 'Contact Us',
+            email: typeof heroRecord.contact_email === 'string' ? heroRecord.contact_email : '',
+            phone: typeof heroRecord.contact_phone === 'string' ? heroRecord.contact_phone : '',
+            chat_hours: typeof heroRecord.contact_hours === 'string' ? heroRecord.contact_hours : '',
+            contact_form_text: typeof heroRecord.contact_form_text === 'string' ? heroRecord.contact_form_text : 'Contact Form',
+            contact_form_link: typeof heroRecord.contact_form_link === 'string' ? heroRecord.contact_form_link : '/contact'
           };
           
           return extractedInfo;
@@ -108,20 +107,20 @@ export class ContactService {
         console.warn('Error updating contact_info singleton:', singletonError);
       }
       
-      // Also update settings
+      // Also update hero collection
       try {
-        const settingsData: Record<string, unknown> = {};
-        if (data.title) settingsData['contact_title'] = data.title;
-        if (data.email) settingsData['contact_email'] = data.email;
-        if (data.phone) settingsData['contact_phone'] = data.phone;
-        if (data.chat_hours) settingsData['contact_hours'] = data.chat_hours;
-        if (data.contact_form_text) settingsData['contact_form_text'] = data.contact_form_text;
-        if (data.contact_form_link) settingsData['contact_form_link'] = data.contact_form_link;
+        const heroData: Record<string, unknown> = {};
+        if (data.title) heroData['contact_title'] = data.title;
+        if (data.email) heroData['contact_email'] = data.email;
+        if (data.phone) heroData['contact_phone'] = data.phone;
+        if (data.chat_hours) heroData['contact_hours'] = data.chat_hours;
+        if (data.contact_form_text) heroData['contact_form_text'] = data.contact_form_text;
+        if (data.contact_form_link) heroData['contact_form_link'] = data.contact_form_link;
         
-        await DirectusService.updateSettings(settingsData);
+        await DirectusServiceExtension.updateCollectionItemSafe('hero', 1, heroData);
         anySuccess = true;
-      } catch (settingsError) {
-        console.warn('Error updating settings:', settingsError);
+      } catch (heroError) {
+        console.warn('Error updating hero collection:', heroError);
       }
       
       // Also update the first contact in contacts collection if it exists
@@ -152,20 +151,20 @@ export class ContactService {
    */
   static async updateContactField(field: string, value: unknown): Promise<boolean> {
     try {
-      // Map field to settings field if needed
-      const settingsField = 
+      // Map field to hero collection field if needed
+      const heroField = 
         field === 'title' ? 'contact_title' :
         field === 'email' ? 'contact_email' :
         field === 'phone' ? 'contact_phone' :
         field === 'chat_hours' ? 'contact_hours' :
         field;
       
-      // For critical fields like phone, use the most direct and reliable method first
-      if (field === 'phone') {
+      // Try direct API update first for immediate response
+      if (field === 'phone' || field === 'email') {
         try {
-          // Direct API call for immediate update
+          // Direct API call for immediate update to hero collection
           const directusUrl = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
-          const endpoint = `${directusUrl}/items/settings`;
+          const endpoint = `${directusUrl}/items/hero/1`;
           
           const response = await fetch(endpoint, {
             method: 'PATCH',
@@ -195,16 +194,16 @@ export class ContactService {
       
       // Standard update through DirectusService for most fields
       try {
-        // Update settings first (most reliable)
-        await DirectusService.updateSettings({ [settingsField]: value });
-        console.log(`Successfully updated ${settingsField} in settings`);
+        // Update hero collection first (most reliable)
+        await DirectusServiceExtension.updateCollectionItemSafe('hero', 1, { [heroField]: value });
+        console.log(`Successfully updated ${heroField} in hero collection`);
         
         // Update other collections in background
         this.updateOtherCollections(field, value);
         
         return true;
-      } catch (settingsError) {
-        console.warn(`Error updating ${settingsField} in settings:`, settingsError);
+      } catch (heroError) {
+        console.warn(`Error updating ${heroField} in hero collection:`, heroError);
         
         // Try contact_info singleton as fallback
         try {

@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ContactService } from '@/services/contactService';
 import type { DirectusContactInfo } from '@/lib/directus';
 import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import useRolePermissions from '@/hooks/useRolePermissions';
-import useAutoRefresh from '@/hooks/useAutoRefresh';
+import { usePersistentContent } from '@/hooks/usePersistentContent';
 import { Loader2, Phone, Mail, Clock, Link as LinkIcon, RefreshCw } from 'lucide-react';
 
 interface ContactInfoEditorProps {
@@ -22,20 +22,34 @@ export const ContactInfoEditor: React.FC<ContactInfoEditorProps> = ({
   const { canEditCollection } = useRolePermissions();
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const hasAuthPermission = isInDirectusEditor || isAuthenticated;
-  const hasRolePermission = canEditCollection('contact_info');
-  const canEdit = hasAuthPermission && hasRolePermission;
+  // Memoize permission checks to prevent excessive re-renders
+  const canEdit = useMemo(() => {
+    const hasAuthPermission = isInDirectusEditor || isAuthenticated;
+    const hasRolePermission = canEditCollection('contact_info');
+    return hasAuthPermission && hasRolePermission;
+  }, [isInDirectusEditor, isAuthenticated, canEditCollection]);
 
-  const fetchContactInfo = useCallback(async () => {
-    return await ContactService.getContactInfo();
-  }, []);
-
-  const { data: contactInfo, isLoading, error, isRefreshing, refresh: loadContactInfo } = useAutoRefresh<DirectusContactInfo>(
-    fetchContactInfo,
-    {
-      refreshOnWindowFocus: true,
+  // Use a simple state for contact info since UniversalContentEditor handles persistence per field
+  const [contactInfo, setContactInfo] = useState<DirectusContactInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const loadContactInfo = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const info = await ContactService.getContactInfo();
+      setContactInfo(info);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load contact info'));
+    } finally {
+      setIsLoading(false);
     }
-  );
+  }, []);
+  
+  useEffect(() => {
+    loadContactInfo();
+  }, [loadContactInfo]);
   
   const handleFieldUpdate = async (field: string, value: unknown) => {
     if (!canEdit || !contactInfo) return;
@@ -101,9 +115,9 @@ export const ContactInfoEditor: React.FC<ContactInfoEditorProps> = ({
           <button
             onClick={() => loadContactInfo()}
             className="flex items-center text-sm text-gray-500 hover:text-gray-700"
-            disabled={isRefreshing}
+            disabled={isLoading}
           >
-            <RefreshCw size={14} className={`mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw size={14} className={`mr-1 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>

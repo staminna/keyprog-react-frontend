@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageLayout } from '@/components/layout/PageLayout';
+import PageLayout from '../components/layout/PageLayout';
 import { ContactInfoEditor } from '@/components/contacts/ContactInfoEditor';
 import { DirectusContentExample } from '@/components/examples/DirectusContentExample';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -86,10 +86,10 @@ const BidirectionalDemoPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <DirectusContentExample
-                  collection="settings"
+                  collection="hero"
                   fields={[
-                    'site_title',
-                    'site_description',
+                    'title',
+                    'description',
                     'contact_email',
                     'contact_phone',
                     'social_facebook',

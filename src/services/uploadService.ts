@@ -86,7 +86,7 @@ export class UploadService {
               
               // Alternative: check for token in parent localStorage
               if (!token) {
-                const parentToken = (window.parent as Window & { localStorage?: Storage }).localStorage?.getItem('directus_token');
+                const parentToken = (window.parent as Window & { localStorage?: Storage }).localStorage?.getItem('DIRECTUS_TOKEN');
                 if (parentToken) {
                   token = parentToken;
                   console.log('Retrieved parent Directus token from localStorage for file upload');

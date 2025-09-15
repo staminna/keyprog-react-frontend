@@ -5,8 +5,7 @@ import { formatContentForDisplay, cleanContentForSaving } from '@/utils/contentP
 
 // Define collection existence mapping
 const COLLECTION_EXISTS: Record<string, boolean> = {
-  'settings': false,  // Settings is a singleton, not a collection with IDs
-  'hero': false,      // Hero is a singleton
+  'hero': true,       // Hero is now a regular collection
   'contact_info': false, // Contact info is a singleton
   'services': true,   // Services is a regular collection
   'pages': true,      // Pages is a regular collection
@@ -41,7 +40,8 @@ export class DirectusServiceExtension {
    * Check if a collection is a singleton
    */
   static isSingleton(collection: string): boolean {
-    return COLLECTION_EXISTS[collection] === false;
+    // Hero collection is a singleton in Directus
+    return collection === 'hero' || COLLECTION_EXISTS[collection] === false;
   }
   
   /**
@@ -57,8 +57,8 @@ export class DirectusServiceExtension {
     try {
       // Check if this is a singleton collection
       if (this.isSingleton(collection)) {
-        // For singletons, use updateSingleton instead of updateItem
-        console.log(`${collection} is a singleton, using updateSingleton instead`);
+        // For singletons, use updateHero method from DirectusServiceWrapper
+        console.log(`${collection} is a singleton, using updateHero instead`);
         try {
           // Clean data before saving to remove doc(paragraph(...)) syntax
           const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
@@ -70,7 +70,7 @@ export class DirectusServiceExtension {
             return acc;
           }, {} as Record<string, unknown>);
           
-          return await DirectusServiceWrapper.updateSettings(cleanedData) as Record<string, unknown>;
+          return await DirectusServiceWrapper.updateHero(cleanedData) as Record<string, unknown>;
         } catch (singletonError) {
           console.error(`Error updating singleton ${collection}:`, singletonError);
           throw singletonError;
@@ -112,25 +112,8 @@ export class DirectusServiceExtension {
       
       // If we get a 404 Not Found error, the collection might not exist
       if (typedError?.response?.status === 404 || typedError?.message?.includes("doesn't exist")) {
-        console.log(`Collection ${collection} not found, trying to use settings singleton`);
-        
-        // Try to update the settings singleton as a fallback with content formatting
-        try {
-          // Clean data before saving
-          const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
-            if (typeof value === 'string') {
-              acc[key] = cleanContentForSaving(value);
-            } else {
-              acc[key] = value;
-            }
-            return acc;
-          }, {} as Record<string, unknown>);
-          
-          return await DirectusServiceWrapper.updateSettings(cleanedData) as Record<string, unknown>;
-        } catch (fallbackError) {
-          console.error('Fallback to settings singleton failed:', fallbackError);
-          throw fallbackError;
-        }
+        console.log(`Collection ${collection} not found`);
+        throw error;
       }
       
       // Re-throw the error if we can't handle it
@@ -150,16 +133,9 @@ export class DirectusServiceExtension {
     try {
       // Check if this is a singleton collection
       if (this.isSingleton(collection)) {
-        // For singletons, use getSettings instead of getCollectionItem
-        console.log(`${collection} is a singleton, using getSettings instead`);
-        try {
-          // Get settings with content formatting
-          const settings = await DirectusServiceWrapper.getSettings() as Record<string, unknown>;
-          return settings;
-        } catch (singletonError) {
-          console.error(`Error getting singleton ${collection}:`, singletonError);
-          throw singletonError;
-        }
+        // For singletons, use getHero method from DirectusServiceWrapper
+        console.log(`${collection} is a singleton, using getHero instead`);
+        return await DirectusServiceWrapper.getHero() as Record<string, unknown>;
       }
       
       // For regular collections, use getCollectionItem with content formatting
@@ -177,15 +153,8 @@ export class DirectusServiceExtension {
       
       // If we get a 404 Not Found error, the collection might not exist
       if (typedError?.response?.status === 404 || typedError?.message?.includes("doesn't exist")) {
-        console.log(`Collection ${collection} not found, trying to use settings singleton`);
-        
-        // Try to get the settings singleton as a fallback with content formatting
-        try {
-          return await DirectusServiceWrapper.getSettings() as Record<string, unknown>;
-        } catch (fallbackError) {
-          console.error('Fallback to settings singleton failed:', fallbackError);
-          throw fallbackError;
-        }
+        console.log(`Collection ${collection} not found`);
+        throw error;
       }
       
       // Re-throw the error if we can't handle it
@@ -205,54 +174,8 @@ export class DirectusServiceExtension {
    * This is useful when we need to update a field in a different collection
    */
   static mapField(collection: string, field: string): { collection: string, field: string } {
-    // Collection mappings for permissions
-    const collectionMappings: Record<string, { collection: string, fields: Record<string, string> }> = {
-      'contact_info': {
-        collection: 'settings',
-        fields: {
-          'title': 'contact_title',
-          'email': 'contact_email',
-          'phone': 'contact_phone',
-          'chat_hours': 'contact_hours',
-          'image': 'contact_image'
-        }
-      },
-      'hero': {
-        collection: 'settings',
-        fields: {
-          'title': 'site_title',
-          'subtitle': 'site_description',
-          'primary_button_text': 'primary_button_text',
-          'primary_button_link': 'primary_button_link',
-          'image': 'hero_image'
-        }
-      },
-      'contacts': {
-        collection: 'contact_info',
-        fields: {
-          'email': 'email',
-          'phone': 'phone',
-          'name': 'title',
-          'address': 'address',
-          'website': 'website'
-        }
-      }
-    };
-    
-    // Check if we have a mapping for this collection
-    const mapping = collectionMappings[collection];
-    if (mapping) {
-      // Check if we have a mapping for this field
-      const mappedField = mapping.fields[field];
-      if (mappedField) {
-        return {
-          collection: mapping.collection,
-          field: mappedField
-        };
-      }
-    }
-    
-    // Return the original collection and field if no mapping exists
+    // No field mappings needed since settings collection is removed
+    // Return the original collection and field
     return { collection, field };
   }
   
@@ -348,6 +271,48 @@ export class DirectusServiceExtension {
       throw error;
     }
   }
+
+  /**
+   * Create an item in a collection with permission handling
+   * @param collection Collection name
+   * @param data Item data
+   * @returns Created item
+   */
+  static async createItem(
+    collection: string,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    try {
+      // Clean data before saving to remove doc(paragraph(...)) syntax
+      const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
+        if (typeof value === 'string') {
+          acc[key] = cleanContentForSaving(value);
+        } else {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as Record<string, unknown>);
+
+      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/${collection}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_DIRECTUS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(cleanedData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create ${collection} item`);
+      }
+      
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error(`Failed to create ${collection} item:`, error);
+      throw error;
+    }
+  }
   
   /**
    * Update a specific field in a collection with permission handling
@@ -359,31 +324,24 @@ export class DirectusServiceExtension {
     field: string,
     value: unknown
   ): Promise<Record<string, unknown>> {
+    console.log('DirectusServiceExtension.updateField called with:', {
+      collection,
+      id,
+      field,
+      value
+    });
+    
     // Map the field to the correct collection if needed
     const { collection: mappedCollection, field: mappedField } = this.mapField(collection, field);
+    console.log('Mapped to:', { mappedCollection, mappedField });
     
     // Create the data object with the mapped field
     const data = { [mappedField]: value };
     
     // Check if this is a singleton collection
     if (this.isSingleton(mappedCollection)) {
-      console.log(`${mappedCollection} is a singleton, updating settings directly`);
-      try {
-        // Clean data before saving
-        const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
-          if (typeof value === 'string') {
-            acc[key] = cleanContentForSaving(value);
-          } else {
-            acc[key] = value;
-          }
-          return acc;
-        }, {} as Record<string, unknown>);
-        
-        return await DirectusServiceWrapper.updateSettings(cleanedData) as Record<string, unknown>;
-      } catch (error) {
-        console.error(`Error updating singleton ${mappedCollection}:`, error);
-        throw error;
-      }
+      console.log(`${mappedCollection} is a singleton, but settings collection removed. Using regular collection update.`);
+      // Fall through to regular collection handling since settings is removed
     }
     
     // For regular collections, use updateCollectionItemSafe
@@ -401,26 +359,12 @@ export class DirectusServiceExtension {
    */
   static async getContactInfo(): Promise<Record<string, unknown>> {
     try {
-      // First try to get from contact_info singleton
+      // Try to get from contact_info collection first
       try {
-        const contactInfo = await DirectusServiceWrapper.getSettings() as Record<string, unknown>;
-        
-        // Extract contact-related fields
-        const extractedInfo = {
-          id: '1',
-          title: contactInfo.contact_title || 'Contact Us',
-          email: contactInfo.contact_email || '',
-          phone: contactInfo.contact_phone || '',
-          chat_hours: contactInfo.contact_hours || '',
-          contact_form_text: contactInfo.contact_form_text || 'Contact Form',
-          contact_form_link: contactInfo.contact_form_link || '/contact',
-          address: contactInfo.contact_address || '',
-          website: contactInfo.website || ''
-        };
-        
-        return extractedInfo;
-      } catch (singletonError) {
-        console.error('Error getting contact_info from settings:', singletonError);
+        const contactInfo = await this.getCollectionItemSafe('contact_info', 1);
+        return contactInfo;
+      } catch (contactError) {
+        console.error('Error getting contact_info collection:', contactError);
         
         // Try to get from contacts collection as fallback
         try {
@@ -463,22 +407,22 @@ export class DirectusServiceExtension {
   
   /**
    * Update contact information with bidirectional support
-   * This method updates both contact_info singleton and contacts collection
+   * This method tries multiple collections to update contact information
    */
   static async updateContactInfo(data: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
-      // Map contact data to settings fields
-      const settingsData: Record<string, unknown> = {};
-      if (data.title) settingsData.contact_title = data.title;
-      if (data.email) settingsData.contact_email = data.email;
-      if (data.phone) settingsData.contact_phone = data.phone;
-      if (data.chat_hours) settingsData.contact_hours = data.chat_hours;
-      if (data.contact_form_text) settingsData.contact_form_text = data.contact_form_text;
-      if (data.contact_form_link) settingsData.contact_form_link = data.contact_form_link;
-      if (data.address) settingsData.contact_address = data.address;
+      // Map contact data to hero collection fields
+      const heroData: Record<string, unknown> = {};
+      if (data.title) heroData.contact_title = data.title;
+      if (data.email) heroData.contact_email = data.email;
+      if (data.phone) heroData.contact_phone = data.phone;
+      if (data.chat_hours) heroData.contact_hours = data.chat_hours;
+      if (data.contact_form_text) heroData.contact_form_text = data.contact_form_text;
+      if (data.contact_form_link) heroData.contact_form_link = data.contact_form_link;
+      if (data.address) heroData.contact_address = data.address;
       
-      // Update settings
-      await DirectusServiceWrapper.updateSettings(settingsData);
+      // Update hero collection
+      await this.updateCollectionItemSafe('hero', 1, heroData);
       
       // Also update the first contact in contacts collection if it exists
       try {

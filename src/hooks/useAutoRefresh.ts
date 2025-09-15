@@ -69,7 +69,7 @@ export function useAutoRefresh<T>(
 
   // Interval-based refreshing
   useEffect(() => {
-    if (!enabled || !interval) return;
+    if (!enabled || !interval || interval === 0) return;
 
     const intervalId = setInterval(() => {
       if (stopOnSuccess && data) {

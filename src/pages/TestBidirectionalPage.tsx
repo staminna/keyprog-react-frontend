@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PageLayout } from '@/components/layout/PageLayout';
+import PageLayout from '../components/layout/PageLayout';
 import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 import { ContactInfoEditor } from '@/components/contacts/ContactInfoEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,9 +55,9 @@ const TestBidirectionalPage: React.FC = () => {
             <CardContent>
               <div className="text-xl font-semibold">
                 <UniversalContentEditor
-                  collection="settings"
-                  itemId="settings"
-                  field="contact_phone"
+                  collection="contact_info"
+                  itemId="1"
+                  field="phone"
                   value=""
                   showEditIcon={false}
                 />
@@ -82,9 +82,9 @@ const TestBidirectionalPage: React.FC = () => {
             <CardContent>
               <div className="text-xl font-semibold">
                 <UniversalContentEditor
-                  collection="settings"
-                  itemId="settings"
-                  field="contact_email"
+                  collection="contact_info"
+                  itemId="1"
+                  field="email"
                   value=""
                   showEditIcon={false}
                 />
@@ -109,9 +109,9 @@ const TestBidirectionalPage: React.FC = () => {
             <CardContent>
               <div className="text-xl font-semibold">
                 <UniversalContentEditor
-                  collection="settings"
-                  itemId="settings"
-                  field="site_title"
+                  collection="hero"
+                  itemId="1"
+                  field="title"
                   value=""
                   showEditIcon={false}
                 />
@@ -157,9 +157,9 @@ const TestBidirectionalPage: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Site Title</label>
                     <UniversalContentEditor
-                      collection="settings"
-                      itemId="settings"
-                      field="site_title"
+                      collection="hero"
+                      itemId="1"
+                      field="title"
                       value=""
                       className="border border-gray-200 rounded-md p-2"
                     />
@@ -167,9 +167,9 @@ const TestBidirectionalPage: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
                     <UniversalContentEditor
-                      collection="settings"
-                      itemId="settings"
-                      field="contact_phone"
+                      collection="contact_info"
+                      itemId="1"
+                      field="phone"
                       value=""
                       className="border border-gray-200 rounded-md p-2"
                     />
@@ -177,9 +177,9 @@ const TestBidirectionalPage: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
                     <UniversalContentEditor
-                      collection="settings"
-                      itemId="settings"
-                      field="contact_email"
+                      collection="contact_info"
+                      itemId="1"
+                      field="email"
                       value=""
                       className="border border-gray-200 rounded-md p-2"
                     />
@@ -187,9 +187,9 @@ const TestBidirectionalPage: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Site Description</label>
                     <UniversalContentEditor
-                      collection="settings"
-                      itemId="settings"
-                      field="site_description"
+                      collection="hero"
+                      itemId="1"
+                      field="description"
                       value=""
                       className="border border-gray-200 rounded-md p-2"
                     />
@@ -222,9 +222,9 @@ const TestBidirectionalPage: React.FC = () => {
  * Component for testing universal content editor with any collection and field
  */
 const UniversalEditorTester: React.FC = () => {
-  const [collection, setCollection] = useState('settings');
-  const [itemId, setItemId] = useState('settings');
-  const [field, setField] = useState('contact_phone');
+  const [collection, setCollection] = useState('contact_info');
+  const [itemId, setItemId] = useState('1');
+  const [field, setField] = useState('phone');
   const [showEditor, setShowEditor] = useState(true);
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -37,11 +37,13 @@ interface DirectusServices {
   title?: string;
   description?: string;
   slug?: string;
+  content?: string;
   image?: string;
   category?: string;
   features?: string | string[];
   price?: number;
   status?: string;
+  sort?: number;
 }
 
 interface DirectusCategories {
