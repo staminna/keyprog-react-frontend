@@ -745,7 +745,11 @@ export class DirectusService {
         ? this.editorDirectusClient 
         : directus;
       
-      const headerMenu = await client.request(readItems('header_menu'));
+      const headerMenu = await client.request(readItems('header_menu', {
+        filter: {
+          status: { _eq: 'published' }
+        }
+      }));
       
       if (headerMenu && headerMenu.length > 0) {
         return headerMenu.map(item => ({
