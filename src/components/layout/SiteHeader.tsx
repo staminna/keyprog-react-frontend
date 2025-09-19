@@ -49,17 +49,6 @@ const SiteHeader = () => {
           // Use fallback menu only if Directus data is not available
           setHeaderMenu([
             {
-              id: 'loja',
-              title: 'Loja',
-              link: '/loja',
-              sub_menu: [
-                { title: 'Emuladores', link: '/loja#emuladores' },
-                { title: 'Equipamentos', link: '/loja#equipamentos' },
-                { title: 'Software', link: '/loja#software' },
-                { title: 'Estabilizadores', link: '/loja#estabilizadores' }
-              ]
-            },
-            {
               id: 'servicos',
               title: 'Serviços',
               link: '/servicos',
@@ -105,17 +94,6 @@ const SiteHeader = () => {
         console.error('Failed to fetch data:', error);
         // Use fallback menu on error
         setHeaderMenu([
-          {
-            id: 'loja',
-            title: 'Loja',
-            link: '/loja',
-            sub_menu: [
-              { title: 'Emuladores', link: '/loja#emuladores' },
-              { title: 'Equipamentos', link: '/loja#equipamentos' },
-              { title: 'Software', link: '/loja#software' },
-              { title: 'Estabilizadores', link: '/loja#estabilizadores' }
-            ]
-          },
           {
             id: 'servicos',
             title: 'Serviços',

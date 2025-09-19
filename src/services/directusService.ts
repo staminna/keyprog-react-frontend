@@ -575,16 +575,6 @@ export class DirectusService {
         ]
       },
       {
-        id: '2',
-        title: 'Loja',
-        links: [
-          { title: 'Emuladores', url: '/loja#emuladores' },
-          { title: 'Equipamentos', url: '/loja#equipamentos' },
-          { title: 'Software', url: '/loja#software' },
-          { title: 'Acessórios', url: '/loja#acessorios' }
-        ]
-      },
-      {
         id: '3',
         title: 'Suporte',
         links: [
