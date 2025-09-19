@@ -564,10 +564,14 @@ export class DirectusService {
         id: '1',
         title: 'Serviços',
         links: [
-          { title: 'Reprogramação ECU', url: '/servicos#reprogramacao' },
-          { title: 'Desbloqueio', url: '/servicos#desbloqueio' },
-          { title: 'Clonagem', url: '/servicos#clonagem' },
-          { title: 'Diagnóstico', url: '/servicos#diagnostico' }
+          { title: 'Reprogramação ECU', url: '/servicos/reprogramacao' },
+          { title: 'Desbloqueio', url: '/servicos/desbloqueio' },
+          { title: 'Clonagem', url: '/servicos/clonagem' },
+          { title: 'Diagnóstico', url: '/servicos/diagnostico' },
+          { title: 'Airbag', url: '/servicos/airbag' },
+          { title: 'AdBlue', url: '/servicos/adblue' },
+          { title: 'Chaves', url: '/servicos/chaves' },
+          { title: 'Quadrantes', url: '/servicos/quadrantes' }
         ]
       },
       {
@@ -745,11 +749,7 @@ export class DirectusService {
         ? this.editorDirectusClient 
         : directus;
       
-      const headerMenu = await client.request(readItems('header_menu', {
-        filter: {
-          status: { _eq: 'published' }
-        }
-      }));
+      const headerMenu = await client.request(readItems('header_menu'));
       
       if (headerMenu && headerMenu.length > 0) {
         return headerMenu.map(item => ({
@@ -863,7 +863,7 @@ export class DirectusService {
           // First try to get as a singleton (preferred approach)
           try {
             const contactInfo = await client.request(readSingleton('contact_info'));
-            return contactInfo as DirectusContactInfo;
+            return contactInfo as unknown as DirectusContactInfo;
           } catch (singletonError) {
             // If singleton approach fails, try as a regular item
             const parsedError = parseDirectusError(singletonError);
@@ -875,7 +875,7 @@ export class DirectusService {
             
             // Try as regular item
             const contactInfo = await client.request(readItem('contact_info' as any, '1'));
-            return contactInfo as DirectusContactInfo;
+            return contactInfo as unknown as DirectusContactInfo;
           }
         } catch (error) {
           const parsedError = parseDirectusError(error);

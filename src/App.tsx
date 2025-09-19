@@ -29,6 +29,7 @@ import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EditableContentProvider } from "@/contexts/EditableContentProvider";
 import EditableContentWrapper from "@/components/layout/EditableContentWrapper";
+import HashRedirect from "@/components/HashRedirect";
 
 // Service Pages
 import DiagnosticoPage from "./pages/servicos/DiagnosticoPage";
@@ -36,6 +37,10 @@ import ReparacaoPage from "./pages/servicos/ReparacaoPage";
 import ReprogramacaoPage from "./pages/servicos/ReprogramacaoPage";
 import DesbloqueioPage from "./pages/servicos/DesbloqueioPage";
 import ClonagemPage from "./pages/servicos/ClonagemPage";
+import AirbagPage from "./pages/servicos/AirbagPage";
+import AdBluePage from "./pages/servicos/AdBluePage";
+import ChavesPage from "./pages/servicos/ChavesPage";
+import QuadrantesPage from "./pages/servicos/QuadrantesPage";
 
 
 const App = () => (
@@ -48,6 +53,7 @@ const App = () => (
               <Sonner />
               <InlineEditorProvider>
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <HashRedirect />
                 <SiteHeader />
                 <EditableContentWrapper>
                   <Routes>
@@ -63,6 +69,10 @@ const App = () => (
                     <Route path="/servicos/reprogramacao" element={<ReprogramacaoPage />} />
                     <Route path="/servicos/desbloqueio" element={<DesbloqueioPage />} />
                     <Route path="/servicos/clonagem" element={<ClonagemPage />} />
+                    <Route path="/servicos/airbag" element={<AirbagPage />} />
+                    <Route path="/servicos/adblue" element={<AdBluePage />} />
+                    <Route path="/servicos/chaves" element={<ChavesPage />} />
+                    <Route path="/servicos/quadrantes" element={<QuadrantesPage />} />
                     <Route path="/servicos/:slug" element={<SubMenuContent />} />
                     <Route path="/suporte/:slug" element={<SubMenuContent />} />
                     <Route path="/file-service" element={<FileService />} />

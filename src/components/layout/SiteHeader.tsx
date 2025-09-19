@@ -64,9 +64,15 @@ const SiteHeader = () => {
               title: 'Serviços',
               link: '/servicos',
               sub_menu: [
-                { title: 'Reprogramação', link: '/servicos#reprogramacao' },
-                { title: 'Diagnóstico', link: '/servicos#diagnostico' },
-                { title: 'Reparação', link: '/servicos#reparacao' }
+                { title: 'Reprogramação', link: '/servicos/reprogramacao' },
+                { title: 'Diagnóstico', link: '/servicos/diagnostico' },
+                { title: 'Reparação', link: '/servicos/reparacao' },
+                { title: 'Desbloqueio', link: '/servicos/desbloqueio' },
+                { title: 'Clonagem', link: '/servicos/clonagem' },
+                { title: 'Airbag', link: '/servicos/airbag' },
+                { title: 'AdBlue', link: '/servicos/adblue' },
+                { title: 'Chaves', link: '/servicos/chaves' },
+                { title: 'Quadrantes', link: '/servicos/quadrantes' }
               ]
             },
             {
@@ -115,9 +121,15 @@ const SiteHeader = () => {
             title: 'Serviços',
             link: '/servicos',
             sub_menu: [
-              { title: 'Reprogramação', link: '/servicos#reprogramacao' },
-              { title: 'Diagnóstico', link: '/servicos#diagnostico' },
-              { title: 'Reparação', link: '/servicos#reparacao' }
+              { title: 'Reprogramação', link: '/servicos/reprogramacao' },
+              { title: 'Diagnóstico', link: '/servicos/diagnostico' },
+              { title: 'Reparação', link: '/servicos/reparacao' },
+              { title: 'Desbloqueio', link: '/servicos/desbloqueio' },
+              { title: 'Clonagem', link: '/servicos/clonagem' },
+              { title: 'Airbag', link: '/servicos/airbag' },
+              { title: 'AdBlue', link: '/servicos/adblue' },
+              { title: 'Chaves', link: '/servicos/chaves' },
+              { title: 'Quadrantes', link: '/servicos/quadrantes' }
             ]
           },
           {

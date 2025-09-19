@@ -96,10 +96,14 @@ export class FallbackService {
         id: '1',
         title: 'Serviços',
         links: [
-          { title: 'Reprogramação ECU', url: '/servicos#reprogramacao' },
-          { title: 'Desbloqueio', url: '/servicos#desbloqueio' },
-          { title: 'Clonagem', url: '/servicos#clonagem' },
-          { title: 'Diagnóstico', url: '/servicos#diagnostico' }
+          { title: 'Reprogramação ECU', url: '/servicos/reprogramacao' },
+          { title: 'Desbloqueio', url: '/servicos/desbloqueio' },
+          { title: 'Clonagem', url: '/servicos/clonagem' },
+          { title: 'Diagnóstico', url: '/servicos/diagnostico' },
+          { title: 'Airbag', url: '/servicos/airbag' },
+          { title: 'AdBlue', url: '/servicos/adblue' },
+          { title: 'Chaves', url: '/servicos/chaves' },
+          { title: 'Quadrantes', url: '/servicos/quadrantes' }
         ]
       },
       {

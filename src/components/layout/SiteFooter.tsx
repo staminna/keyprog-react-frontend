@@ -40,10 +40,14 @@ const SiteFooter = () => {
 
   // Fallback content for when Directus is unavailable
   const fallbackServices = [
-    { title: "Reprogramação", link: "/servicos#reprogramacao" },
-    { title: "Desbloqueio", link: "/servicos#desbloqueio" },
-    { title: "Clonagem", link: "/servicos#clonagem" },
-    { title: "Airbag", link: "/servicos#airbag" }
+    { title: "Reprogramação", link: "/servicos/reprogramacao" },
+    { title: "Desbloqueio", link: "/servicos/desbloqueio" },
+    { title: "Clonagem", link: "/servicos/clonagem" },
+    { title: "Airbag", link: "/servicos/airbag" },
+    { title: "AdBlue", link: "/servicos/adblue" },
+    { title: "Chaves", link: "/servicos/chaves" },
+    { title: "Quadrantes", link: "/servicos/quadrantes" },
+    { title: "Diagnóstico", link: "/servicos/diagnostico" }
   ];
 
   const fallbackContact = {

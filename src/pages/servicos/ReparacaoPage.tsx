@@ -1,21 +1,10 @@
 import React from 'react';
-import { ServicePageTemplate } from '@/components/universal/ServicePageTemplate';
+import ServicePageTemplate from '@/components/ServicePageTemplate';
 
 const ReparacaoPage: React.FC = () => {
-  const fallbackContent = {
-    id: 'reparacao',
-    title: 'Reparação de Centralinas',
-    description: 'Serviços especializados de reparação e recuperação de centralinas danificadas',
-    content: '<p>Conteúdo em carregamento...</p>',
-    status: 'published'
-  };
-
-  return (
-    <ServicePageTemplate 
-      serviceSlug="reparacao" 
-      fallbackContent={fallbackContent} 
-    />
-  );
+  // Note: We don't have a specific "reparacao" service in Directus yet
+  // This will show a "not found" message until we create it
+  return <ServicePageTemplate serviceSlug="reparacao" />;
 };
 
 export default ReparacaoPage;
