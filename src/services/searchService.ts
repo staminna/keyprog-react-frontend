@@ -210,7 +210,7 @@ export class SearchService {
     return relevance;
   }
 
-  private static extractTextFromContent(content: any): string {
+  private static extractTextFromContent(content: unknown): string {
     if (!content) return '';
     if (typeof content === 'string') return content.substring(0, 200);
     if (typeof content === 'object') {

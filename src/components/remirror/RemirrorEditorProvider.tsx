@@ -6,15 +6,15 @@ interface EditingState {
 }
 
 interface RemirrorEditorContextType {
-  editingState: EditingState;
-  setEditing: (key: string, isEditing: boolean) => void;
   isAnyEditing: boolean;
   showEditMode: boolean;
   setShowEditMode: (show: boolean) => void;
+  editingState: EditingState;
+  setEditing: (key: string, isEditing: boolean) => void;
   saveAll: () => void;
   revertAll: () => void;
-  pendingChanges: Record<string, any>;
-  setPendingChange: (key: string, value: any) => void;
+  pendingChanges: Record<string, unknown>;
+  setPendingChange: (key: string, value: unknown) => void;
   clearPendingChange: (key: string) => void;
 }
 
@@ -39,7 +39,7 @@ export const RemirrorEditorProvider: React.FC<RemirrorEditorProviderProps> = ({
 }) => {
   const [editingState, setEditingState] = useState<EditingState>({});
   const [showEditMode, setShowEditMode] = useState(initialEditMode);
-  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
+  const [pendingChanges, setPendingChanges] = useState<Record<string, unknown>>({});
 
   const isAnyEditing = Object.values(editingState).some(Boolean);
 
@@ -50,7 +50,7 @@ export const RemirrorEditorProvider: React.FC<RemirrorEditorProviderProps> = ({
     }));
   }, []);
 
-  const setPendingChange = useCallback((key: string, value: any) => {
+  const setPendingChange = useCallback((key: string, value: unknown) => {
     setPendingChanges(prev => ({
       ...prev,
       [key]: value

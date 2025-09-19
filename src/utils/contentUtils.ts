@@ -18,13 +18,13 @@ export function getNestedProperty<T>(
   if (!obj) return defaultValue;
   
   const keys = path.split('.');
-  let current: any = obj;
+  let current: unknown = obj;
   
   for (const key of keys) {
     if (current === null || current === undefined || typeof current !== 'object') {
       return defaultValue;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
   
   return current !== undefined && current !== null ? current as T : defaultValue;
@@ -48,14 +48,14 @@ export function setNestedProperty<T>(
   
   if (!lastKey) return result;
   
-  let current: any = result;
+  let current: Record<string, unknown> = result;
   
   // Navigate to the parent object
   for (const key of keys) {
     if (current[key] === undefined || current[key] === null || typeof current[key] !== 'object') {
       current[key] = {};
     }
-    current = current[key];
+    current = current[key] as Record<string, unknown>;
   }
   
   // Set the value on the parent object
@@ -93,10 +93,10 @@ export function deepMerge<T extends Record<string, unknown>>(
         result[key] = deepMerge(
           targetValue as Record<string, unknown>,
           sourceValue as Record<string, unknown>
-        ) as any;
+        ) as T[Extract<keyof T, string>];
       } else {
         // Otherwise, use the source value
-        result[key] = sourceValue as any;
+        result[key] = sourceValue as T[Extract<keyof T, string>];
       }
     }
   }
@@ -127,7 +127,7 @@ export function removeEmptyValues<T extends Record<string, unknown>>(obj: T): T 
         
         // Only add non-empty objects
         if (Object.keys(cleaned).length > 0) {
-          result[key] = cleaned as any;
+          result[key] = cleaned as T[Extract<keyof T, string>];
         }
       } else if (Array.isArray(value)) {
         // Filter out empty values from arrays
@@ -135,16 +135,16 @@ export function removeEmptyValues<T extends Record<string, unknown>>(obj: T): T 
         
         // Only add non-empty arrays
         if (filteredArray.length > 0) {
-          result[key] = filteredArray as any;
+          result[key] = filteredArray as T[Extract<keyof T, string>];
         }
       } else if (typeof value === 'string') {
         // Only add non-empty strings
         if (value.trim() !== '') {
-          result[key] = value as any;
+          result[key] = value as T[Extract<keyof T, string>];
         }
       } else {
         // Add all other values
-        result[key] = value as any;
+        result[key] = value as T[Extract<keyof T, string>];
       }
     }
   }

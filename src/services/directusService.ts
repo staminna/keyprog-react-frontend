@@ -534,7 +534,7 @@ export class DirectusService {
   static async getPages(): Promise<Record<string, unknown>[]> {
     try {
       await this.ensureAuthenticated();
-      const pages = await directus.request(readItems('pages' as 'pages'));
+      const pages = await directus.request(readItems('pages' as const));
       return pages;
     } catch (error) {
       console.error('Error fetching pages:', error);
@@ -545,7 +545,7 @@ export class DirectusService {
   static async getPage(slug: string): Promise<Record<string, unknown> | null> {
     try {
       const pages = await directus.request(
-        readItems('pages' as 'pages', {
+        readItems('pages' as const, {
           filter: { slug: { _eq: slug } }
         })
       );
@@ -874,7 +874,7 @@ export class DirectusService {
             }
             
             // Try as regular item
-            const contactInfo = await client.request(readItem('contact_info', '1'));
+            const contactInfo = await client.request(readItem('contact_info' as any, '1'));
             return contactInfo as DirectusContactInfo;
           }
         } catch (error) {

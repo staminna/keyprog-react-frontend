@@ -36,7 +36,7 @@ export const ContactBidirectionalExample: React.FC = () => {
   });
   
   // Track Directus data changes
-  const [directusData, setDirectusData] = useState<any>(null);
+  const [directusData, setDirectusData] = useState<Record<string, unknown> | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
   // Initialize form data when contact info is loaded

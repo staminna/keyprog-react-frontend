@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DirectusServiceExtension } from '@/services/directusServiceExtension';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import useRolePermissions from '@/hooks/useRolePermissions';
@@ -44,13 +44,8 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
   const hasRolePermission = canEditCollection(collection);
   const canEdit = hasAuthPermission && hasRolePermission;
 
-  // Load menu items on mount
-  useEffect(() => {
-    loadMenuItems();
-  }, [collection]);
-
   // Load menu items from Directus
-  const loadMenuItems = async () => {
+  const loadMenuItems = useCallback(async () => {
     setIsLoading(true);
     
     try {
@@ -72,10 +67,15 @@ export const MenuEditor: React.FC<MenuEditorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [collection]);
+
+  // Load menu items on mount
+  useEffect(() => {
+    loadMenuItems();
+  }, [collection, loadMenuItems]);
 
   // Handle item update
-  const handleItemUpdate = async (id: string, field: string, value: any) => {
+  const handleItemUpdate = async (id: string, field: string, value: string | number | boolean) => {
     if (!canEdit) return;
     
     try {

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   createDirectus, 
   rest, 
@@ -10,7 +10,6 @@ import {
   type DirectusClient,
   type Query
 } from '@directus/sdk';
-import { useEffect } from 'react';
 import type { Schema } from '@/lib/directus-schema';
 
 type CollectionName = keyof Schema;
@@ -34,34 +33,61 @@ export function useItems<T extends CollectionName>(
   collection: T,
   query?: unknown // Simplified for now - can be typed more strictly later
 ) {
-  return useQuery<Schema[T]>({
-    queryKey: [collection, query],
-    queryFn: async () => {
-      const response = await directus.request(
-        readItems(collection, query)
-      );
-      return response as Schema[T];
-    },
-  });
+  const [data, setData] = useState<Schema[T] | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await directus.request(
+          readItems(collection, query)
+        );
+        setData(response as Schema[T]);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [collection, JSON.stringify(query)]);
+
+  return { data, isLoading, error };
 }
 
 // Hook to update items
 export function useUpdateItem<T extends CollectionName>(
   collection: T
 ) {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (variables: { id: string | number; data: Partial<CollectionItem<T>> }) =>
-      directus.request(
-        updateItem(collection, variables.id, variables.data)
-      ) as Promise<CollectionItem<T>>,
-    onSuccess: (_, variables) => {
-      // Invalidate and refetch the items query
-      queryClient.invalidateQueries({ queryKey: [collection] });
-      queryClient.invalidateQueries({ queryKey: [collection, variables.id] });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [data, setData] = useState<CollectionItem<T> | null>(null);
+
+  const mutate = useCallback(
+    async (variables: { id: string | number; data: Partial<CollectionItem<T>> }) => {
+      try {
+        setIsLoading(true);
+        const result = await directus.request(
+          updateItem(collection, variables.id, variables.data)
+        ) as CollectionItem<T>;
+        setData(result);
+        setError(null);
+        return result;
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
     },
-  });
+    [collection]
+  );
+
+  return { mutate, isLoading, error, data };
 }
 
 // Hook to subscribe to real-time updates
@@ -72,8 +98,6 @@ type RealtimeEvent<T> = {
 };
 
 export function useRealtimeUpdates<T extends CollectionName>(collection: T) {
-  const queryClient = useQueryClient();
-  
   useEffect(() => {
     // Simple implementation without real-time for now
     // Will be enhanced in a future update
@@ -87,24 +111,7 @@ export function useRealtimeUpdates<T extends CollectionName>(collection: T) {
     });
 
     const handleEvent = (event: RealtimeEvent<CollectionItem<T>>) => {
-      queryClient.setQueriesData<Schema[T]>(
-        { queryKey: [collection] },
-        (currentData) => {
-          if (!currentData) return currentData;
-          
-          if (event.event === 'delete') {
-            return currentData.filter(
-              (item) => item.id.toString() !== event.key
-            ) as Schema[T];
-          }
-          
-          return currentData.map((item) =>
-            item.id.toString() === event.key
-              ? { ...item, ...event.payload }
-              : item
-          ) as Schema[T];
-        }
-      );
+      // Handle real-time updates here
     };
 
     const subscriptionPromise = subscription.subscribe(handleEvent);
@@ -117,5 +124,5 @@ export function useRealtimeUpdates<T extends CollectionName>(collection: T) {
       });
     };
     */
-  }, [collection, queryClient]);
+  }, [collection]);
 }

@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -38,11 +37,9 @@ import ReprogramacaoPage from "./pages/servicos/ReprogramacaoPage";
 import DesbloqueioPage from "./pages/servicos/DesbloqueioPage";
 import ClonagemPage from "./pages/servicos/ClonagemPage";
 
-const queryClient = new QueryClient();
 
 const App = () => (
   <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EditableContentProvider>
           <GlobalEditingProvider>
@@ -89,7 +86,6 @@ const App = () => (
           </GlobalEditingProvider>
         </EditableContentProvider>
       </AuthProvider>
-    </QueryClientProvider>
   </HelmetProvider>
 );
 
