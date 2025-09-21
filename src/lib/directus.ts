@@ -165,8 +165,41 @@ export interface DirectusProduct {
   updated_at?: string;
 }
 
-const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
+// Automatically determine the correct Directus URL based on environment
+const getDirectusURL = () => {
+  const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
+  const isBrowser = typeof window !== 'undefined';
+  const isHTTPS = isBrowser && window.location.protocol === 'https:';
+  
+  // Force production mode if we're on HTTPS or the domain contains varrho.com
+  const forceProduction = isHTTPS || (isBrowser && window.location.hostname.includes('varrho.com'));
+  
+  if (isProduction || forceProduction) {
+    // In production, always use HTTPS with the correct API path
+    return import.meta.env.VITE_DIRECTUS_URL || 'https://keyprog.varrho.com';
+  }
+  
+  if (isBrowser) {
+    // In development browser, use browser-specific URL or fallback to localhost
+    return import.meta.env.VITE_DIRECTUS_URL_BROWSER || import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
+  } else {
+    // In development server-side, use container name
+    return import.meta.env.VITE_DIRECTUS_URL || 'http://keyprog:8055';
+  }
+};
+
+const DIRECTUS_URL = getDirectusURL();
 const STATIC_TOKEN = import.meta.env.VITE_DIRECTUS_TOKEN;
+
+// Debug logging for URL configuration
+console.log('🔧 Directus Configuration:', {
+  url: DIRECTUS_URL,
+  isProduction: import.meta.env.PROD || import.meta.env.MODE === 'production',
+  isHTTPS: typeof window !== 'undefined' && window.location.protocol === 'https:',
+  hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+  isBrowser: typeof window !== 'undefined',
+  hasToken: !!STATIC_TOKEN
+});
 
 // Create Directus client for API calls (with static token if available)
 export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
