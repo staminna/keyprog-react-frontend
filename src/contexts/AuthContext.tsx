@@ -34,36 +34,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.warn('Error checking session token:', tokenError);
       }
       
-      // If no valid session token, try stored credentials
-      const storedEmail = localStorage.getItem('directus_auth_email');
-      const storedPassword = localStorage.getItem('directus_auth_password');
-      
-      if (!storedEmail || !storedPassword) {
-        setIsAuthenticated(false);
-        setUser(null);
-        return false;
-      }
-      
-      const authenticated = await DirectusService.authenticate(storedEmail, storedPassword);
-      setIsAuthenticated(authenticated);
-      
-      if (authenticated) {
-        setUser({ email: storedEmail, authenticated: true });
-      } else {
-        // Clear stored credentials if authentication fails
-        localStorage.removeItem('directus_auth_email');
-        localStorage.removeItem('directus_auth_password');
-        setUser(null);
-      }
-      
-      return authenticated;
+      // If no valid session token, assume logged out
+      setIsAuthenticated(false);
+      setUser(null);
+      return false;
     } catch (error) {
       console.error('Authentication check failed:', error);
       setIsAuthenticated(false);
       setUser(null);
-      // Clear stored credentials on error
-      localStorage.removeItem('directus_auth_email');
-      localStorage.removeItem('directus_auth_password');
       return false;
     } finally {
       setIsLoading(false);
@@ -77,25 +55,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const success = await DirectusService.authenticate(email, password);
       
       if (success) {
-        // Store credentials only after successful authentication
-        localStorage.setItem('directus_auth_email', email);
-        localStorage.setItem('directus_auth_password', password);
+        // Get user info after successful authentication
+        const userInfo = await DirectusService.getCurrentUser();
+        setUser(userInfo || { email, authenticated: true });
         setIsAuthenticated(true);
-        setUser({ email, authenticated: true });
         return true;
       } else {
-        // Clear any existing credentials if login fails
-        localStorage.removeItem('directus_auth_email');
-        localStorage.removeItem('directus_auth_password');
         setIsAuthenticated(false);
         setUser(null);
         return false;
       }
     } catch (error) {
       console.error('Login failed:', error);
-      // Clear credentials on error
-      localStorage.removeItem('directus_auth_email');
-      localStorage.removeItem('directus_auth_password');
       setIsAuthenticated(false);
       setUser(null);
       return false;
@@ -110,12 +81,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(false);
       setUser(null);
       
-      // Clear stored credentials
-      localStorage.removeItem('directus_auth_email');
-      localStorage.removeItem('directus_auth_password');
+      // Perform logout if the service supports it
+      if (DirectusService.logout) {
+        await DirectusService.logout();
+      }
       
-      // Note: DirectusService doesn't have a logout method in the current implementation
-      // but the authentication will fail on next request
     } catch (error) {
       console.error('Logout error:', error);
     }

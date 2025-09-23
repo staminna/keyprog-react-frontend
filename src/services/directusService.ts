@@ -100,7 +100,7 @@ export class DirectusService {
       // Check if we're in Directus Visual Editor first
       const editorContext = await this.checkDirectusEditor();
       this.isInDirectusEditor = editorContext.isEditor;
-      
+
       if (this.isInDirectusEditor) {
         console.log('🎯 Detected Directus Visual Editor - using inherited authentication');
         if (editorContext.token) {
@@ -111,7 +111,7 @@ export class DirectusService {
         return true;
       }
 
-      // Try static token first
+      // Try static token for read-only operations
       const staticToken = import.meta.env.VITE_DIRECTUS_TOKEN;
       if (staticToken && staticToken.trim()) {
         console.log('🔑 Using static token for authentication');
@@ -120,20 +120,12 @@ export class DirectusService {
         return true;
       }
 
-      // Attempt autologin with environment credentials
-      const email = import.meta.env.VITE_DIRECTUS_EMAIL;
-      const password = import.meta.env.VITE_DIRECTUS_PASSWORD;
-      
-      if (email && password && !this.autoLoginAttempted) {
-        console.log('🚀 Attempting autologin with environment credentials');
-        this.autoLoginAttempted = true;
-        const success = await this.performAuthentication(email, password);
-        if (success) {
-          console.log('✅ Autologin successful');
-          return true;
-        } else {
-          console.warn('❌ Autologin failed');
-        }
+      // Check for an existing valid session token
+      const sessionTokenIsValid = await this.verifyToken();
+      if (sessionTokenIsValid) {
+        console.log('✅ Found valid session token');
+        this.isAuthenticated = true;
+        return true;
       }
 
       return false;
@@ -143,170 +135,69 @@ export class DirectusService {
     }
   }
 
-  // Public method to trigger autologin
+  // Public method to trigger authentication initialization
   static async autoLogin(): Promise<boolean> {
-    console.log('🚀 Triggering autologin...');
+    console.log('🚀 Initializing authentication...');
     return await this.initialize();
   }
 
   static async authenticate(email?: string, password?: string): Promise<boolean> {
-    // If email and password are provided, force session-based authentication
+    // If email and password are provided, force a new session-based authentication
     if (email && password) {
-      console.log('Using session-based authentication with provided credentials');
       this.useStaticToken = false;
       this.isAuthenticated = false; // Reset to force fresh authentication
-      
+
       // Prevent multiple simultaneous authentication attempts
       if (this.authPromise) {
         return this.authPromise;
       }
-      
+
       this.authPromise = this.performAuthentication(email, password);
       const result = await this.authPromise;
       this.authPromise = null;
       return result;
     }
-    
-    // If not initialized yet, initialize first
+
+    // If not authenticating with new credentials, rely on the initialization status
     if (!this.initPromise) {
       return await this.initialize();
     }
     
-    // Check if we're in Directus Visual Editor
-    const editorContext = await this.checkDirectusEditor();
-    this.isInDirectusEditor = editorContext.isEditor;
-    
-    // If in Directus Editor, try to use inherited authentication
-    if (this.isInDirectusEditor) {
-      console.log('🎯 Auto-authenticating for Directus Visual Editor');
-      
-      // If we have a parent token, create a dedicated editor client
-      if (editorContext.token) {
-        try {
-          this.parentToken = editorContext.token;
-          this.editorDirectusClient = createEditorDirectus(editorContext.token);
-          console.log('🔑 Created Directus client with parent token for write operations');
-        } catch (tokenError) {
-          console.warn('Failed to create editor client with parent token:', tokenError);
-        }
-      }
-      
-      this.isAuthenticated = true;
-      this.useStaticToken = false; // Use session auth in editor
-      return true;
-    }
-    
-    // Only use static token if no credentials provided (for API calls)
-    const staticToken = import.meta.env.VITE_DIRECTUS_TOKEN;
-    if (staticToken && staticToken.trim()) {
-      console.log('Using static token authentication for API calls');
-      this.isAuthenticated = true;
-      this.useStaticToken = true;
-      return true;
-    }
-
-    // If already authenticated and no new credentials provided
-    if (this.isAuthenticated) return true;
-    
-    // No credentials and no static token
-    console.warn('No authentication method available');
-    return false;
+    return this.isAuthenticated;
   }
 
-  private static async performAuthentication(email?: string, password?: string): Promise<boolean> {
+  private static async performAuthentication(email: string, password: string): Promise<boolean> {
     try {
-      // Use provided credentials or fall back to environment
-      const authEmail = email || import.meta.env.VITE_DIRECTUS_EMAIL;
-      const authPassword = password || import.meta.env.VITE_DIRECTUS_PASSWORD;
-      
-      if (!authEmail || !authPassword) {
-        console.warn('Directus credentials not provided');
-        return false;
-      }
-      
-      // Check if we're using static token (no login/logout methods available)
-      if (this.useStaticToken) {
-        console.log('Using static token, skipping login');
-        this.isAuthenticated = true;
-        return true;
-      }
-      
-      // If in Directus Editor, assume authentication is inherited
-      if (this.isInDirectusEditor) {
-        console.log('🎯 Using inherited Directus Editor authentication');
-        this.isAuthenticated = true;
-        return true;
-      }
-      
       // Use session-based client for authentication
       const authClient = sessionDirectus;
-      
-      // Clear any existing authentication state
-      const existingToken = await authClient.getToken();
-      if (existingToken && 'logout' in authClient) {
-        try {
-          await (authClient as { logout: () => Promise<void> }).logout();
-          console.log('Logged out existing session');
-        } catch (logoutError) {
-          console.warn('Logout failed, continuing with fresh login');
-        }
-      }
-      
-      // CRITICAL: Only authenticate if login method exists, otherwise fail
+
+      // CRITICAL: Only authenticate if login method exists
       if (!('login' in authClient)) {
         console.error('Login method not available on session client - authentication cannot proceed');
-        this.isAuthenticated = false;
         return false;
       }
+
+      console.log('Attempting login with provided credentials...');
       
-      // Perform fresh login with proper error handling
-      try {
-        console.log('Attempting login with credentials:', { email: authEmail, passwordProvided: !!authPassword });
-        
-        const result = await (authClient as { login: (credentials: { email: string; password: string }) => Promise<{ access_token?: string }> }).login({ 
-          email: authEmail, 
-          password: authPassword 
-        });
-        
-        console.log('Login attempt result:', !!result.access_token);
-        
-        // Verify we actually received a valid token
-        if (!result.access_token) {
-          console.error('No access token received from Directus login');
-          this.isAuthenticated = false;
-          return false;
-        }
-        
-        // Double-check the token is properly set in the client
-        const token = await authClient.getToken();
-        if (!token) {
-          console.error('Token not properly set in Directus client after login');
-          this.isAuthenticated = false;
-          return false;
-        }
-        
-        console.log('Authentication successful - token verified');
-        this.isAuthenticated = true;
-        return true;
-        
-      } catch (loginError) {
-        console.error('Login failed with error:', loginError);
+      const result = await (authClient as { login: (credentials: { email: string; password: string }) => Promise<{ access_token?: string }> }).login({ 
+        email, 
+        password 
+      });
+
+      // Verify we actually received a valid token
+      if (!result.access_token) {
+        console.error('No access token received from Directus login');
         this.isAuthenticated = false;
         return false;
       }
+
+      console.log('Authentication successful');
+      this.isAuthenticated = true;
+      return true;
+
     } catch (error) {
       console.error('Authentication failed with error:', error);
       this.isAuthenticated = false;
-      
-      // Reset authentication state on failure
-      if ('logout' in sessionDirectus) {
-        try {
-          await (sessionDirectus as { logout: () => Promise<void> }).logout();
-        } catch (logoutError) {
-          console.warn('Failed to logout after authentication error');
-        }
-      }
-      
       return false;
     }
   }

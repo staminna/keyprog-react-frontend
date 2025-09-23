@@ -8,9 +8,9 @@
 const { createDirectus, rest, updateField, createField, authentication } = require('@directus/sdk');
 
 // Configuration
-const DIRECTUS_URL = process.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
-const DIRECTUS_EMAIL = process.env.VITE_DIRECTUS_EMAIL;
-const DIRECTUS_PASSWORD = process.env.VITE_DIRECTUS_PASSWORD;
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8065';
+const DIRECTUS_EMAIL = process.env.DIRECTUS_EMAIL;
+const DIRECTUS_PASSWORD = process.env.DIRECTUS_PASSWORD;
 
 const client = createDirectus(DIRECTUS_URL).with(rest()).with(authentication());
 
