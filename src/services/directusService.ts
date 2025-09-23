@@ -37,6 +37,8 @@ export class DirectusService {
 
   // Check if running inside Directus Visual Editor and get parent token
   private static async checkDirectusEditor(): Promise<{ isEditor: boolean; token?: string }> {
+    const isLocalDevHost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
     try {
       // Check if we're in an iframe and the parent has Directus context
       if (window.parent !== window) {
@@ -47,6 +49,11 @@ export class DirectusService {
           (window.parent as Window & { location?: Location }).location?.href?.includes('directus');
         
         if (isDirectusFrame) {
+          if (isLocalDevHost) {
+            console.log('🧪 Local development detected - skipping Directus Visual Editor auto-detection');
+            return { isEditor: false };
+          }
+
           console.log('🎯 Detected Directus Visual Editor context');
           
           // Try to get the parent Directus token
@@ -102,13 +109,19 @@ export class DirectusService {
       this.isInDirectusEditor = editorContext.isEditor;
       
       if (this.isInDirectusEditor) {
-        console.log('🎯 Detected Directus Visual Editor - using inherited authentication');
+        console.log('🎯 Detected Directus Visual Editor - attempting to inherit authentication');
+
         if (editorContext.token) {
           this.parentToken = editorContext.token;
           this.editorDirectusClient = createEditorDirectus(editorContext.token);
+          this.isAuthenticated = true;
+          return true;
         }
-        this.isAuthenticated = true;
-        return true;
+
+        console.warn('⚠️ Directus Visual Editor detected but no parent token available. Falling back to environment credentials.');
+        this.parentToken = null;
+        this.editorDirectusClient = null;
+        this.isAuthenticated = false;
       }
 
       // Try static token first
@@ -177,20 +190,17 @@ export class DirectusService {
     this.isInDirectusEditor = editorContext.isEditor;
     
     // If in Directus Editor, try to use inherited authentication
-    if (this.isInDirectusEditor) {
-      console.log('🎯 Auto-authenticating for Directus Visual Editor');
+    if (this.isInDirectusEditor && editorContext.token) {
+      console.log('🎯 Auto-authenticating for Directus Visual Editor with inherited token');
       
-      // If we have a parent token, create a dedicated editor client
-      if (editorContext.token) {
-        try {
-          this.parentToken = editorContext.token;
-          this.editorDirectusClient = createEditorDirectus(editorContext.token);
-          console.log('🔑 Created Directus client with parent token for write operations');
-        } catch (tokenError) {
-          console.warn('Failed to create editor client with parent token:', tokenError);
-        }
+      try {
+        this.parentToken = editorContext.token;
+        this.editorDirectusClient = createEditorDirectus(editorContext.token);
+        console.log('🔑 Created Directus client with parent token for write operations');
+      } catch (tokenError) {
+        console.warn('Failed to create editor client with parent token:', tokenError);
       }
-      
+
       this.isAuthenticated = true;
       this.useStaticToken = false; // Use session auth in editor
       return true;
@@ -405,8 +415,8 @@ export class DirectusService {
     }
     
     // If in Directus Editor, skip authentication check
-    if (this.isInDirectusEditor) {
-      console.log('🎯 Skipping authentication check - using Directus Editor context');
+    if (this.isInDirectusEditor && this.parentToken && this.editorDirectusClient) {
+      console.log('🎯 Skipping authentication check - using Directus Editor inherited token');
       this.isAuthenticated = true;
       return;
     }
@@ -837,7 +847,7 @@ export class DirectusService {
       id: '1',
       title: 'Como Podemos Ajudar?',
       email: 'suporte@keyprog.pt',
-      phone: '+351 XXX XXX XXX',
+      phone: '+351 964 463 161',
       chat_hours: 'Seg-Sex: 9h-18h',
       contact_form_text: 'Formulário de Contacto',
       contact_form_link: '/contactos'
