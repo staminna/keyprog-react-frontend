@@ -763,20 +763,26 @@ export class DirectusService {
         ? this.editorDirectusClient 
         : directus;
       
-      const headerMenu = await client.request(readItems('header_menu'));
+      // Filter out archived menu items
+      const headerMenu = await client.request(readItems('header_menu', {
+        filter: {
+          status: { _neq: 'archived' }
+        },
+        sort: ['sort']
+      }));
       
       if (headerMenu && headerMenu.length > 0) {
-        return headerMenu.map(item => ({
-          ...item,
-          sub_menu: this.normalizeSubMenu(item.sub_menu)
-        }));
+        return headerMenu
+          .filter(item => item.status !== 'archived')
+          .map(item => ({
+            ...item,
+            sub_menu: this.normalizeSubMenu(item.sub_menu)
+          }));
       }
       
-      // Return empty array if no data, let component handle fallback
       return [];
     } catch (error) {
       console.error('Failed to fetch header menu from Directus:', error);
-      // Return empty array on error, let component handle fallback
       return [];
     }
   }
@@ -822,14 +828,19 @@ export class DirectusService {
   }
 
   // Helper function to normalize sub_menu data from Directus JSON field
-  private static normalizeSubMenu(subMenu: unknown): Array<{title: string, link: string}> | undefined {
+  private static normalizeSubMenu(subMenu: unknown): Array<{title: string, link: string, status?: string, target?: string}> | undefined {
     if (!subMenu) return undefined;
     
-    // If it's already an array (from JSON field), return as is
+    // If it's already an array (from JSON field), filter out archived items
     if (Array.isArray(subMenu)) {
-      return subMenu.filter(item => 
-        item && typeof item === 'object' && 'title' in item && 'link' in item
-      ) as Array<{title: string, link: string}>;
+      return subMenu.filter(item => {
+        // Skip if item is not an object or missing required fields
+        if (!item || typeof item !== 'object' || !('title' in item) || !('link' in item)) {
+          return false;
+        }
+        // Filter out archived items
+        return item.status !== 'archived';
+      }) as Array<{title: string, link: string, status?: string, target?: string}>;
     }
     
     return undefined;
