@@ -1,0 +1,197 @@
+/* Editable content styling */
+
+/* Base editable element styling */
+.editable-element {
+  position: relative;
+  transition: outline 0.2s ease;
+}
+
+.editable-element:hover {
+  outline: 1px dashed rgba(var(--primary), 0.5);
+}
+
+/* Editable indicator */
+.editable-element::after {
+  content: "✏️";
+  position: absolute;
+  top: -15px;
+  right: -5px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.editable-element:hover::after {
+  opacity: 1;
+}
+
+/* Editable section styling */
+.editable-section-wrapper {
+  position: relative;
+}
+
+.editable-section {
+  position: relative;
+  transition: outline 0.2s ease;
+}
+
+.editable-section:hover {
+  outline: 1px dashed rgba(var(--primary), 0.3);
+}
+
+/* Editable section indicator */
+.editable-section::before {
+  content: attr(data-editable-section);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-size: 10px;
+  background-color: rgba(var(--primary), 0.1);
+  color: rgba(var(--primary), 1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.editable-section:hover::before {
+  opacity: 1;
+}
+
+/* Active editing state */
+.editable-active {
+  outline: 2px solid rgba(var(--primary), 0.8) !important;
+  z-index: 100;
+}
+
+/* Editable text node styling */
+.directus-editable-text {
+  position: relative;
+  cursor: pointer;
+  transition: outline 0.2s ease;
+}
+
+.directus-editable-text:hover {
+  outline: 1px dashed rgba(var(--primary), 0.5);
+}
+
+.directus-editable-text::after {
+  content: "✏️";
+  position: absolute;
+  top: -15px;
+  right: -5px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.directus-editable-text:hover::after {
+  opacity: 1;
+}
+
+/* Editable badge styling */
+.badge .editable-element {
+  display: inline-block;
+}
+
+/* Editable button text styling */
+button .editable-element,
+.button .editable-element {
+  display: inline;
+}
+
+button .editable-element:hover,
+.button .editable-element:hover {
+  outline: none;
+}
+
+/* Editable card content styling */
+.card .editable-element {
+  display: block;
+}
+
+/* Editable image styling */
+.editable-image {
+  position: relative;
+  display: inline-block;
+}
+
+.editable-image::after {
+  content: "🖼️";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 2px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editable-image:hover::after {
+  opacity: 1;
+}
+
+/* Editable toolbar */
+.editable-toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+}
+
+.editable-toolbar button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editable-toolbar button:hover {
+  background-color: rgba(var(--primary), 0.1);
+}
+
+.editable-toolbar button.active {
+  background-color: rgba(var(--primary), 0.2);
+}
+
+/* Editable status indicator */
+.editable-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 1000;
+  font-size: 12px;
+}
+
+.editable-status.enabled {
+  color: green;
+}
+
+.editable-status.disabled {
+  color: red;
+}

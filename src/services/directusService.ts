@@ -479,15 +479,29 @@ export class DirectusService {
       return fallback;
     }
   }
-  static async getSettings(): Promise<DirectusSettings> {
+  static async getSettingsItem() {
     try {
       await this.ensureAuthenticated();
-      const settings = await directus.request(readSingleton('settings'));
-      return settings;
+      console.log('🔍 Fetching settings...');
+      
+      try {
+        // First try the singleton endpoint
+        const settings = await directus.request(readSingleton('settings'));
+        console.log('✅ Fetched settings via singleton');
+        return settings;
+      } catch (singletonError) {
+        console.log('⚠️ Singleton fetch failed, trying regular endpoint');
+        // Fallback to regular items endpoint
+        const { data } = await directus.request(readItems('settings', { limit: 1 }));
+        return data?.[0] || null;
+      }
     } catch (error) {
-      console.error('Error fetching settings:', error);
-      // Return empty settings object so logo fallback works
-      return { logo: null } as DirectusSettings;
+      console.error('❌ Error in getSettingsItem:', {
+        message: error.message,
+        status: error?.response?.status,
+        data: error?.data
+      });
+      return null;
     }
   }
 
