@@ -494,24 +494,50 @@ export class DirectusService {
         [key: string]: any;
       };
 
-      // Use the correct client based on context
-      const client = this.isInDirectusEditor && this.editorDirectusClient 
-        ? this.editorDirectusClient 
-        : directus;
-      
-      // Try to get system settings from Directus
+      // Default values
+      const defaultSettings = {
+        site_title: 'Keyprog',
+        site_description: 'Soluções Automóveis',
+        project_name: 'Keyprog',
+        project_descriptor: 'Soluções Automóveis'
+      };
+
       try {
-        const response = await client.request<DirectusSettings>(
-          // @ts-ignore - The SDK types might not include this directly
-          client.url.pathname('/settings').method('GET')
-        );
+        // Get the base URL from environment or use the current origin
+        const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        const settingsUrl = `${baseUrl}/settings`;
+        
+        // Get the authentication token from the Directus client
+        let authToken = '';
+        try {
+          // @ts-ignore - Accessing private storage property
+          authToken = directus.storage.auth_token || '';
+        } catch (e) {
+          console.warn('Could not access auth token:', e);
+        }
+        
+        const response = await fetch(settingsUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          },
+          credentials: 'include' // Include cookies for authentication if needed
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch settings: ${response.status} ${response.statusText}`);
+        }
+
+        const settings = await response.json() as DirectusSettings;
         
         // Return combined settings with defaults
-        return {  
-          site_title: response?.project_name || 'Keyprog',
-          site_description: response?.project_descriptor || 'Soluções Automóveis',
-          // Include all other settings from the response
-          ...(response || {})
+        return {
+          ...defaultSettings,
+          ...settings,
+          site_title: settings?.project_name || defaultSettings.site_title,
+          site_description: settings?.project_descriptor || defaultSettings.site_description
         };
       } catch (settingsError) {
         console.warn('Failed to fetch system settings, using defaults:', settingsError);
