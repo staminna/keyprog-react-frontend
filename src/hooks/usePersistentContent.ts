@@ -39,11 +39,35 @@ export const usePersistentContent = ({
   // Load content from storage or server on mount
   useEffect(() => {
     const loadContent = async () => {
+      // Special handling for settings collection
+      if (collection === 'settings') {
+        try {
+          const settings = await DirectusService.getSettingsItem();
+          const serverContent = settings && field in settings 
+            ? String(settings[field] || '') 
+            : initialValue;
+            
+          setState(prev => ({
+            ...prev,
+            content: serverContent,
+            isLoading: false,
+          }));
+          return;
+        } catch (settingsError) {
+          console.warn('Failed to load settings, using initial value:', settingsError);
+          setState(prev => ({
+            ...prev,
+            content: initialValue,
+            isLoading: false,
+          }));
+          return;
+        }
+      }
+
+      // For non-settings collections, use the standard approach
       try {
-        // Load from server - get the item directly using DirectusServiceExtension
         const item = await DirectusServiceExtension.getCollectionItemSafe(collection, itemId);
         const serverContent = item && field in item ? String(item[field] || '') : initialValue;
-        
         
         setState(prev => ({
           ...prev,
@@ -77,6 +101,14 @@ export const usePersistentContent = ({
 
     try {
       console.log('🔄 Attempting save:', { collection, itemId, field, content });
+      
+      // Special handling for settings collection
+      if (collection === 'settings') {
+        // For settings, we don't support direct editing through this hook
+        // as settings should be managed through the Directus admin panel
+        console.warn('Direct editing of settings is not supported through this interface');
+        return;
+      }
       
       let result;
       

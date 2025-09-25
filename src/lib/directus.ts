@@ -17,9 +17,13 @@ interface DirectusHeaderMenu {
   id: string;
   title?: string;
   link?: string;
+  status?: 'draft' | 'published' | 'archived';
+  sort?: number;
   sub_menu?: Array<{
     title: string;
     link: string;
+    status?: 'draft' | 'published' | 'archived';
+    target?: string;
   }>;
 }
 

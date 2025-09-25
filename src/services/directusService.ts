@@ -479,21 +479,50 @@ export class DirectusService {
       return fallback;
     }
   }
-  static async getSettingsItem() {
+  static async getSettingsItem(): Promise<{
+    site_title: string;
+    site_description: string;
+    [key: string]: any;
+  }> {
     try {
       await this.ensureAuthenticated();
-      console.log('🔍 Fetching settings...');
       
+      // Define the Directus settings type
+      type DirectusSettings = {
+        project_name?: string;
+        project_descriptor?: string;
+        [key: string]: any;
+      };
+
+      // Use the correct client based on context
+      const client = this.isInDirectusEditor && this.editorDirectusClient 
+        ? this.editorDirectusClient 
+        : directus;
+      
+      // Try to get system settings from Directus
       try {
-        // First try the singleton endpoint
-        const settings = await directus.request(readSingleton('settings'));
-        console.log('✅ Fetched settings via singleton');
-        return settings;
-      } catch (singletonError) {
-        console.log('⚠️ Singleton fetch failed, trying regular endpoint');
-        // Fallback to regular items endpoint
-        const { data } = await directus.request(readItems('settings', { limit: 1 }));
-        return data?.[0] || null;
+        const response = await client.request<DirectusSettings>(
+          // @ts-ignore - The SDK types might not include this directly
+          client.url.pathname('/settings').method('GET')
+        );
+        
+        // Return combined settings with defaults
+        return {  
+          site_title: response?.project_name || 'Keyprog',
+          site_description: response?.project_descriptor || 'Soluções Automóveis',
+          // Include all other settings from the response
+          ...(response || {})
+        };
+      } catch (settingsError) {
+        console.warn('Failed to fetch system settings, using defaults:', settingsError);
+        
+        // Fallback to default values if settings can't be fetched
+        return {
+          site_title: 'Keyprog',
+          site_description: 'Soluções Automóveis',
+          project_name: 'Keyprog',
+          project_descriptor: 'Soluções Automóveis'
+        };
       }
     } catch (error) {
       console.error('❌ Error in getSettingsItem:', {
@@ -501,6 +530,14 @@ export class DirectusService {
         status: error?.response?.status,
         data: error?.data
       });
+      
+      // Return default values in case of any error
+      return {
+        site_title: 'Keyprog',
+        site_description: 'Soluções Automóveis',
+        project_name: 'Keyprog',
+        project_descriptor: 'Soluções Automóveis'
+      };
       return null;
     }
   }
@@ -763,24 +800,36 @@ export class DirectusService {
         ? this.editorDirectusClient 
         : directus;
       
-      // Filter out archived menu items
-      const headerMenu = await client.request(readItems('header_menu', {
-        filter: {
-          status: { _neq: 'archived' }
-        },
-        sort: ['sort']
-      }));
-      
-      if (headerMenu && headerMenu.length > 0) {
-        return headerMenu
-          .filter(item => item.status !== 'archived')
-          .map(item => ({
+      // Try without sort first to avoid permission issues
+      try {
+        const headerMenu = await client.request(readItems('header_menu', {
+          filter: {
+            _or: [
+              { status: { _eq: 'published' } },
+              { status: { _null: true } } // Include items with no status
+            ]
+          }
+        }));
+        
+        if (headerMenu?.length) {
+          // Sort items by sort field if it exists, otherwise keep original order
+          const sortedMenu = [...headerMenu].sort((a, b) => {
+            const aSort = typeof a.sort === 'number' ? a.sort : 0;
+            const bSort = typeof b.sort === 'number' ? b.sort : 0;
+            return aSort - bSort;
+          });
+          
+          return sortedMenu.map(item => ({
             ...item,
             sub_menu: this.normalizeSubMenu(item.sub_menu)
           }));
+        }
+        
+        return [];
+      } catch (error) {
+        console.error('Error fetching header menu:', error);
+        return [];
       }
-      
-      return [];
     } catch (error) {
       console.error('Failed to fetch header menu from Directus:', error);
       return [];
@@ -828,7 +877,12 @@ export class DirectusService {
   }
 
   // Helper function to normalize sub_menu data from Directus JSON field
-  private static normalizeSubMenu(subMenu: unknown): Array<{title: string, link: string, status?: string, target?: string}> | undefined {
+  private static normalizeSubMenu(subMenu: unknown): Array<{
+    title: string;
+    link: string;
+    status?: 'draft' | 'published' | 'archived';
+    target?: string;
+  }> | undefined {
     if (!subMenu) return undefined;
     
     // If it's already an array (from JSON field), filter out archived items
@@ -840,7 +894,12 @@ export class DirectusService {
         }
         // Filter out archived items
         return item.status !== 'archived';
-      }) as Array<{title: string, link: string, status?: string, target?: string}>;
+      }) as Array<{
+        title: string;
+        link: string;
+        status?: 'draft' | 'published' | 'archived';
+        target?: string;
+      }>;
     }
     
     return undefined;
