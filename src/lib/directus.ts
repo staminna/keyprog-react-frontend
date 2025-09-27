@@ -188,7 +188,7 @@ const getDirectusURL = () => {
     return import.meta.env.VITE_DIRECTUS_URL_BROWSER || import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
   } else {
     // In development server-side, use container name
-    return import.meta.env.VITE_DIRECTUS_URL || 'http://keyprog:8055';
+    return import.meta.env.VITE_DIRECTUS_URL || 'http://keyprog:8065';
   }
 };
 
