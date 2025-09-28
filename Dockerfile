@@ -14,7 +14,7 @@ ENV PATH="/root/.bun/bin:$PATH"
 COPY package.json bun.lockb ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy the rest of the application
 COPY . .

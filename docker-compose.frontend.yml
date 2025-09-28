@@ -1,0 +1,17 @@
+services:
+  react-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keyprog-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_DIRECTUS_URL: http://localhost:8065
+    networks:
+      - keyprog-app-network
+
+networks:
+  keyprog-app-network:
+    external: true
