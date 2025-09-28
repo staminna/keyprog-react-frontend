@@ -442,40 +442,65 @@ export class DirectusService {
 
   private static async safeRequest<T>(requestFn: () => Promise<T>, fallback: T): Promise<T> {
     try {
-      await this.ensureAuthenticated();
-      
-      // If in Directus Editor with parent token, use the editor client for requests
-      if (this.isInDirectusEditor && this.editorDirectusClient && this.parentToken) {
-        // Use debug level to reduce console noise
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('🎯 Using editor Directus client with inherited token');
+      // First try with authentication if possible
+      try {
+        await this.ensureAuthenticated();
+        
+        // If in Directus Editor with parent token, use the editor client for requests
+        if (this.isInDirectusEditor && this.editorDirectusClient && this.parentToken) {
+          // Use debug level to reduce console noise
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('🎯 Using editor Directus client with inherited token');
+          }
         }
+        
+        return await requestFn();
+      } catch (authError) {
+        // Authentication error - public collections should still work without auth
+        // When in Visual Editor, use fallback to public access
+        if (this.isInDirectusEditor) {
+          console.log('📣 Using public access for collection in Visual Editor');
+          try {
+            // Try without authentication - relies on PUBLIC_READ being configured correctly
+            return await requestFn();
+          } catch (publicError) {
+            // Public access also failed, use fallback
+            const parsedError = parseDirectusError(publicError);
+            logDirectusError(parsedError, 'safeRequest:publicAccess');
+            return fallback;
+          }
+        }
+        
+        // Not in Visual Editor, handle authentication error
+        const parsedError = parseDirectusError(authError);
+        logDirectusError(parsedError, 'safeRequest:auth');
+        
+        // If it's a 403, try to re-authenticate once as the token might be expired
+        if (parsedError.statusCode === 403 && !(authError as { isRetry?: boolean })?.isRetry) {
+          // Use info level to reduce console noise
+          console.info('403 error - token might be expired, re-authenticating...');
+          this.isAuthenticated = false;
+          try {
+            await this.ensureAuthenticated();
+            const retryError = new Error('Retry attempt') as Error & { isRetry: boolean };
+            retryError.isRetry = true;
+            return await requestFn();
+          } catch (retryError) {
+            const parsedRetryError = parseDirectusError(retryError);
+            logDirectusError(parsedRetryError, 'safeRequest:retry');
+            return fallback;
+          }
+        }
+        
+        // For all other errors, use fallback
+        return fallback;
       }
-      
-      return await requestFn();
     } catch (error: unknown) {
       // Parse and log the error properly
       const parsedError = parseDirectusError(error);
       logDirectusError(parsedError, 'safeRequest');
       
-      // If it's a 403, try to re-authenticate once as the token might be expired
-      if (parsedError.statusCode === 403 && !(error as { isRetry?: boolean })?.isRetry) {
-        // Use info level to reduce console noise
-        console.info('403 error - token might be expired, re-authenticating...');
-        this.isAuthenticated = false;
-        try {
-          await this.ensureAuthenticated();
-          const retryError = new Error('Retry attempt') as Error & { isRetry: boolean };
-          retryError.isRetry = true;
-          return await requestFn();
-        } catch (retryError) {
-          const parsedRetryError = parseDirectusError(retryError);
-          logDirectusError(parsedRetryError, 'safeRequest:retry');
-          return fallback;
-        }
-      }
-      
-      // For all other errors, use fallback
+      // Return fallback for any unexpected errors
       return fallback;
     }
   }
