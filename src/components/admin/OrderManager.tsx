@@ -13,14 +13,38 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
+const isOrderRecord = (item: unknown): item is Order => {
+  if (!item || typeof item !== 'object') return false;
+
+  const record = item as Record<string, unknown>;
+  const requiredStringFields = ['id', 'order_number', 'customer_id', 'customer_email', 'customer_name', 'status', 'currency', 'payment_status', 'created_at', 'updated_at'] as const;
+
+  for (const field of requiredStringFields) {
+    if (typeof record[field] !== 'string') {
+      return false;
+    }
+  }
+
+  if (typeof record['total_amount'] !== 'number') {
+    return false;
+  }
+
+  const items = record['items'];
+  if (!Array.isArray(items)) {
+    return false;
+  }
+
+  return true;
+};
+
 export default function OrderManager() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filters, setFilters] = useState({
-    status: '',
-    customer: '',
+    status: 'all',
+    customer: 'all',
     dateFrom: '',
     dateTo: ''
   });
@@ -30,12 +54,22 @@ export default function OrderManager() {
   useOrderUpdates((event) => {
     switch (event.type) {
       case 'create':
-        setOrders(prev => [event.item, ...prev]);
-        toast.success('Nova encomenda recebida');
+        if (isOrderRecord(event.item)) {
+          const order = event.item;
+          setOrders(prev => [order, ...prev]);
+          toast.success('Nova encomenda recebida');
+        } else {
+          console.warn('Received invalid order data for create event', event);
+        }
         break;
       case 'update':
-        setOrders(prev => prev.map(o => o.id === event.item.id ? event.item : o));
-        toast.info('Encomenda atualizada');
+        if (isOrderRecord(event.item)) {
+          const order = event.item;
+          setOrders(prev => prev.map(o => o.id === order.id ? order : o));
+          toast.info('Encomenda atualizada');
+        } else {
+          console.warn('Received invalid order data for update event', event);
+        }
         break;
       case 'delete':
         setOrders(prev => prev.filter(o => o.id !== event.key));
@@ -132,8 +166,8 @@ export default function OrderManager() {
   };
 
   const filteredOrders = orders.filter(order => {
-    if (filters.status && order.status !== filters.status) return false;
-    if (filters.customer && order.customer_id !== filters.customer) return false;
+    if (filters.status !== 'all' && order.status !== filters.status) return false;
+    if (filters.customer !== 'all' && order.customer_id !== filters.customer) return false;
     if (searchQuery && !order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !order.customer_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
@@ -197,7 +231,7 @@ export default function OrderManager() {
                       <SelectValue placeholder="Todos os estados" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os estados</SelectItem>
+                      <SelectItem value="all">Todos os estados</SelectItem>
                       <SelectItem value="pending">Pendente</SelectItem>
                       <SelectItem value="processing">A processar</SelectItem>
                       <SelectItem value="shipped">Enviado</SelectItem>
@@ -213,7 +247,7 @@ export default function OrderManager() {
                       <SelectValue placeholder="Todos os clientes" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os clientes</SelectItem>
+                      <SelectItem value="all">Todos os clientes</SelectItem>
                       {customers.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.first_name} {customer.last_name}
@@ -225,7 +259,7 @@ export default function OrderManager() {
                 <div className="flex items-end">
                   <Button 
                     variant="outline" 
-                    onClick={() => setFilters({ status: '', customer: '', dateFrom: '', dateTo: '' })}
+                    onClick={() => setFilters({ status: 'all', customer: 'all', dateFrom: '', dateTo: '' })}
                     className="w-full"
                   >
                     <Filter className="h-4 w-4 mr-2" />
