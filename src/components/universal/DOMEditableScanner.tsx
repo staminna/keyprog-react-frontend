@@ -88,9 +88,10 @@ export const DOMEditableScanner: React.FC = () => {
       
       // Process each text node
       const textNodes: Node[] = [];
-      let currentNode: Node | null;
-      while (currentNode = walker.nextNode()) {
+      let currentNode: Node | null = walker.nextNode();
+      while (currentNode) {
         textNodes.push(currentNode);
+        currentNode = walker.nextNode();
       }
       
       // Make each text node editable
