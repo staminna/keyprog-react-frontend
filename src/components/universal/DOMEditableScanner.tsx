@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import useRouteContent from '@/hooks/useRouteContent';
 import { DirectusService } from '@/services/directusService';

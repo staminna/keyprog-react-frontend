@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { UniversalContentEditor } from './UniversalContentEditor';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 
 interface UniversalEditableContentProps {
   children?: ReactNode;

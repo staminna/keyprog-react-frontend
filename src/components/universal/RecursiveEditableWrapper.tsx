@@ -1,6 +1,6 @@
 import React from 'react';
 import { EditableTextNode } from './EditableTextNode';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
 interface RecursiveEditableWrapperProps {

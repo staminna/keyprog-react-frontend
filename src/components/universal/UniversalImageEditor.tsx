@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
+import { useInlineEditor } from '@/components/universal/inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import useRolePermissions from '@/hooks/useRolePermissions';
 import { UploadService } from '@/services/uploadService';

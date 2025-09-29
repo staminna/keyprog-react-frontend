@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import { Pencil, Eye, Save, X, RefreshCw } from 'lucide-react';
 import './editable.css';

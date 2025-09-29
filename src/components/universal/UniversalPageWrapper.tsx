@@ -1,5 +1,5 @@
 import React, { ReactNode, ReactElement, cloneElement, isValidElement } from 'react';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { UniversalEditableContent } from './UniversalEditableContent';
 

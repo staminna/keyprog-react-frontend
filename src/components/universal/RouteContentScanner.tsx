@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DirectusService } from '@/services/directusService';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import { DOMEditableScanner } from './DOMEditableScanner';
 
 interface RouteMapping {

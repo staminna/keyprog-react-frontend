@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { useRemirrorEditorContext } from './RemirrorEditorProvider';
+import { useRemirrorEditorContext } from './remirror-editor-context';
 import { 
   Edit, 
   Eye, 
