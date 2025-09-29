@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   createDirectus, 
   rest, 
@@ -37,6 +37,11 @@ export function useItems<T extends CollectionName>(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Memoize the query object to avoid unnecessary re-renders
+  const queryString = useMemo(() => {
+    return query ? JSON.stringify(query) : '';
+  }, [query]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,7 +59,7 @@ export function useItems<T extends CollectionName>(
     };
 
     fetchData();
-  }, [collection, JSON.stringify(query)]);
+  }, [collection, queryString, query]);
 
   return { data, isLoading, error };
 }

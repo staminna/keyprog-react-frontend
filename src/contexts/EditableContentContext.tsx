@@ -1,17 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { useState } from 'react';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
-interface EditableContentContextType {
-  isEditMode: boolean;
-  toggleEditMode: () => void;
-  canEdit: boolean;
-}
-
-const EditableContentContext = createContext<EditableContentContextType | undefined>(undefined);
-
-interface EditableContentProviderProps {
-  children: ReactNode;
-}
+import {
+  EditableContentContext,
+  type EditableContentContextType,
+  type EditableContentProviderProps,
+} from './editable-content-utils';
 
 export const EditableContentProvider: React.FC<EditableContentProviderProps> = ({ children }) => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -31,11 +25,4 @@ export const EditableContentProvider: React.FC<EditableContentProviderProps> = (
   );
 };
 
-export const useEditableContent = (): EditableContentContextType => {
-  const context = useContext(EditableContentContext);
-  if (context === undefined) {
-    throw new Error('useEditableContent must be used within an EditableContentProvider');
-  }
-  return context;
-};
 

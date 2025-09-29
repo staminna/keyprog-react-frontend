@@ -18,17 +18,18 @@ export class FileService {
       );
 
       // 2. Trigger a Directus Flow to send an email
-      await directus.request(
-        ('flows/trigger/your_flow_id_here' as any), {
-          method: 'POST',
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email,
-            message: data.message,
-            fileId: uploadedFile.id,
-          }),
-        }
-      );
+      await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/flows/trigger/your_flow_id_here`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          message: data.message,
+          fileId: uploadedFile.id,
+        }),
+      });
 
     } catch (error) {
       console.error('File service request failed:', error);

@@ -1,34 +1,13 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-interface EditingState {
-  [key: string]: boolean; // collection:itemId:field -> isEditing
-}
-
-interface InlineEditContextType {
-  editingState: EditingState;
-  setEditing: (key: string, isEditing: boolean) => void;
-  isAnyEditing: boolean;
-  showEditMode: boolean;
-  toggleEditMode: () => void;
-  saveAll: () => Promise<void>;
-  revertAll: () => void;
-}
-
-const InlineEditContext = createContext<InlineEditContextType | undefined>(undefined);
-
-export const useInlineEditContext = () => {
-  const context = useContext(InlineEditContext);
-  if (!context) {
-    throw new Error('useInlineEditContext must be used within InlineEditProvider');
-  }
-  return context;
-};
-
-interface InlineEditProviderProps {
-  children: React.ReactNode;
-  initialEditMode?: boolean;
-}
+import {
+  InlineEditContext,
+  useInlineEditContext,
+  type InlineEditProviderProps,
+  type EditingState,
+  type InlineEditContextType,
+} from './inline-edit-context';
 
 export const InlineEditProvider: React.FC<InlineEditProviderProps> = ({
   children,

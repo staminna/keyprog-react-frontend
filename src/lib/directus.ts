@@ -150,6 +150,7 @@ interface DirectusSchema {
   customers: DirectusCustomer[];
   order_items: DirectusOrderItem[];
   contact_info: DirectusContactInfo;
+  sub_menu_content: DirectusSubMenuContent[];
 }
 
 export interface DirectusProduct {

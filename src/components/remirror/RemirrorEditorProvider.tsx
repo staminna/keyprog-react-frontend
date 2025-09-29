@@ -1,37 +1,12 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-interface EditingState {
-  [key: string]: boolean; // collection:itemId:field -> isEditing
-}
-
-interface RemirrorEditorContextType {
-  isAnyEditing: boolean;
-  showEditMode: boolean;
-  setShowEditMode: (show: boolean) => void;
-  editingState: EditingState;
-  setEditing: (key: string, isEditing: boolean) => void;
-  saveAll: () => void;
-  revertAll: () => void;
-  pendingChanges: Record<string, unknown>;
-  setPendingChange: (key: string, value: unknown) => void;
-  clearPendingChange: (key: string) => void;
-}
-
-const RemirrorEditorContext = createContext<RemirrorEditorContextType | undefined>(undefined);
-
-export const useRemirrorEditorContext = () => {
-  const context = useContext(RemirrorEditorContext);
-  if (!context) {
-    throw new Error('useRemirrorEditorContext must be used within RemirrorEditorProvider');
-  }
-  return context;
-};
-
-interface RemirrorEditorProviderProps {
-  children: React.ReactNode;
-  initialEditMode?: boolean;
-}
+import {
+  RemirrorEditorContext,
+  type RemirrorEditorContextType,
+  type RemirrorEditorProviderProps,
+  type EditingState,
+} from './remirror-editor-context';
 
 export const RemirrorEditorProvider: React.FC<RemirrorEditorProviderProps> = ({
   children,

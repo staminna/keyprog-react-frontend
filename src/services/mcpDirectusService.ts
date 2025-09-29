@@ -1,4 +1,18 @@
 import { mcp0_add_roots, mcp0_analyze_collection_schema, mcp0_create_collection, mcp0_create_field, mcp0_create_relationship, mcp0_get_collection_schema, mcp0_list_collections } from '@/mcp-tools';
+import { DirectusRelationship } from '@/lib/directus-types';
+
+// Define types needed for this service
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type FieldData = { type: string; interface?: string; required?: boolean };
+
+// Define EditableField interface outside the class for better structure
+interface EditableField {
+  name: string;
+  type: string;
+  interface?: string;
+  required?: boolean;
+  collection: string;
+}
 
 /**
  * Service for interacting with Directus via MCP server
@@ -8,7 +22,7 @@ export class MCPDirectusService {
   /**
    * Initialize the MCP service with the project root
    */
-  static async initialize() {
+  static async initialize(): Promise<boolean> {
     try {
       await mcp0_add_roots({
         roots: [
@@ -29,12 +43,20 @@ export class MCPDirectusService {
   /**
    * Get all collections from Directus
    */
-  static async getCollections(includeSystem = false) {
+  static async getCollections(includeSystem = false): Promise<string[]> {
     try {
       const result = await mcp0_list_collections({
         include_system: includeSystem
       });
-      return result.data || [];
+      
+      // Safely cast the JsonValue result to our expected structure
+      if (result && typeof result === 'object' && !Array.isArray(result) && 'data' in result) {
+        const data = result.data;
+        if (Array.isArray(data)) {
+          return data.map(item => String(item));
+        }
+      }
+      return [];
     } catch (error) {
       console.error('Failed to get collections:', error);
       return [];
@@ -44,12 +66,12 @@ export class MCPDirectusService {
   /**
    * Get schema for a specific collection
    */
-  static async getCollectionSchema(collection: string) {
+  static async getCollectionSchema(collection: string): Promise<Record<string, unknown> | null> {
     try {
       const result = await mcp0_get_collection_schema({
         collection
       });
-      return result;
+      return result as Record<string, unknown>;
     } catch (error) {
       console.error(`Failed to get schema for collection ${collection}:`, error);
       return null;
@@ -59,14 +81,14 @@ export class MCPDirectusService {
   /**
    * Analyze a collection schema to find editable fields
    */
-  static async analyzeCollection(collection: string) {
+  static async analyzeCollection(collection: string): Promise<Record<string, unknown> | null> {
     try {
       const result = await mcp0_analyze_collection_schema({
         collection,
         includeRelations: true,
         validateConstraints: true
       });
-      return result;
+      return result as Record<string, unknown>;
     } catch (error) {
       console.error(`Failed to analyze collection ${collection}:`, error);
       return null;
@@ -75,14 +97,24 @@ export class MCPDirectusService {
 
   /**
    * Create a new collection for editable content
+   * @param collection Collection name
+   * @param fields Array of field definitions
    */
-  static async createCollection(collection: string, fields: any[]) {
+  static async createCollection(
+    collection: string, 
+    fields: Array<{
+      field: string;
+      type: string;
+      [key: string]: string | number | boolean | null | undefined;
+    }>
+  ): Promise<Record<string, unknown> | null> {
     try {
       const result = await mcp0_create_collection({
         collection,
-        fields
+        // Type assertion to satisfy compiler
+        fields: fields as unknown as Array<Record<string, JsonValue>>
       });
-      return result;
+      return result as Record<string, unknown>;
     } catch (error) {
       console.error(`Failed to create collection ${collection}:`, error);
       return null;
@@ -92,7 +124,12 @@ export class MCPDirectusService {
   /**
    * Create a new field in a collection
    */
-  static async createField(collection: string, field: string, type: string, options: any = {}) {
+  static async createField(
+    collection: string, 
+    field: string, 
+    type: string, 
+    options: Record<string, string | number | boolean | null | undefined> = {}
+  ): Promise<Record<string, unknown> | null> {
     try {
       const result = await mcp0_create_field({
         collection,
@@ -100,7 +137,7 @@ export class MCPDirectusService {
         type,
         ...options
       });
-      return result;
+      return result as Record<string, unknown>;
     } catch (error) {
       console.error(`Failed to create field ${field} in collection ${collection}:`, error);
       return null;
@@ -110,10 +147,10 @@ export class MCPDirectusService {
   /**
    * Create a relationship between collections
    */
-  static async createRelationship(options: any) {
+  static async createRelationship(options: DirectusRelationship): Promise<Record<string, unknown> | null> {
     try {
       const result = await mcp0_create_relationship(options);
-      return result;
+      return result as Record<string, unknown>;
     } catch (error) {
       console.error('Failed to create relationship:', error);
       return null;
@@ -124,16 +161,23 @@ export class MCPDirectusService {
    * Get all editable fields for a collection
    * This is useful for automatically generating editable components
    */
-  static async getEditableFields(collection: string) {
+  static async getEditableFields(collection: string): Promise<EditableField[]> {
     try {
-      const schema = await this.getCollectionSchema(collection);
-      if (!schema) return [];
+      const schemaResult = await this.getCollectionSchema(collection);
+      if (!schemaResult) return [];
+      
+      // Extract fields safely with proper type assertion
+      const schema = schemaResult as { fields?: Record<string, FieldData> };
+      if (!schema.fields) return [];
       
       // Filter for fields that are typically editable
       const editableTypes = ['string', 'text', 'wysiwyg', 'markdown', 'integer', 'float', 'decimal', 'boolean'];
       
       return Object.entries(schema.fields)
-        .filter(([_, field]) => editableTypes.includes(field.type))
+        .filter(([_, field]) => 
+          field && typeof field === 'object' && 'type' in field && 
+          editableTypes.includes(field.type)
+        )
         .map(([name, field]) => ({
           name,
           type: field.type,
@@ -151,15 +195,15 @@ export class MCPDirectusService {
    * Scan all collections and create a mapping of editable fields
    * This is useful for automatically generating editable components for all routes
    */
-  static async scanAllCollections() {
+  static async scanAllCollections(): Promise<Record<string, EditableField[]>> {
     try {
       const collections = await this.getCollections();
-      const editableMapping = {};
+      const editableMapping: Record<string, EditableField[]> = {};
       
-      for (const collection of collections) {
-        const fields = await this.getEditableFields(collection.collection);
+      for (const collectionName of collections) {
+        const fields = await this.getEditableFields(collectionName);
         if (fields.length > 0) {
-          editableMapping[collection.collection] = fields;
+          editableMapping[collectionName] = fields;
         }
       }
       

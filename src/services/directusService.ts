@@ -1,4 +1,3 @@
-import { deleteItem } from '@directus/sdk';
 import { 
   directus, 
   sessionDirectus,
@@ -21,6 +20,7 @@ import {
   type DirectusSubMenuContent,
   type DirectusContactInfo
 } from '@/lib/directus';
+import { deleteItem as directusDeleteItem } from '@directus/sdk';
 
 import { parseDirectusError, logDirectusError, DirectusErrorType } from './directusErrorHandler';
 import type { User } from '@/types/auth';
@@ -436,7 +436,7 @@ export class DirectusService {
   static async getSettingsItem(): Promise<{
     site_title: string;
     site_description: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | null | undefined;
   }> {
     try {
       await this.ensureAuthenticated();
@@ -783,7 +783,8 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
-        readItems('sub_menu_content' as any, {
+        // @ts-expect-error - Using explicit sub_menu_content collection
+        readItems('sub_menu_content', {
           filter: { 
             category: { _eq: category },
             slug: { _eq: slug },
@@ -803,7 +804,8 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
-        readItems('sub_menu_content' as any, {
+        // @ts-expect-error - Using explicit sub_menu_content collection
+        readItems('sub_menu_content', {
           filter: { 
             category: { _eq: category },
             status: { _eq: 'published' }
@@ -858,7 +860,8 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const item = await directus.request(
-        readItem(collection as any, id)
+        // @ts-expect-error - Dynamic collection access
+        readItem(collection, id)
       );
       return item as Record<string, unknown>;
     } catch (error) {
@@ -900,7 +903,8 @@ export class DirectusService {
             }
             
             // Try as regular item
-            const contactInfo = await client.request(readItem('contact_info' as any, '1'));
+            // @ts-expect-error - Explicitly using contact_info collection
+            const contactInfo = await client.request(readItem('contact_info', '1'));
             return contactInfo as unknown as DirectusContactInfo;
           }
         } catch (error) {
@@ -917,7 +921,8 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const updatedItem = await directus.request(
-        updateItem(collection as any, id, data)
+        // @ts-expect-error - Dynamic collection access
+        updateItem(collection, id, data)
       );
       return updatedItem as Record<string, unknown>;
     } catch (error) {
@@ -930,7 +935,8 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const newItem = await directus.request(
-        createItem(collection as any, data)
+        // @ts-expect-error - Dynamic collection access
+        createItem(collection, data)
       );
       return newItem as Record<string, unknown>;
     } catch (error) {
@@ -943,7 +949,8 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       await directus.request(
-        deleteItem(collection as any, id)
+        // @ts-expect-error - Dynamic collection access
+        directusDeleteItem(collection, id)
       );
     } catch (error) {
       console.error(`Error deleting ${collection} item:`, error);

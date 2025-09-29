@@ -7,15 +7,3 @@ export {
   InlineImage,
   InlineSelect
 } from './components';
-
-// Export hook from separate file
-export { useInlineEdit } from './useInlineEdit';
-
-// Export types from separate file
-export type { 
-  InlineTextProps,
-  InlineRichTextProps,
-  InlineImageProps,
-  InlineSelectProps,
-  SelectOption 
-} from './types';

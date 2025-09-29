@@ -1,25 +1,13 @@
-import React, { useState, useCallback, useContext, createContext, ReactNode } from 'react';
+import React, { useState, useCallback } from 'react';
 
-interface GlobalEditingState {
-  editingSessions: Set<string>;
-  updatingSessions: Set<string>;
-  isAnyEditing: boolean;
-  isAnyUpdating: boolean;
-}
+import {
+  GlobalEditingContext,
+  type GlobalEditingState,
+  type GlobalEditingContextType,
+  type GlobalEditingProviderProps,
+} from './global-editing-utils';
 
-interface GlobalEditingContextType {
-  state: GlobalEditingState;
-  startEditing: (sessionId: string) => void;
-  stopEditing: (sessionId: string) => void;
-  startUpdating: (sessionId: string) => void;
-  stopUpdating: (sessionId: string) => void;
-  isEditing: (sessionId: string) => boolean;
-  isUpdating: (sessionId: string) => boolean;
-}
-
-const GlobalEditingContext = createContext<GlobalEditingContextType | null>(null);
-
-export const GlobalEditingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const GlobalEditingProvider: React.FC<GlobalEditingProviderProps> = ({ children }) => {
   const [state, setState] = useState<GlobalEditingState>({
     editingSessions: new Set(),
     updatingSessions: new Set(),
@@ -100,12 +88,3 @@ export const GlobalEditingProvider: React.FC<{ children: ReactNode }> = ({ child
   );
 };
 
-export const useGlobalEditingState = () => {
-  const context = useContext(GlobalEditingContext);
-  if (!context) {
-    throw new Error('useGlobalEditingState must be used within a GlobalEditingProvider');
-  }
-  return context;
-};
-
-export default useGlobalEditingState;
