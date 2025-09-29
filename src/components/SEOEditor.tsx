@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, X } from 'lucide-react';
 import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
-import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
+import { useInlineEditor } from '@/components/universal/inline-editor-context';
 
 interface SEOEditorProps {
   collection?: string;

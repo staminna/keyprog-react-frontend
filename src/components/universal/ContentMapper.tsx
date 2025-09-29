@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { UniversalContentEditor } from './UniversalContentEditor';
 import { DirectusService } from '@/services/directusService';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
 interface ContentMapperProps {

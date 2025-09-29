@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
-import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
+import { useInlineEditor } from '@/components/universal/inline-editor-context';
 
 interface EditableSEOHeadProps {
   collection?: string;

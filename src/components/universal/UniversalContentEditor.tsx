@@ -5,8 +5,8 @@ import { formatContentForDisplay } from '@/utils/contentParserV2';
 import { DirectusServiceExtension } from '@/services/directusServiceExtension';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import useRolePermissions from '@/hooks/useRolePermissions';
-import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
-import { useGlobalEditingState } from '@/hooks/useGlobalEditingState.tsx';
+import { useInlineEditor } from '@/components/universal/inline-editor-context';
+import { useGlobalEditingState } from '@/hooks/global-editing-utils';
 import { usePersistentContent } from '@/hooks/usePersistentContent';
 import { Edit3, Check, X, Loader2, RefreshCw } from 'lucide-react';
 

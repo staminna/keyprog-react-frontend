@@ -17,7 +17,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState, useEffect } from "react";
 import { DirectusService } from "@/services/directusService";
 import type { DirectusHeaderMenu } from "@/lib/directus";
-import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
+import { useInlineEditor } from '@/components/universal/inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
 const menuLinkClasses = "text-sm";

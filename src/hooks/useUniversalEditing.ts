@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useRolePermissions } from './useRolePermissions';
-import { useInlineEditor } from '@/components/universal/InlineEditorProvider';
+import { useInlineEditor } from '@/components/universal/inline-editor-context';
 
 interface EditableContentConfig {
   collection: string;

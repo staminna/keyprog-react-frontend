@@ -1,6 +1,6 @@
 import React from 'react';
 import { UniversalContentEditor } from './UniversalContentEditor';
-import { useInlineEditor } from './InlineEditorProvider';
+import { useInlineEditor } from './inline-editor-context';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 
 interface AutoEditableContentProps {

@@ -1,6 +1,7 @@
 // Export all universal components
 export * from './UniversalContentEditor';
 export * from './InlineEditorProvider';
+export * from './inline-editor-context';
 export * from './ContentMapper';
 export * from './AutoEditableContent';
 export * from './RouteContentScanner';
