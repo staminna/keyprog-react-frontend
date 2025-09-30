@@ -109,16 +109,8 @@ export class DirectusService {
       this.isInDirectusEditor = editorContext.isEditor;
 
       if (this.isInDirectusEditor) {
-        console.log('🎯 Detected Directus Visual Editor - attempting to inherit authentication');
-
-        if (editorContext.token) {
-          this.parentToken = editorContext.token;
-          this.editorDirectusClient = createEditorDirectus(editorContext.token);
-          this.isAuthenticated = true;
-          return true;
-        }
-
-        console.warn('⚠️ Directus Visual Editor detected but no parent token available. Falling back to environment credentials.');
+        // In Visual Editor but no parent token - this is normal when embedded cross-origin
+        // Fall through to use environment credentials which work fine
         this.parentToken = null;
         this.editorDirectusClient = null;
         this.isAuthenticated = false;
@@ -292,22 +284,22 @@ export class DirectusService {
   }
   
   // Get current user information
-  static async getCurrentUser(): Promise<User | null> {
+  static async getCurrentUser(options?: { token?: string }): Promise<User | null> {
     try {
-      // If in Directus Editor, return a placeholder user
-      if (this.isInDirectusEditor) {
-        return { email: 'directus-editor-user', authenticated: true };
+      // Prefer explicit override token (e.g., passed from Directus Visual Editor)
+      const tokenOverride = options?.token;
+      if (tokenOverride) {
+        this.parentToken = tokenOverride;
       }
-      
-      // Check if we have a token
-      const token = await sessionDirectus.getToken();
+
+      const token = tokenOverride || this.parentToken || await sessionDirectus.getToken();
       if (!token) {
         return null;
       }
       
       // Get user info using fetch to avoid SDK typing issues
       try {
-        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=email,first_name,last_name`, {
+        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=id,email,first_name,last_name,role.id,role.name`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -320,9 +312,12 @@ export class DirectusService {
         const result = await response.json();
         if (result && result.data) {
           return {
+            id: result.data.id,
             email: result.data.email,
             firstName: result.data.first_name,
             lastName: result.data.last_name,
+            role: result.data.role?.name,
+            roleId: result.data.role?.id,
             authenticated: true
           };
         }
@@ -451,9 +446,6 @@ export class DirectusService {
 
       try {
         // For now, just return default settings to avoid API issues
-        // TODO: Implement proper settings fetch when Directus settings are configured
-        console.log('📋 Using default settings (settings API temporarily disabled)');
-        
         return defaultSettings;
       } catch (settingsError) {
         console.warn('Failed to fetch system settings, using defaults:', settingsError);
@@ -783,8 +775,7 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
-        // @ts-expect-error - Using explicit sub_menu_content collection
-        readItems('sub_menu_content', {
+        readItems('sub_menu_content' as const, {
           filter: { 
             category: { _eq: category },
             slug: { _eq: slug },
@@ -804,8 +795,7 @@ export class DirectusService {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
-        // @ts-expect-error - Using explicit sub_menu_content collection
-        readItems('sub_menu_content', {
+        readItems('sub_menu_content' as const, {
           filter: { 
             category: { _eq: category },
             status: { _eq: 'published' }
@@ -954,6 +944,33 @@ export class DirectusService {
       );
     } catch (error) {
       console.error(`Error deleting ${collection} item:`, error);
+      throw error;
+    }
+  }
+
+  // Create new user (for registration)
+  static async createUser(userData: Record<string, unknown>): Promise<User> {
+    try {
+      // Use admin token for user creation
+      const adminToken = import.meta.env.VITE_DIRECTUS_TOKEN;
+      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errors?.[0]?.message || 'Failed to create user');
+      }
+
+      const result = await response.json();
+      return result.data as User;
+    } catch (error) {
+      console.error('Error creating user:', error);
       throw error;
     }
   }

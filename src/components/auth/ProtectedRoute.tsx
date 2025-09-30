@@ -1,49 +1,96 @@
-import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import LoginForm from '@/components/auth/LoginForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Shield } from 'lucide-react';
+import { ReactNode, useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { DirectusService } from '@/services/directusService';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+  children: ReactNode;
+  requiredRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallback }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+export const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) => {
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const location = useLocation();
 
-  if (isLoading) {
+  useEffect(() => {
+    checkAuthorization();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const checkAuthorization = async () => {
+    try {
+      // Check if user is authenticated
+      const user = await DirectusService.getCurrentUser();
+      
+      if (!user) {
+        setIsAuthorized(false);
+        setIsChecking(false);
+        return;
+      }
+
+      // Get user's role ID
+      const userRoleId = user?.roleId || user?.role;
+      const userRoleName = user?.role;
+      
+      // SECURITY: Explicitly block Cliente role from accessing protected routes
+      const clienteRoleId = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
+      if (userRoleId === clienteRoleId) {
+        setIsAuthorized(false);
+        setIsChecking(false);
+        return;
+      }
+
+      // If no specific roles required, just check authentication (but Cliente is still blocked)
+      if (requiredRoles.length === 0) {
+        setIsAuthorized(true);
+        setIsChecking(false);
+        return;
+      }
+
+      // Check if user has required role
+      const hasRequiredRole = requiredRoles.some(role => {
+        // Match by UUID (role ID)
+        if (userRoleId === role) return true;
+        
+        // Match by role name (case-insensitive)
+        if (userRoleName?.toLowerCase() === role.toLowerCase()) return true;
+        
+        // Match common role names
+        if (role.toLowerCase() === 'admin' || role.toLowerCase() === 'administrator') {
+          return userRoleName?.toLowerCase().includes('admin');
+        }
+        
+        if (role.toLowerCase() === 'editor' || role.toLowerCase() === 'editor-user') {
+          return userRoleName?.toLowerCase().includes('editor');
+        }
+        
+        return false;
+      });
+
+      setIsAuthorized(hasRequiredRole);
+    } catch (error) {
+      console.error('Authorization check failed:', error);
+      setIsAuthorized(false);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-sm text-muted-foreground">Verificando autenticação...</p>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Checking authorization...</p>
+        </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Shield className="h-12 w-12 text-primary" />
-            </div>
-            <CardTitle className="text-xl">Acesso Restrito</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Esta área requer autenticação com o Directus CMS
-            </p>
-          </CardHeader>
-          <CardContent>
-            <LoginForm />
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!isAuthorized) {
+    // Redirect to login page or home with return URL
+    return <Navigate to={`/login?return=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   return <>{children}</>;

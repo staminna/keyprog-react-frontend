@@ -214,16 +214,16 @@ export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
       return { 
         ...options, 
         timeout: 10000,
-        // Fix CORS issue by using 'same-origin' instead of 'include'
-        credentials: 'same-origin'
+        // Enable cross-origin cookies for Directus session
+        credentials: 'include'
       };
     }
   }))
   .with(STATIC_TOKEN && STATIC_TOKEN.trim() 
     ? staticToken(STATIC_TOKEN)
     : authentication('json', {
-        // Fix CORS issue by using 'same-origin' instead of 'include'
-        credentials: 'same-origin',
+        // Enable cross-origin cookies for Directus session
+        credentials: 'include',
         autoRefresh: true,
         msRefreshBeforeExpires: 30000
       })
@@ -236,14 +236,14 @@ export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
       return { 
         ...options, 
         timeout: 10000,
-        // Fix CORS issue by using 'same-origin' instead of 'include'
-        credentials: 'same-origin'
+        // Enable cross-origin cookies for Directus session
+        credentials: 'include'
       };
     }
   }))
   .with(authentication('json', {
-    // Fix CORS issue by using 'same-origin' instead of 'include'
-    credentials: 'same-origin',
+    // Enable cross-origin cookies for Directus session
+    credentials: 'include',
     autoRefresh: true,
     msRefreshBeforeExpires: 30000
   }));
@@ -257,8 +257,8 @@ export const createEditorDirectus = (token: string) => {
         return { 
           ...options, 
           timeout: 10000,
-          // Fix CORS issue by using 'same-origin' instead of 'include'
-          credentials: 'same-origin',
+          // Enable cross-origin cookies for Directus session
+          credentials: 'include',
           headers: {
             ...options.headers,
             Authorization: `Bearer ${token}`

@@ -1,167 +1,115 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DirectusService } from '@/services/directusService';
+import { sessionDirectus } from '@/lib/directus';
 
-export type UserRole = 'admin' | 'editor' | 'author' | 'viewer' | 'public';
-
-export interface ContentPermission {
-  collection: string;
-  field?: string;
-  allowedRoles: UserRole[];
-}
-
-/**
- * Default permissions configuration
- * This defines which roles can edit which collections and fields
- */
-const DEFAULT_PERMISSIONS: ContentPermission[] = [
-  // Admin can edit everything
-  { collection: '*', allowedRoles: ['admin'] },
-  
-  // Editors can edit most content
-  { collection: 'settings', allowedRoles: ['admin', 'editor'] },
-  { collection: 'pages', allowedRoles: ['admin', 'editor'] },
-  { collection: 'services', allowedRoles: ['admin', 'editor'] },
-  
-  // Authors can edit specific content
-  { collection: 'blog_posts', allowedRoles: ['admin', 'editor', 'author'] },
-  { collection: 'news', allowedRoles: ['admin', 'editor', 'author'] },
-  
-  // Field-level permissions
-  { collection: 'settings', field: 'site_title', allowedRoles: ['admin'] },
-  { collection: 'settings', field: 'site_description', allowedRoles: ['admin', 'editor'] },
-  
-  // Virtual collection permissions (mapped to settings)
-  { collection: 'hero', allowedRoles: ['admin', 'editor'] },
-  { collection: 'contact_info', allowedRoles: ['admin', 'editor'] },
-];
-
-/**
- * Hook for managing role-based permissions
- * This hook provides functions to check if a user has permission to edit specific content
- */
 export const useRolePermissions = () => {
-  const [userRole, setUserRole] = useState<UserRole>('public');
-  const [permissions, setPermissions] = useState<ContentPermission[]>(DEFAULT_PERMISSIONS);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRoleId, setUserRoleId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Fetch user role from Directus
   useEffect(() => {
-    const fetchUserRole = async () => {
+    async function checkAuth() {
       try {
-        setIsLoading(true);
-        const user = await DirectusService.getCurrentUser();
+        // First check if we have a session token
+        const token = await sessionDirectus.getToken();
+        console.log('🔑 useRolePermissions: Session token exists:', !!token);
         
-        if (!user) {
-          setUserRole('public');
+        if (!token) {
+          console.log('❌ useRolePermissions: No session token found');
+          setIsAuthenticated(false);
+          setUserRole(null);
+          setUserRoleId(null);
+          setIsLoading(false);
           return;
         }
         
-        // Map user to role based on Directus role
-        // This is a simplified example - you would need to adapt this to your Directus roles
-        if (user.email?.includes('admin')) {
-          setUserRole('admin');
-        } else if (user.email?.includes('editor')) {
-          setUserRole('editor');
-        } else if (user.email?.includes('author')) {
-          setUserRole('author');
-        } else if (user.authenticated) {
-          setUserRole('viewer');
-        } else {
-          setUserRole('public');
+        // Verify token is valid
+        const isValid = await DirectusService.verifyToken();
+        console.log('🔐 useRolePermissions: Token valid:', isValid);
+        
+        if (!isValid) {
+          console.log('❌ useRolePermissions: Token invalid');
+          setIsAuthenticated(false);
+          setUserRole(null);
+          setUserRoleId(null);
+          setIsLoading(false);
+          return;
         }
         
-        // Optionally fetch custom permissions from Directus
-        // const customPermissions = await fetchCustomPermissions();
-        // if (customPermissions) {
-        //   setPermissions([...DEFAULT_PERMISSIONS, ...customPermissions]);
-        // }
+        // Get user info
+        const user = await DirectusService.getCurrentUser();
+        console.log('👤 useRolePermissions: User data:', user);
+        
+        if (user) {
+          const authenticated = !!user;
+          setIsAuthenticated(authenticated);
+          setUserRole(user?.role || null);
+          setUserRoleId(user?.roleId || null);
+          console.log('✅ useRolePermissions: Auth successful', {
+            authenticated,
+            role: user?.role,
+            roleId: user?.roleId
+          });
+        } else {
+          console.log('❌ useRolePermissions: No user data returned');
+          setIsAuthenticated(false);
+          setUserRole(null);
+          setUserRoleId(null);
+        }
       } catch (error) {
-        console.error('Failed to fetch user role:', error);
-        setUserRole('public');
+        console.error('❌ useRolePermissions: Error during auth check:', error);
+        setIsAuthenticated(false);
+        setUserRole(null);
+        setUserRoleId(null);
       } finally {
         setIsLoading(false);
       }
-    };
+    }
     
-    fetchUserRole();
+    checkAuth();
   }, []);
   
-  /**
-   * Check if the current user can edit a specific collection and field
-   * Memoized to prevent excessive re-computations
-   */
-  const canEditContent = useCallback((collection: string, field?: string): boolean => {
-    // Admins can edit everything
-    if (userRole === 'admin') return true;
-    
-    // publics can't edit anything
-    if (userRole === 'public') return false;
-    
-    // Check for wildcard collection permission
-    const wildcardPermission = permissions.find(p => p.collection === '*');
-    if (wildcardPermission && wildcardPermission.allowedRoles.includes(userRole)) {
-      return true;
+  // Check if user has editor or admin role
+  const isEditorOrAdmin = useCallback(() => {
+    if (!isAuthenticated || !userRoleId) {
+      console.log('❌ isEditorOrAdmin: Not authenticated or no roleId', { isAuthenticated, userRoleId });
+      return false;
     }
     
-    // Check for field-specific permission
-    if (field) {
-      const fieldPermission = permissions.find(
-        p => p.collection === collection && p.field === field
-      );
-      
-      if (fieldPermission) {
-        return fieldPermission.allowedRoles.includes(userRole);
-      }
+    // Allowed role IDs from .env
+    const editorRoleId = import.meta.env.VITE_DIRECTUS_ALLOWED_EDITOR_ROLES;
+    const allowedRoles = editorRoleId ? editorRoleId.split(',').map((id: string) => id.trim()) : [];
+    
+    console.log('🔐 Role Check:', {
+      userRoleId,
+      allowedRoles,
+      editorRoleEnv: editorRoleId
+    });
+    
+    // SECURITY: Block Cliente role explicitly
+    const clienteRoleId = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
+    if (userRoleId === clienteRoleId) {
+      console.log('🚫 Blocked: User has Cliente role');
+      return false;
     }
     
-    // Check for collection-level permission
-    const collectionPermission = permissions.find(
-      p => p.collection === collection && !p.field
-    );
-    
-    return collectionPermission ? collectionPermission.allowedRoles.includes(userRole) : false;
-  }, [userRole, permissions]);
+    // Check if user's role ID is in allowed list
+    const hasPermission = allowedRoles.includes(userRoleId);
+    console.log('✅ Permission result:', hasPermission);
+    return hasPermission;
+  }, [isAuthenticated, userRoleId]);
   
-  /**
-   * Check if the current user can edit any field in a collection
-   * Memoized to prevent excessive re-computations
-   */
-  const canEditCollection = useCallback((collection: string): boolean => {
-    // Admins can edit everything
-    if (userRole === 'admin') return true;
-    
-    // publics can't edit anything
-    if (userRole === 'public') return false;
-    
-    // Check for wildcard collection permission
-    const wildcardPermission = permissions.find(p => p.collection === '*');
-    if (wildcardPermission && wildcardPermission.allowedRoles.includes(userRole)) {
-      return true;
-    }
-    
-    // Check for collection-level permission
-    const collectionPermission = permissions.find(
-      p => p.collection === collection && !p.field
-    );
-    
-    return collectionPermission ? collectionPermission.allowedRoles.includes(userRole) : false;
-  }, [userRole, permissions]);
-  
-  // Computed properties for convenience
-  const isAdmin = userRole === 'admin';
-  const isEditor = userRole === 'editor' || isAdmin;
-  const isAuthor = userRole === 'author' || isEditor;
-  const isAuthenticated = userRole !== 'public';
+  const canEditContent = useCallback(() => isEditorOrAdmin(), [isEditorOrAdmin]);
+  const canEditCollection = useCallback(() => isEditorOrAdmin(), [isEditorOrAdmin]);
   
   return {
-    userRole,
-    permissions,
+    userRole: userRole || 'public',
     isLoading,
     canEditContent,
     canEditCollection,
-    isAdmin,
-    isEditor,
-    isAuthor,
+    isAdmin: userRole === 'Administrator',
+    isEditor: isAuthenticated,
     isAuthenticated
   };
 };

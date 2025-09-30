@@ -65,7 +65,7 @@ const SEOEditor = ({
                   value={title}
                   placeholder="Enter page title..."
                   tag="div"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[50px]"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[50px] text-gray-900"
                 />
               </div>
 
@@ -83,7 +83,7 @@ const SEOEditor = ({
                   value={description}
                   placeholder="Enter meta description..."
                   tag="div"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px] text-gray-900"
                 />
               </div>
 
@@ -101,7 +101,7 @@ const SEOEditor = ({
                   value={keywords}
                   placeholder="Enter keywords separated by commas..."
                   tag="div"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[60px]"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[60px] text-gray-900"
                 />
               </div>
 

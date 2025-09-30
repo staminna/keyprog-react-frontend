@@ -15,7 +15,6 @@ import Simulador from "./pages/Simulador";
 import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
 import Suporte from "./pages/Suporte";
-// Old editor removed
 import SearchPage from './pages/SearchPage';
 import DynamicPage from "@/components/DynamicPage";
 import ServiceDetail from "@/components/ServiceDetail";
@@ -24,6 +23,10 @@ import ProductDetail from '@/components/ProductDetail';
 import SubMenuContent from '@/components/SubMenuContent';
 import Admin from '@/pages/Admin';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import LoginPage from '@/pages/auth/LoginPage';
+import EditorPage from '@/pages/auth/EditorPage';
+import AdminPage from '@/pages/auth/AdminPage';
+import RegistrationPage from '@/pages/customer/RegistrationPage';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -57,7 +60,25 @@ const App = () => (
                 <SiteHeader />
                 <EditableContentWrapper>
                   <Routes>
-                    <Route path="/editor" element={<Navigate to="/" replace />} />
+                    {/* Auth Routes */}
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/registo" element={<RegistrationPage />} />
+                    
+                    {/* Protected Admin Routes */}
+                    <Route path="/admin" element={
+                      <ProtectedRoute requiredRoles={['admin', 'administrator']}>
+                        <AdminPage />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Protected Editor Routes */}
+                    <Route path="/editor" element={
+                      <ProtectedRoute requiredRoles={['admin', 'administrator', 'editor', 'editor-user']}>
+                        <EditorPage />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Public Routes */}
                     <Route path="/" element={<Index />} />
                     <Route path="/loja" element={<Loja />} />
                     <Route path="/loja/produtos/:slug" element={<ProductDetail />} />

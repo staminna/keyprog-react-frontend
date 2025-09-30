@@ -18,6 +18,7 @@ type UniversalContentEditorProps<T extends React.ElementType> = {
   placeholder?: string;
   tag?: T;
   showEditIcon?: boolean;
+  alwaysEditing?: boolean; // New prop to always show editor
   onContentChange?: (content: string) => void;
 } & Omit<React.ComponentPropsWithoutRef<T>, 'value' | 'onChange'>;
 
@@ -33,6 +34,7 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
   placeholder = 'Click to edit...',
   tag,
   showEditIcon = true,
+  alwaysEditing = false,
   onContentChange,
   ...rest
 }: UniversalContentEditorProps<T>) => {
@@ -66,17 +68,43 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
   
   const [parsedContent, setParsedContent] = useState('');
 
-  // Memoize permission checks to prevent excessive re-renders
-  const canEditContentMemo = useMemo(() => {
-    return canEditContent(collection, field);
-  }, [canEditContent, collection, field]);
-  
-  const canEverEdit = (isInDirectusEditor || isAuthenticated) && canEditContentMemo;
-  const canEdit = canEverEdit && isInlineEditingEnabled;
-  
-  // Temporary override for debugging - force allow editing if authenticated
-  const debugCanEdit = isAuthenticated || isInDirectusEditor;
+  // Unified permission check - consolidated from multiple variables
+  const canEdit = useMemo(() => {
+    const hasAuth = isInDirectusEditor || isAuthenticated;
+    const hasPermission = isInDirectusEditor ? true : canEditContent();
+    const editingEnabled = isInlineEditingEnabled;
 
+    // Debug logging
+    console.log('🔐 UniversalContentEditor Permission Check:', {
+      collection,
+      field,
+      isInDirectusEditor,
+      isAuthenticated,
+      hasAuth,
+      hasPermission,
+      editingEnabled,
+      canEdit: hasAuth && hasPermission && editingEnabled
+    });
+
+    return hasAuth && hasPermission && editingEnabled;
+  }, [
+    isInDirectusEditor,
+    isAuthenticated,
+    canEditContent,
+    isInlineEditingEnabled,
+    collection,
+    field
+  ]);
+
+
+  // Auto-enable editing mode if alwaysEditing is true
+  useEffect(() => {
+    if (alwaysEditing && canEdit && !isEditing && !isLoading) {
+      console.log('🔄 Auto-enabling edit mode (alwaysEditing=true)');
+      setIsEditing(true);
+      globalEditingState.startEditing(sessionId);
+    }
+  }, [alwaysEditing, canEdit, isEditing, isLoading, globalEditingState, sessionId]);
 
   useEffect(() => {
     if (content !== undefined && !isEditing) {
@@ -101,15 +129,19 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
 
   // Handle edit button click - memoized to prevent unnecessary re-renders
   const handleEdit = useCallback(() => {
-    if (debugCanEdit) {
+    console.log('🖱️ Click detected, canEdit:', canEdit);
+    if (canEdit) {
+      console.log('✅ Starting edit mode for:', { collection, itemId, field });
       setIsEditing(true);
       globalEditingState.startEditing(sessionId);
+    } else {
+      console.log('❌ Edit prevented - permissions denied');
     }
-  }, [debugCanEdit, globalEditingState, sessionId]);
+  }, [canEdit, globalEditingState, sessionId, collection, itemId, field]);
 
   const handleSave = async (newContent: string) => {
-    if (!debugCanEdit) {
-      console.log('UniversalContentEditor: Cannot edit, permissions denied');
+    if (!canEdit) {
+      console.log('❌ UniversalContentEditor: Cannot save, permissions denied');
       return;
     }
     
@@ -175,8 +207,9 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
       {/* Content display */}
       <Tag
         {...rest}
-        className={`${rest.className || ''} ${debugCanEdit ? 'cursor-text' : ''}`}
-        onClick={debugCanEdit ? handleEdit : undefined}
+        className={`${rest.className || ''} ${canEdit ? 'cursor-text hover:bg-blue-50 hover:outline hover:outline-2 hover:outline-blue-300 transition-all' : ''}`}
+        onClick={canEdit ? handleEdit : undefined}
+        style={{ position: 'relative', ...rest.style }}
       >
         {parsedContent ? (
           <ContentParser content={parsedContent} />
@@ -203,7 +236,7 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
       )}
       
       {/* Manual refresh button for editors */}
-      {debugCanEdit && !isEditing && (
+      {canEdit && !isEditing && (
         <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => {

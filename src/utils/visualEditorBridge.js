@@ -53,6 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
           source: 'react-frontend'
         }, '*');
       }
+
+      // Handle inline editing toggle from Directus toolbar
+      if (event.data.type === 'directus:toggle-editing' && typeof event.data.enabled === 'boolean') {
+        console.log('🖊️ Visual Editor Bridge: Toggle inline editing requested:', event.data.enabled);
+        window.postMessage({
+          type: 'directus-inline-editing-toggle',
+          enabled: event.data.enabled
+        }, '*');
+      }
     }
   });
   

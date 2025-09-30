@@ -15,23 +15,64 @@ export const TrueInlineEditor: React.FC<TrueInlineEditorProps> = ({ value, onSav
 
   useEffect(() => {
     if (editorRef.current && !hasChanges) {
+      console.log('📝 TrueInlineEditor: Initializing editor with value:', value?.substring(0, 50));
+      
       // Only set content if we haven't made changes yet
-      editorRef.current.innerHTML = value;
+      editorRef.current.innerHTML = value || '';
       
-      // Focus and select all text for immediate editing
-      editorRef.current.focus();
-      
-      // Place cursor at the end of the text
-      setTimeout(() => {
-        if (editorRef.current) {
+      // Improved focus with error handling and retry
+      const attemptFocus = (attempt = 1) => {
+        if (!editorRef.current) {
+          console.error('❌ Editor ref lost');
+          return;
+        }
+        
+        try {
+          // Force focus
+          editorRef.current.focus();
+          
+          // Ensure it's actually focused
+          if (document.activeElement !== editorRef.current) {
+            console.warn('⚠️ Element not focused, forcing...');
+            editorRef.current.focus();
+          }
+          
+          // Place cursor at the end of the text
           const range = document.createRange();
           const selection = window.getSelection();
-          range.selectNodeContents(editorRef.current);
-          range.collapse(false);
-          selection?.removeAllRanges();
-          selection?.addRange(range);
+          
+          if (!selection) {
+            console.error('❌ No window.getSelection available');
+            return;
+          }
+          
+          if (editorRef.current.childNodes.length > 0) {
+            range.selectNodeContents(editorRef.current);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } else {
+            // If no content, just set cursor at start
+            range.setStart(editorRef.current, 0);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+          
+          console.log('✅ Editor focused and cursor positioned (attempt', attempt, ')');
+          console.log('Active element:', document.activeElement === editorRef.current ? 'EDITOR' : document.activeElement?.tagName);
+        } catch (error) {
+          console.error(`❌ Focus attempt ${attempt} failed:`, error);
+          
+          // Retry up to 5 times with increasing delays
+          if (attempt < 5) {
+            setTimeout(() => attemptFocus(attempt + 1), attempt * 100);
+          }
         }
-      }, 10);
+      };
+      
+      // Initial attempt with 100ms delay to ensure DOM is ready
+      setTimeout(() => attemptFocus(), 100);
     }
   }, [value, hasChanges]);
 
@@ -69,6 +110,7 @@ export const TrueInlineEditor: React.FC<TrueInlineEditorProps> = ({ value, onSav
   };
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    console.log('✏️ Input detected:', e.currentTarget.innerText.substring(0, 20));
     // Track changes
     setHasChanges(true);
     
@@ -96,14 +138,21 @@ export const TrueInlineEditor: React.FC<TrueInlineEditorProps> = ({ value, onSav
           ref={editorRef}
           contentEditable={true}
           suppressContentEditableWarning={true}
-          className={`outline-none cursor-text blinking-cursor ${className}`}
+          tabIndex={0}
+          className={`outline-none cursor-text blinking-cursor text-gray-900 ${className}`}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
+          onClick={() => {
+            console.log('🖱️ Editor clicked, focusing...');
+            editorRef.current?.focus();
+          }}
           style={{ 
             minHeight: '1em',
-            caretColor: 'currentColor',
-            WebkitTextFillColor: 'currentColor',
-            color: 'inherit'
+            caretColor: '#111827',
+            WebkitTextFillColor: '#111827',
+            color: '#111827',
+            userSelect: 'text',
+            WebkitUserSelect: 'text'
           }}
         />
         
