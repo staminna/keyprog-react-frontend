@@ -974,4 +974,122 @@ export class DirectusService {
       throw error;
     }
   }
+
+  // Upload files to Directus
+  static async uploadFiles(files: File[]): Promise<string[]> {
+    try {
+      const token = await sessionDirectus.getToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const uploadedFileIds: string[] = [];
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/files`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.errors?.[0]?.message || `Failed to upload file: ${file.name}`);
+        }
+
+        const result = await response.json();
+        if (result.data && result.data.id) {
+          uploadedFileIds.push(result.data.id);
+        }
+      }
+
+      return uploadedFileIds;
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      throw error;
+    }
+  }
+
+  // Update user's File_service field with uploaded file IDs
+  static async updateUserFileService(userId: string, fileIds: string[]): Promise<void> {
+    try {
+      const token = await sessionDirectus.getToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Get current user data to check existing files
+      const currentUserResponse = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!currentUserResponse.ok) {
+        throw new Error('Failed to fetch current user data');
+      }
+
+      const currentUserData = await currentUserResponse.json();
+      const existingFiles = currentUserData.data.File_service || [];
+
+      // Combine existing files with new files
+      const updatedFiles = [...existingFiles, ...fileIds];
+
+      // Update user with new files
+      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          File_service: updatedFiles
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.errors?.[0]?.message || 'Failed to update user File_service field');
+      }
+    } catch (error) {
+      console.error('Error updating user File_service:', error);
+      throw error;
+    }
+  }
+
+  // Logout user and clear session
+  static async logout(): Promise<void> {
+    try {
+      // Clear session token using SDK
+      if ('logout' in sessionDirectus && typeof sessionDirectus.logout === 'function') {
+        await (sessionDirectus as { logout: () => Promise<void> }).logout();
+      }
+      
+      // Reset internal authentication state
+      this.isAuthenticated = false;
+      this.useStaticToken = false;
+      this.parentToken = null;
+      this.editorDirectusClient = null;
+      this.authPromise = null;
+      this.initPromise = null;
+      
+      // Clear any stored credentials
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('directus_auth_email');
+        localStorage.removeItem('directus_auth_password');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout fails, clear local state
+      this.isAuthenticated = false;
+      this.useStaticToken = false;
+      this.parentToken = null;
+      this.editorDirectusClient = null;
+    }
+  }
 }

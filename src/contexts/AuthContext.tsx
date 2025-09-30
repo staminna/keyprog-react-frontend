@@ -17,21 +17,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const token = await sessionDirectus.getToken();
         if (token) {
-          console.log('Found active session token');
           // Verify the token is still valid by making a test request
           const isValid = await DirectusService.verifyToken();
           if (isValid) {
-            console.log('Session token is valid');
             // Get user info if available
             const userInfo = await DirectusService.getCurrentUser();
             setUser(userInfo || { email: 'session-user', authenticated: true });
             setIsAuthenticated(true);
             return true;
           }
-          console.log('Session token expired or invalid');
         }
       } catch (tokenError) {
-        console.warn('Error checking session token:', tokenError);
+        // Silent fail - just means no valid session
       }
       
       // If no valid session token, assume logged out

@@ -4,7 +4,7 @@ import { ContentParser } from '@/components/remirror/ContentParser';
 import { formatContentForDisplay } from '@/utils/contentParserV2';
 import { DirectusServiceExtension } from '@/services/directusServiceExtension';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
-import useRolePermissions from '@/hooks/useRolePermissions';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { useInlineEditor } from '@/components/universal/inline-editor-context';
 import { useGlobalEditingState } from '@/hooks/global-editing-utils';
 import { usePersistentContent } from '@/hooks/usePersistentContent';
@@ -40,8 +40,8 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
 }: UniversalContentEditorProps<T>) => {
   const Tag = tag || 'div';
   const [isEditing, setIsEditing] = useState(false);
-  const { isInDirectusEditor, isAuthenticated } = useDirectusEditorContext();
-  const { canEditContent } = useRolePermissions();
+  const { isInDirectusEditor } = useDirectusEditorContext();
+  const { isAuthenticated, canEdit: userCanEdit } = useUnifiedAuth();
   const { isInlineEditingEnabled } = useInlineEditor();
   const globalEditingState = useGlobalEditingState();
   
@@ -68,33 +68,12 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
   
   const [parsedContent, setParsedContent] = useState('');
 
-  // Unified permission check - consolidated from multiple variables
+  // Unified permission check - simplified
   const canEdit = useMemo(() => {
-    const hasAuth = isInDirectusEditor || isAuthenticated;
-    const hasPermission = isInDirectusEditor ? true : canEditContent();
+    const hasPermission = isInDirectusEditor || userCanEdit;
     const editingEnabled = isInlineEditingEnabled;
-
-    // Debug logging
-    console.log('🔐 UniversalContentEditor Permission Check:', {
-      collection,
-      field,
-      isInDirectusEditor,
-      isAuthenticated,
-      hasAuth,
-      hasPermission,
-      editingEnabled,
-      canEdit: hasAuth && hasPermission && editingEnabled
-    });
-
-    return hasAuth && hasPermission && editingEnabled;
-  }, [
-    isInDirectusEditor,
-    isAuthenticated,
-    canEditContent,
-    isInlineEditingEnabled,
-    collection,
-    field
-  ]);
+    return hasPermission && editingEnabled;
+  }, [isInDirectusEditor, userCanEdit, isInlineEditingEnabled]);
 
 
   // Auto-enable editing mode if alwaysEditing is true

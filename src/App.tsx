@@ -29,7 +29,7 @@ import AdminPage from '@/pages/auth/AdminPage';
 import RegistrationPage from '@/pages/customer/RegistrationPage';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { UnifiedAuthProvider } from "@/contexts/UnifiedAuthContext";
 import { EditableContentProvider } from "@/contexts/EditableContentProvider";
 import EditableContentWrapper from "@/components/layout/EditableContentWrapper";
 import HashRedirect from "@/components/HashRedirect";
@@ -48,7 +48,7 @@ import QuadrantesPage from "./pages/servicos/QuadrantesPage";
 
 const App = () => (
   <HelmetProvider>
-      <AuthProvider>
+      <UnifiedAuthProvider>
         <EditableContentProvider>
           <GlobalEditingProvider>
             <TooltipProvider>
@@ -116,7 +116,7 @@ const App = () => (
             </TooltipProvider>
           </GlobalEditingProvider>
         </EditableContentProvider>
-      </AuthProvider>
+      </UnifiedAuthProvider>
   </HelmetProvider>
 );
 

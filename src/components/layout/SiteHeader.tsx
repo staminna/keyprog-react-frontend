@@ -12,13 +12,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Edit3, X } from "lucide-react";
+import { Menu, Edit3, X, UserCircle, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState, useEffect } from "react";
 import { DirectusService } from "@/services/directusService";
 import type { DirectusHeaderMenu } from "@/lib/directus";
 import { useInlineEditor } from '@/components/universal/inline-editor-context';
-import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const menuLinkClasses = "text-sm";
 
@@ -27,7 +35,12 @@ const SiteHeader = () => {
   const [headerMenu, setHeaderMenu] = useState<DirectusHeaderMenu[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isInlineEditingEnabled, setInlineEditingEnabled } = useInlineEditor();
-  const { isAuthenticated } = useDirectusEditorContext();
+  const { isAuthenticated, user, logout, canEdit } = useUnifiedAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/';
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -220,7 +233,7 @@ const SiteHeader = () => {
             <Input placeholder="Pesquisar..." className="w-64" />
             <Button variant="default">Pesquisar</Button>
             <ThemeToggle />
-            {isAuthenticated && (
+            {canEdit && (
               <Button 
                 variant="outline" 
                 onClick={() => setInlineEditingEnabled(!isInlineEditingEnabled)}
@@ -228,6 +241,35 @@ const SiteHeader = () => {
               >
                 {isInlineEditingEnabled ? <X size={16} /> : <Edit3 size={16} />}
               </Button>
+            )}
+            {/* Cliente authentication dropdown */}
+            {isAuthenticated && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <UserCircle className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    {user.email || 'Cliente'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/registo">Registar</Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -264,6 +306,26 @@ const SiteHeader = () => {
               <NavLink to="/contactos">Contactos</NavLink>
               <div className="pt-2">
                 <Input placeholder="Pesquisar..." className="w-full" />
+              </div>
+              <div className="pt-4 border-t">
+                {isAuthenticated && user ? (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">{user.email}</div>
+                    <Button variant="outline" size="sm" onClick={handleLogout} className="w-full">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sair
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <Button variant="ghost" size="sm" asChild className="w-full">
+                      <Link to="/login">Login</Link>
+                    </Button>
+                    <Button size="sm" asChild className="w-full">
+                      <Link to="/registo">Registar</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </nav>
           </SheetContent>
