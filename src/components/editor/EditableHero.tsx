@@ -71,7 +71,7 @@ const EditableHero = () => {
             field="title"
             value={heroData.title || ''}
             tag="h1"
-            className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-gradient-primary md:text-6xl pr-4 pb-[0.15em] tracking-wider"
+            className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.15] md:leading-[1.15] text-white md:text-6xl pr-4 pb-[0.15em] tracking-wider [text-decoration:none]"
           />
           
           <UniversalContentEditor
@@ -80,7 +80,7 @@ const EditableHero = () => {
             field="subtitle"
             value={heroData.subtitle || ''}
             tag="p"
-            className="mt-4 max-w-2xl text-lg text-muted-foreground"
+            className="mt-4 max-w-2xl text-lg text-gray-300 [text-decoration:none]"
           />
           
           <div className="mt-8 flex flex-wrap gap-3">

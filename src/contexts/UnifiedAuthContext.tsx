@@ -4,6 +4,15 @@ import { UnifiedAuthContext } from '@/types/unifiedAuth';
 import { sessionDirectus } from '@/lib/directus';
 import type { UnifiedUser, UnifiedAuthContextType, UnifiedAuthProviderProps, UserRole } from '@/types/unifiedAuth';
 
+// Helper function to clear session
+export const clearAuthSession = async () => {
+  try {
+    await sessionDirectus.setToken(null);
+  } catch (error) {
+    console.error('Error clearing auth session:', error);
+  }
+};
+
 // Re-export the context so hooks can import it from here
 export { UnifiedAuthContext };
 
@@ -18,6 +27,18 @@ const getRoleType = (roleId: string): UserRole => {
   if (roleId === EDITOR_ROLE_ID) return 'editor';
   if (roleId === CLIENTE_ROLE_ID) return 'cliente';
   return null;
+};
+
+// Check if we're in Directus Visual Editor
+const isInDirectusVisualEditor = (): boolean => {
+  try {
+    const isInIframe = window.self !== window.top;
+    const referrer = document.referrer;
+    const isFromDirectus = referrer.includes('localhost:8065') || referrer.includes('/admin/');
+    return isInIframe && isFromDirectus;
+  } catch {
+    return false;
+  }
 };
 
 export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ children }) => {
@@ -42,14 +63,45 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
     try {
       setIsLoading(true);
       
-      // Check if we have an active session token
+      // PRIORITY 1: Auto-authenticate for Directus Visual Editor
+      if (isInDirectusVisualEditor()) {
+        console.log('🎯 Detected Directus Visual Editor - auto-authenticating...');
+        const envEmail = import.meta.env.VITE_DIRECTUS_EMAIL;
+        const envPassword = import.meta.env.VITE_DIRECTUS_PASSWORD;
+        
+        if (envEmail && envPassword) {
+          const success = await DirectusService.authenticate(envEmail, envPassword);
+          if (success) {
+            const userInfo = await DirectusService.getCurrentUser();
+            if (userInfo && userInfo.roleId) {
+              const roleType = getRoleType(userInfo.roleId);
+              
+              // Only allow admin/editor in Visual Editor
+              if (roleType === 'administrator' || roleType === 'editor') {
+                setUser({
+                  id: userInfo.id || '',
+                  email: userInfo.email || '',
+                  firstName: userInfo.firstName,
+                  lastName: userInfo.lastName,
+                  role: roleType,
+                  roleId: userInfo.roleId,
+                  authenticated: true,
+                });
+                setIsAuthenticated(true);
+                console.log('✅ Visual Editor auto-auth successful:', roleType);
+                return true;
+              }
+            }
+          }
+        }
+      }
+      
+      // PRIORITY 2: Check for existing session token (normal user login)
       try {
         const token = await sessionDirectus.getToken();
         if (token) {
-          // Verify the token is still valid
           const isValid = await DirectusService.verifyToken();
           if (isValid) {
-            // Get full user info
             const userInfo = await DirectusService.getCurrentUser();
             if (userInfo && userInfo.roleId) {
               const roleType = getRoleType(userInfo.roleId);
@@ -64,15 +116,18 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
                 authenticated: true,
               });
               setIsAuthenticated(true);
+              console.log('✅ Session auth successful:', roleType);
               return true;
             }
+          } else {
+            await clearAuthSession();
           }
         }
       } catch (tokenError) {
-        // Silent fail - just means no valid session
+        await clearAuthSession();
       }
       
-      // If no valid session token, assume logged out
+      // No authentication found
       setIsAuthenticated(false);
       setUser(null);
       return false;
@@ -93,7 +148,6 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
       const success = await DirectusService.authenticate(email, password);
       
       if (success) {
-        // Get full user info after successful authentication
         const userInfo = await DirectusService.getCurrentUser();
         if (userInfo && userInfo.roleId) {
           const roleType = getRoleType(userInfo.roleId);
@@ -115,6 +169,7 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
       
       setIsAuthenticated(false);
       setUser(null);
+      await clearAuthSession();
       return false;
     } catch (error) {
       console.error('Login failed:', error);
@@ -128,19 +183,11 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
 
   const logout = async (): Promise<void> => {
     try {
-      console.log('🚪 Logging out...');
-      
-      // Clear authentication state
       setIsAuthenticated(false);
       setUser(null);
-      
-      // Call DirectusService logout to clear session
       await DirectusService.logout();
-      
-      console.log('✅ Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout fails, clear local state
       setIsAuthenticated(false);
       setUser(null);
     }
@@ -153,7 +200,6 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
     }
 
     try {
-      // Update user in Directus
       const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/${user.id}`, {
         method: 'PATCH',
         headers: {
@@ -177,7 +223,6 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
         throw new Error('Failed to update profile');
       }
 
-      // Update local user state
       setUser(prev => prev ? { ...prev, ...data } : null);
       console.log('✅ Profile updated successfully');
       return true;

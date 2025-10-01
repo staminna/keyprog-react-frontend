@@ -186,7 +186,7 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
       {/* Content display */}
       <Tag
         {...rest}
-        className={`${rest.className || ''} ${canEdit ? 'cursor-text hover:bg-blue-50 hover:outline hover:outline-2 hover:outline-blue-300 transition-all' : ''}`}
+        className={`${rest.className || ''} ${canEdit ? 'cursor-text hover:outline hover:outline-2 hover:outline-blue-400 transition-outline' : ''}`}
         onClick={canEdit ? handleEdit : undefined}
         style={{ position: 'relative', ...rest.style }}
       >

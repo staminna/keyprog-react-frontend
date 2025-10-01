@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FileText, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import { DirectusService } from '@/services/directusService';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const FileService = () => {
   const { isAuthenticated, user, isLoading: authLoading, canUpload } = useUnifiedAuth();
@@ -73,8 +74,9 @@ const FileService = () => {
   if (authLoading) {
     return (
       <main className="container py-12">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">A verificar autenticação...</p>
         </div>
       </main>
     );
@@ -82,6 +84,10 @@ const FileService = () => {
 
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
+    // Check if we have a redirect back after login
+    const location = useLocation();
+    const from = location.state?.from?.pathname || '/file-service';
+
     return (
       <main className="container py-12">
         <div className="max-w-2xl mx-auto">
@@ -93,19 +99,36 @@ const FileService = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Autenticação Necessária</h3>
-                <p className="text-muted-foreground mb-6">
-                  Por favor, faça login ou registe-se para utilizar o File Service.
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => navigate('/login?return=/file-service')}>
-                    Fazer Login
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate('/registo?return=/file-service')}>
-                    Registar
-                  </Button>
+              <div className="space-y-6">
+                <Alert variant="destructive" className="bg-amber-50 border-amber-200">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Atenção</AlertTitle>
+                  <AlertDescription>
+                    É necessário iniciar sessão para aceder ao File Service.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="text-center py-4">
+                  <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Autenticação Necessária</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Por favor, faça login ou registe-se para utilizar o File Service.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button 
+                      onClick={() => navigate('/login', { state: { from } })}
+                      className="w-full sm:w-auto"
+                    >
+                      Fazer Login
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate('/registo', { state: { from } })}
+                      className="w-full sm:w-auto"
+                    >
+                      Criar Conta
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -128,16 +151,31 @@ const FileService = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <XCircle className="h-16 w-16 mx-auto mb-4 text-destructive" />
-                <h3 className="text-lg font-semibold mb-2">Acesso Negado</h3>
-                <p className="text-muted-foreground mb-6">
-                  Apenas utilizadores com role "Cliente" podem fazer upload de ficheiros.
-                  Por favor, contacte o administrador para solicitar acesso.
-                </p>
-                <Button variant="outline" onClick={() => navigate('/contactos')}>
-                  Contactar Suporte
-                </Button>
+              <div className="space-y-6">
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertTitle>Acesso Restrito</AlertTitle>
+                  <AlertDescription>
+                    Apenas utilizadores com permissão de cliente podem aceder ao File Service.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="text-center py-4">
+                  <XCircle className="h-16 w-16 mx-auto mb-4 text-destructive" />
+                  <h3 className="text-lg font-semibold mb-2">Acesso Negado</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Apenas utilizadores com a função "Cliente" podem fazer upload de ficheiros.
+                    Por favor, contacte o administrador para solicitar acesso.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button variant="outline" onClick={() => navigate('/contactos')}>
+                      Contactar Suporte
+                    </Button>
+                    <Button variant="ghost" onClick={() => window.location.reload()}>
+                      Recarregar Página
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

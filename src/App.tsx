@@ -27,6 +27,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 import EditorPage from '@/pages/auth/EditorPage';
 import AdminPage from '@/pages/auth/AdminPage';
 import RegistrationPage from '@/pages/customer/RegistrationPage';
+import ClienteDashboard from '@/pages/customer/ClienteDashboard';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { UnifiedAuthProvider } from "@/contexts/UnifiedAuthContext";
@@ -63,6 +64,10 @@ const App = () => (
                     {/* Auth Routes */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/registo" element={<RegistrationPage />} />
+                    
+                    {/* Cliente Routes */}
+                    <Route path="/conta" element={<ClienteDashboard />} />
+                    <Route path="/minha-conta" element={<ClienteDashboard />} />
                     
                     {/* Protected Admin Routes */}
                     <Route path="/admin" element={

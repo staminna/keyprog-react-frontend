@@ -1092,4 +1092,14 @@ export class DirectusService {
       this.editorDirectusClient = null;
     }
   }
+
+  // Get current authentication token
+  static async getToken(): Promise<string | null> {
+    try {
+      return await sessionDirectus.getToken();
+    } catch (error) {
+      console.error('Error getting token:', error);
+      return null;
+    }
+  }
 }
