@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import {
   InlineEditorContext,
   type InlineEditorContextType,
@@ -15,8 +15,19 @@ const INLINE_EDITING_OVERRIDE_KEY = 'inline-editor-override';
  * It replaces the old sidebar-based EditorActivator.
  */
 export const InlineEditorProvider: React.FC<InlineEditorProviderProps> = ({ children }) => {
-  const { isInDirectusEditor, isAuthenticated } = useDirectusEditorContext();
+  const { canEdit, isAuthenticated, user } = useUnifiedAuth();
   const devOverride = import.meta.env.DEV || import.meta.env.VITE_FORCE_INLINE_EDITING === 'true';
+  
+  // Check if we're in Directus Visual Editor
+  const isInDirectusEditor = useMemo(() => {
+    try {
+      const isInIframe = window.self !== window.top;
+      const referrer = document.referrer;
+      return isInIframe && (referrer.includes('localhost:8065') || referrer.includes('/admin/'));
+    } catch {
+      return false;
+    }
+  }, []);
 
   const [manualOverride, setManualOverride] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
@@ -31,7 +42,8 @@ export const InlineEditorProvider: React.FC<InlineEditorProviderProps> = ({ chil
     return stored === 'true';
   });
 
-  const canEverEnableEditing = isInDirectusEditor || isAuthenticated || manualOverride;
+  // Only allow editing for Administrator and Editor roles (canEdit checks this)
+  const canEverEnableEditing = canEdit || isInDirectusEditor || manualOverride;
 
   const [isInlineEditingEnabled, setInlineEditingEnabledState] = useState<boolean>(() => {
     if (typeof window === 'undefined') {

@@ -1,54 +1,54 @@
 import { DirectusService } from './directusService';
 
-// Only these roles should auto-login with .env credentials
-const ALLOWED_AUTO_LOGIN_ROLES = [
-  '0582d74b-a83f-4076-849f-b588e627c868', // Administrator
-  '97ef35d8-3d16-458d-8c93-78e35b7105a4', // Editor-user
-];
+/**
+ * Check if we're in Directus Visual Editor context
+ */
+function isInDirectusEditor(): boolean {
+  try {
+    const isInIframe = window.self !== window.top;
+    const referrer = document.referrer;
+    const isFromDirectus = referrer.includes('localhost:8065') || referrer.includes('/admin/');
+    return isInIframe && isFromDirectus;
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Initialize autologin for Directus - ONLY for Editor/Admin roles
- * Cliente users must login manually via the login form
+ * Initialize autologin for Directus - ONLY for Visual Editor context
+ * Regular users should NOT be auto-logged in with .env credentials
  */
 export async function initializeDirectusAutoLogin(): Promise<boolean> {
   try {
-    console.log('🔄 Initializing Directus autologin (Editor/Admin only)...');
+    console.log('🔄 Initializing Directus autologin...');
     
-    // Try session-based authentication first using .env credentials
-    const envEmail = import.meta.env.VITE_DIRECTUS_EMAIL;
-    const envPassword = import.meta.env.VITE_DIRECTUS_PASSWORD;
-    
-    if (envEmail && envPassword) {
-      console.log('🔑 Attempting session login with .env credentials');
-      const sessionAuth = await DirectusService.authenticate(envEmail, envPassword);
+    // ONLY auto-login in Directus Visual Editor context
+    if (isInDirectusEditor()) {
+      const envEmail = import.meta.env.VITE_DIRECTUS_EMAIL;
+      const envPassword = import.meta.env.VITE_DIRECTUS_PASSWORD;
       
-      if (sessionAuth) {
-        // Check if the authenticated user has an allowed role
-        const user = await DirectusService.getCurrentUser();
-        if (user && user.roleId) {
-          if (ALLOWED_AUTO_LOGIN_ROLES.includes(user.roleId)) {
-            console.log('✅ Session authentication successful');
+      if (envEmail && envPassword) {
+        console.log('🎯 Directus Editor detected - attempting admin auto-login');
+        const sessionAuth = await DirectusService.authenticate(envEmail, envPassword);
+        
+        if (sessionAuth) {
+          const user = await DirectusService.getCurrentUser();
+          if (user) {
+            console.log('✅ Visual Editor authentication successful');
             console.log('👤 Authenticated as:', user.email, '| Role:', user.role);
             return true;
-          } else {
-            // User authenticated but doesn't have editor/admin role
-            console.log('⚠️ User authenticated but not an editor/admin - logging out');
-            await DirectusService.logout();
-            return false;
           }
         }
-      } else {
-        console.warn('⚠️ Session authentication failed - credentials may be incorrect');
       }
     }
     
-    // Fallback to static token autologin (read-only)
+    // For regular users: just use static token for read-only operations
+    // DO NOT auto-authenticate with admin credentials
+    console.log('👥 Regular user context - skipping auto-login');
     const success = await DirectusService.autoLogin();
     
     if (success) {
-      console.log('✅ Directus autologin initialized with static token (read-only mode)');
-    } else {
-      console.warn('⚠️ Directus autologin failed - manual authentication may be required');
+      console.log('✅ Static token initialized for read-only operations');
     }
     
     return success;

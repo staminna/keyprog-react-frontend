@@ -5,7 +5,7 @@ import { formatContentForDisplay, cleanContentForSaving } from '@/utils/contentP
 
 // Define collection existence mapping
 const COLLECTION_EXISTS: Record<string, boolean> = {
-  'hero': true,       // Hero is now a regular collection
+  'hero': false,      // Hero is a singleton collection
   'contact_info': false, // Contact info is a singleton
   'services': true,   // Services is a regular collection
   'pages': true,      // Pages is a regular collection
@@ -40,8 +40,8 @@ export class DirectusServiceExtension {
    * Check if a collection is a singleton
    */
   static isSingleton(collection: string): boolean {
-    // Hero collection is a singleton in Directus
-    return collection === 'hero' || COLLECTION_EXISTS[collection] === false;
+    // A collection is considered a singleton if its value in COLLECTION_EXISTS is false.
+    return COLLECTION_EXISTS[collection] === false;
   }
   
   /**
@@ -134,7 +134,7 @@ export class DirectusServiceExtension {
       // Check if this is a singleton collection
       if (this.isSingleton(collection)) {
         // For singletons, use getHero method from DirectusServiceWrapper
-        console.log(`${collection} is a singleton, using getHero instead`);
+        // Removed excessive logging to reduce console noise
         return await DirectusServiceWrapper.getHero() as Record<string, unknown>;
       }
       

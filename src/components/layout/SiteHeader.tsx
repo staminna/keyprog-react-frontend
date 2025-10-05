@@ -12,8 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Edit3, X, UserCircle, LogOut } from "lucide-react";
+import { Menu, Edit3, X, UserCircle, LogOut, Eye } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useState, useEffect } from "react";
 import { DirectusService } from "@/services/directusService";
 import type { DirectusHeaderMenu } from "@/lib/directus";
@@ -158,8 +159,8 @@ const SiteHeader = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-3">
+      <div className="w-full px-4 md:px-6 lg:px-8 flex h-16 items-center justify-between gap-4">
+        <Link to="/" className="flex items-center gap-3 flex-shrink-0">
           {logoUrl ? (
             <img 
               src={logoUrl} 
@@ -232,16 +233,29 @@ const SiteHeader = () => {
           <div className="hidden lg:flex items-center gap-2">
             <Input placeholder="Pesquisar..." className="w-64" />
             <Button variant="default">Pesquisar</Button>
+            <CartDrawer />
             <ThemeToggle />
             {canEdit && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant={isInlineEditingEnabled ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setInlineEditingEnabled(!isInlineEditingEnabled)}
-                title={isInlineEditingEnabled ? 'Disable Inline Editing' : 'Enable Inline Editing'}
+                title={isInlineEditingEnabled ? 'Desativar edição inline' : 'Ativar edição inline'}
               >
-                {isInlineEditingEnabled ? <X size={16} /> : <Edit3 size={16} />}
+                {isInlineEditingEnabled ? (
+                  <>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    <span>Modo Edição</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    <span>Modo Visualização</span>
+                  </>
+                )}
               </Button>
             )}
+            <div id="site-header-toolbar" className="flex items-center gap-2"></div>
             {/* Cliente authentication dropdown */}
             {isAuthenticated && user ? (
               <DropdownMenu>

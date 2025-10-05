@@ -229,23 +229,35 @@ export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
       })
   );
 
-// Create separate Directus client for session-based authentication
+// Create separate Directus client for session-based authentication with localStorage persistence
 export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
   .with(rest({
     onRequest: (options) => {
       return { 
         ...options, 
         timeout: 10000,
-        // Enable cross-origin cookies for Directus session
         credentials: 'include'
       };
     }
   }))
   .with(authentication('json', {
-    // Enable cross-origin cookies for Directus session
     credentials: 'include',
     autoRefresh: true,
-    msRefreshBeforeExpires: 30000
+    msRefreshBeforeExpires: 30000,
+    // CRITICAL: Store token in localStorage for persistence across refreshes
+    storage: {
+      get: async () => {
+        const token = localStorage.getItem('directus_session_token');
+        return token ? JSON.parse(token) : null;
+      },
+      set: async (data) => {
+        if (data) {
+          localStorage.setItem('directus_session_token', JSON.stringify(data));
+        } else {
+          localStorage.removeItem('directus_session_token');
+        }
+      }
+    }
   }));
 
 // Create Directus client for Visual Editor with token inheritance

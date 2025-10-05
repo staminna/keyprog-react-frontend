@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Button } from '@/components/ui/button';
 
 interface TrueInlineEditorProps {
   value: string;
@@ -138,25 +140,7 @@ export const TrueInlineEditor: React.FC<TrueInlineEditorProps> = ({ value, onSav
           }}
         />
         
-        {hasChanges && (
-          <div className="fixed top-4 right-4 flex items-center space-x-2 z-50 bg-white shadow-lg rounded-lg p-2 border border-gray-200">
-            <button
-              onClick={handleSave}
-              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors flex items-center gap-1 text-sm"
-              title="Save changes (Enter)"
-            >
-              <Save size={14} />
-              Save
-            </button>
-            <button
-              onClick={handleCancel}
-              className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors text-sm"
-              title="Cancel (Esc)"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+        {/* The save/cancel buttons were here. They are removed as per user request. */}
       </div>
     </>
   );

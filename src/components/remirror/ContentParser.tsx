@@ -13,28 +13,25 @@ interface ContentParserProps {
 export const ContentParser: React.FC<ContentParserProps> = ({ content, className = '' }) => {
   // Check if content is empty or undefined
   if (!content) {
-    return <span className={className}></span>;
+    return null;
   }
 
   // Format content for display
   const parsedContent = formatContentForDisplay(content);
 
-  // If content is a simple string, wrap it in a paragraph
+  // If content is a simple string, render it directly as text
   if (typeof parsedContent === 'string') {
-    return <span className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: parsedContent }} />;
+    // Return just the text, parent component will handle styling
+    return <>{parsedContent}</>;
   }
 
   // If content is already parsed JSON, render it
   if (parsedContent && typeof parsedContent === 'object') {
-    return (
-      <span className="prose prose-lg max-w-none">
-        <RemirrorRenderer json={parsedContent} />
-      </span>
-    );
+    return <RemirrorRenderer json={parsedContent} />;
   }
 
   // Fallback for empty or invalid content
-  return <span className="text-gray-400">No content available</span>;
+  return null;
 };
 
 export default ContentParser;

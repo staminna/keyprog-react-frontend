@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { DirectusService } from '@/services/directusService';
@@ -20,13 +20,7 @@ export const ClienteDashboard = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && user) {
-      loadUserFiles();
-    }
-  }, [authLoading, user]);
-
-  const loadUserFiles = async () => {
+  const loadUserFiles = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -67,7 +61,13 @@ export const ClienteDashboard = () => {
     } finally {
       setIsLoadingFiles(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadUserFiles();
+    }
+  }, [authLoading, user, loadUserFiles]);
 
   const handleLogout = async () => {
     await logout();

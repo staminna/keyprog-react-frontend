@@ -14,7 +14,7 @@ export class FileService {
       // 1. Upload the file to Directus
       const uploadedFile = await UploadService.uploadFile(
         data.file,
-        'c98ee980-6f68-4db1-b734-f57ff3abe4b1' // Specific folder for file service uploads
+        process.env.VITE_DIRECTUS_FILE_SERVICE_FOLDER_ID
       );
 
       // 2. Trigger a Directus Flow to send an email

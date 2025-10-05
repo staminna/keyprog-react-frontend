@@ -14,9 +14,14 @@ export const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteP
   const location = useLocation();
 
   useEffect(() => {
-    checkAuthorization();
+    // Add a small delay to ensure any pending authentication has completed
+    const checkAuthTimer = setTimeout(() => {
+      checkAuthorization();
+    }, 50);
+    
+    return () => clearTimeout(checkAuthTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.pathname]); // Re-check when route changes
 
   const checkAuthorization = async () => {
     try {

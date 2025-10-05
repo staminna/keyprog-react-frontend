@@ -502,26 +502,126 @@ export class DirectusService {
       primary_button_link: "/servicos"
     };
 
-    return this.safeRequest(
-      () => directus.request(readSingleton('hero')),
-      fallback
-    );
+    try {
+      await this.ensureAuthenticated();
+      let token = await this.getToken();
+      if (!token) {
+        token = import.meta.env.VITE_DIRECTUS_TOKEN;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/hero?_=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch hero data, using fallback.');
+        return fallback;
+      }
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error('Error in getHero, using fallback:', error);
+      return fallback;
+    }
   }
 
   static async updateHero(data: Partial<DirectusHero>): Promise<DirectusHero> {
     try {
       await this.ensureAuthenticated();
       
-      // Use editor client if available (for Directus Visual Editor context)
-      const client = this.isInDirectusEditor && this.editorDirectusClient 
-        ? this.editorDirectusClient 
-        : directus;
+      // CRITICAL: When in Visual Editor, we need a token with WRITE permissions
+      // Static tokens are read-only, so we must use session auth
+      let token;
       
-      console.log('🔄 Updating hero with client:', this.isInDirectusEditor ? 'editor' : 'default');
-      const updatedHero = await client.request(updateSingleton('hero', data));
-      return updatedHero;
+      if (this.isInDirectusEditor) {
+        // In Visual Editor - try to get session token first
+        token = await sessionDirectus.getToken();
+        if (token) {
+          console.log('🔑 Using session token for Visual Editor write operation');
+          console.log('🔍 Token preview:', token.substring(0, 20) + '...');
+        } else if (this.parentToken) {
+          console.log('🔑 Using parent token for Visual Editor write operation');
+          console.log('🔍 Token preview:', this.parentToken.substring(0, 20) + '...');
+          token = this.parentToken;
+        } else {
+          console.warn('⚠️ No write-capable token available in Visual Editor');
+          throw new Error('No authentication token with write permissions available');
+        }
+      } else {
+        // Not in Visual Editor - use regular directus client
+        token = await sessionDirectus.getToken();
+        if (!token) {
+          token = import.meta.env.VITE_DIRECTUS_TOKEN;
+        }
+      }
+      
+      console.log('🔄 Updating hero singleton with data:', data);
+      console.log('🌐 API URL:', import.meta.env.VITE_DIRECTUS_URL);
+      
+      const body = JSON.stringify(data);
+      console.log('Request body:', body);
+
+      // Use direct fetch to ensure update persists
+      const updateResponse = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/hero`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: body
+      });
+      
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(errorData.errors?.[0]?.message || 'Failed to update hero');
+      }
+      
+      const updatedHero = await updateResponse.json();
+      console.log('✅ API Response:', updatedHero.data);
+      
+      // Verify the update by fetching again with cache busting
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const verifyResponse = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/hero?t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (verifyResponse.ok) {
+        const verifyData = await verifyResponse.json();
+        console.log('🔍 Verification fetch:', verifyData.data);
+        
+        // Check if the data actually persisted
+        const persistedCorrectly = Object.keys(data).every(key => {
+          const expected = data[key];
+          const actual = verifyData.data[key];
+          return expected === actual;
+        });
+        
+        if (!persistedCorrectly) {
+          console.warn('⚠️ Data verification failed - update may not have persisted');
+          console.warn('Expected:', data);
+          console.warn('Got:', verifyData.data);
+        } else {
+          console.log('✅ Data verified - update persisted correctly');
+        }
+        
+        return verifyData.data;
+      }
+      
+      // If verification fails, still return the update response
+      return updatedHero.data;
     } catch (error) {
-      console.error('Error updating hero:', error);
+      console.error('❌ Error updating hero:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error?.response?.status,
+        data: error?.response?.data || error?.data
+      });
       throw error;
     }
   }
@@ -849,11 +949,27 @@ export class DirectusService {
   static async getCollectionItem(collection: string, id: string | number): Promise<Record<string, unknown>> {
     try {
       await this.ensureAuthenticated();
-      const item = await directus.request(
-        // @ts-expect-error - Dynamic collection access
-        readItem(collection, id)
+      
+      // Use custom fetch with cache-busting to prevent stale data
+      const token = await this.getToken() || import.meta.env.VITE_DIRECTUS_TOKEN;
+      const response = await fetch(
+        `${import.meta.env.VITE_DIRECTUS_URL}/items/${collection}/${id}?_=${Date.now()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
       );
-      return item as Record<string, unknown>;
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${collection} item: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      return result.data as Record<string, unknown>;
     } catch (error) {
       console.error(`Error fetching ${collection} item:`, error);
       throw error;
@@ -1023,39 +1139,30 @@ export class DirectusService {
         throw new Error('No authentication token available');
       }
 
-      // Get current user data to check existing files
-      const currentUserResponse = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // File_service is a FILES relation (alias field)
+      // We need to create junction records in junction_directus_users_files
+      const junctionRecords = fileIds.map(fileId => ({
+        directus_users_id: userId,
+        directus_files_id: fileId
+      }));
 
-      if (!currentUserResponse.ok) {
-        throw new Error('Failed to fetch current user data');
-      }
-
-      const currentUserData = await currentUserResponse.json();
-      const existingFiles = currentUserData.data.File_service || [];
-
-      // Combine existing files with new files
-      const updatedFiles = [...existingFiles, ...fileIds];
-
-      // Update user with new files
-      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/${userId}`, {
-        method: 'PATCH',
+      // Create junction records
+      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/junction_directus_users_files`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          File_service: updatedFiles
-        })
+        body: JSON.stringify(junctionRecords)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.errors?.[0]?.message || 'Failed to update user File_service field');
+        console.error('Error creating junction records:', errorData);
+        throw new Error(errorData.errors?.[0]?.message || 'Failed to associate files with user');
       }
+
+      console.log('✅ Successfully associated files with user');
     } catch (error) {
       console.error('Error updating user File_service:', error);
       throw error;
@@ -1078,8 +1185,9 @@ export class DirectusService {
       this.authPromise = null;
       this.initPromise = null;
       
-      // Clear any stored credentials
+      // Clear stored session token and credentials
       if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('directus_session_token');
         localStorage.removeItem('directus_auth_email');
         localStorage.removeItem('directus_auth_password');
       }
@@ -1090,6 +1198,13 @@ export class DirectusService {
       this.useStaticToken = false;
       this.parentToken = null;
       this.editorDirectusClient = null;
+      
+      // Force clear localStorage even on error
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('directus_session_token');
+        localStorage.removeItem('directus_auth_email');
+        localStorage.removeItem('directus_auth_password');
+      }
     }
   }
 

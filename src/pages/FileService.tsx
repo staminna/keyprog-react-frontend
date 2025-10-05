@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const FileService = () => {
   const { isAuthenticated, user, isLoading: authLoading, canUpload } = useUnifiedAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // Always call hooks at the top level
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -84,8 +85,6 @@ const FileService = () => {
 
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
-    // Check if we have a redirect back after login
-    const location = useLocation();
     const from = location.state?.from?.pathname || '/file-service';
 
     return (
@@ -212,12 +211,12 @@ const FileService = () => {
                   Ficheiros suportados: .bin, .hex, .fls, .kess, etc.
                 </p>
                 <input
-                  id="file-upload"
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept=".bin,.hex,.fls,.kess,.ori,.mod"
+                id="file-upload"
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".bin,.rar,.zip,.hex,.fls,.kess,.ori,.mod"
                 />
                 <Button
                   onClick={() => document.getElementById('file-upload')?.click()}

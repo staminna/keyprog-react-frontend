@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { DirectusService } from '@/services/directusService';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { Loader2 } from 'lucide-react';
 
 // Role IDs from .env
@@ -9,6 +10,7 @@ const EDITOR_ROLE_ID = '97ef35d8-3d16-458d-8c93-78e35b7105a4';
 const CLIENTE_ROLE_ID = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID || '6c969db6-03d6-4240-b944-d0ba2bc56fc4';
 
 export const LoginPage = () => {
+  const { login: authLogin, checkAuth } = useUnifiedAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,8 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const success = await DirectusService.authenticate(email, password);
+      // Use UnifiedAuth login which updates context
+      const success = await authLogin(email, password);
       
       if (!success) {
         setError('Email ou password inválidos');
@@ -97,6 +100,12 @@ export const LoginPage = () => {
         console.warn('⚠️ Unknown role ID:', userRoleId);
         redirectUrl = '/';
       }
+
+      // CRITICAL FIX: Re-check authentication to update context
+      await checkAuth();
+      
+      // Add small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Navigate to appropriate URL
       navigate(redirectUrl);
@@ -176,6 +185,11 @@ export const LoginPage = () => {
             Não tem conta?{' '}
             <Link to="/registo" className="text-blue-600 hover:underline font-medium">
               Registar
+            </Link>
+          </p>
+          <p className="text-sm text-gray-600">
+            <Link to="/forgot-password" className="text-blue-600 hover:underline">
+              Esqueceu a password?
             </Link>
           </p>
           <p className="text-xs text-gray-500">

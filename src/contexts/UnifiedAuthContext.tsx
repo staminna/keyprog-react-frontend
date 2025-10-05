@@ -3,15 +3,7 @@ import { DirectusService } from '@/services/directusService';
 import { UnifiedAuthContext } from '@/types/unifiedAuth';
 import { sessionDirectus } from '@/lib/directus';
 import type { UnifiedUser, UnifiedAuthContextType, UnifiedAuthProviderProps, UserRole } from '@/types/unifiedAuth';
-
-// Helper function to clear session
-export const clearAuthSession = async () => {
-  try {
-    await sessionDirectus.setToken(null);
-  } catch (error) {
-    console.error('Error clearing auth session:', error);
-  }
-};
+import { clearAuthSession } from './authUtils';
 
 // Re-export the context so hooks can import it from here
 export { UnifiedAuthContext };
@@ -23,9 +15,23 @@ const CLIENTE_ROLE_ID = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID || '6c969d
 
 // Determine role type from role ID
 const getRoleType = (roleId: string): UserRole => {
+  console.log('🔍 getRoleType called with:', { 
+    roleId, 
+    ADMIN_ROLE_ID, 
+    EDITOR_ROLE_ID, 
+    CLIENTE_ROLE_ID,
+    matches: {
+      admin: roleId === ADMIN_ROLE_ID,
+      editor: roleId === EDITOR_ROLE_ID,
+      cliente: roleId === CLIENTE_ROLE_ID
+    }
+  });
+  
   if (roleId === ADMIN_ROLE_ID) return 'administrator';
   if (roleId === EDITOR_ROLE_ID) return 'editor';
   if (roleId === CLIENTE_ROLE_ID) return 'cliente';
+  
+  console.warn('⚠️ Unknown role ID:', roleId);
   return null;
 };
 
@@ -48,11 +54,14 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
 
   // Computed permissions based on role
   const canEdit = useMemo(() => {
-    return user?.role === 'administrator' || user?.role === 'editor';
-  }, [user?.role]);
+    // ONLY Administrator and Editor roles can use inline editor
+    const hasEditRole = user?.role === 'administrator' || user?.role === 'editor';
+    // Logging disabled to reduce console noise
+    return hasEditRole && isAuthenticated;
+  }, [user?.role, isAuthenticated]);
 
   const canUpload = useMemo(() => {
-    return user?.role === 'cliente';
+    return user?.role === 'cliente' || user?.role === 'administrator';
   }, [user?.role]);
 
   const canAdmin = useMemo(() => {
@@ -63,7 +72,41 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
     try {
       setIsLoading(true);
       
-      // PRIORITY 1: Auto-authenticate for Directus Visual Editor
+      // PRIORITY 1: Check for existing session token FIRST (for regular user login persistence)
+      try {
+        const token = await sessionDirectus.getToken();
+        if (token) {
+          console.log('🔍 Found existing session token, verifying...');
+          const isValid = await DirectusService.verifyToken();
+          if (isValid) {
+            const userInfo = await DirectusService.getCurrentUser();
+            if (userInfo && userInfo.roleId) {
+              const roleType = getRoleType(userInfo.roleId);
+              
+              setUser({
+                id: userInfo.id || '',
+                email: userInfo.email || '',
+                firstName: userInfo.firstName,
+                lastName: userInfo.lastName,
+                role: roleType,
+                roleId: userInfo.roleId,
+                authenticated: true,
+              });
+              setIsAuthenticated(true);
+              console.log('✅ Session auth successful:', roleType);
+              return true;
+            }
+          } else {
+            console.log('⚠️ Session token invalid, clearing...');
+            await clearAuthSession();
+          }
+        }
+      } catch (tokenError) {
+        console.warn('Error checking session token:', tokenError);
+        await clearAuthSession();
+      }
+      
+      // PRIORITY 2: Auto-authenticate for Directus Visual Editor (only if no session exists)
       if (isInDirectusVisualEditor()) {
         console.log('🎯 Detected Directus Visual Editor - auto-authenticating...');
         const envEmail = import.meta.env.VITE_DIRECTUS_EMAIL;
@@ -94,37 +137,6 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
             }
           }
         }
-      }
-      
-      // PRIORITY 2: Check for existing session token (normal user login)
-      try {
-        const token = await sessionDirectus.getToken();
-        if (token) {
-          const isValid = await DirectusService.verifyToken();
-          if (isValid) {
-            const userInfo = await DirectusService.getCurrentUser();
-            if (userInfo && userInfo.roleId) {
-              const roleType = getRoleType(userInfo.roleId);
-              
-              setUser({
-                id: userInfo.id || '',
-                email: userInfo.email || '',
-                firstName: userInfo.firstName,
-                lastName: userInfo.lastName,
-                role: roleType,
-                roleId: userInfo.roleId,
-                authenticated: true,
-              });
-              setIsAuthenticated(true);
-              console.log('✅ Session auth successful:', roleType);
-              return true;
-            }
-          } else {
-            await clearAuthSession();
-          }
-        }
-      } catch (tokenError) {
-        await clearAuthSession();
       }
       
       // No authentication found

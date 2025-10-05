@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShoppingCart, Euro, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useCart } from '@/hooks/useCart';
+import { toast } from 'sonner';
 
 const Loja = () => {
   const [products, setProducts] = useState<DirectusServices[]>([]);
@@ -15,6 +17,7 @@ const Loja = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { addItem } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -62,6 +65,25 @@ const Loja = () => {
       style: 'currency',
       currency: 'EUR'
     }).format(price);
+  };
+
+  // Add to cart handler
+  const handleAddToCart = (product: DirectusServices) => {
+    if (!product.price) {
+      toast.error('Produto sem preço definido');
+      return;
+    }
+
+    addItem({
+      product_id: product.id,
+      name: product.title || 'Produto sem nome',
+      slug: product.slug,
+      price: product.price,
+      image: product.image,
+      description: product.description,
+    });
+
+    toast.success(`${product.title} adicionado ao carrinho!`);
   };
 
   return (
@@ -171,7 +193,11 @@ const Loja = () => {
                         Ver Detalhes
                       </Link>
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleAddToCart(product)}
+                    >
                       <ShoppingCart className="h-4 w-4" />
                     </Button>
                   </div>

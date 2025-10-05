@@ -26,14 +26,18 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import LoginPage from '@/pages/auth/LoginPage';
 import EditorPage from '@/pages/auth/EditorPage';
 import AdminPage from '@/pages/auth/AdminPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import PasswordResetPage from '@/pages/auth/PasswordResetPage';
 import RegistrationPage from '@/pages/customer/RegistrationPage';
 import ClienteDashboard from '@/pages/customer/ClienteDashboard';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { UnifiedAuthProvider } from "@/contexts/UnifiedAuthContext";
 import { EditableContentProvider } from "@/contexts/EditableContentProvider";
+import { CartProvider } from "@/contexts/CartContext";
 import EditableContentWrapper from "@/components/layout/EditableContentWrapper";
 import HashRedirect from "@/components/HashRedirect";
+import InlineEditingToggle from "@/components/InlineEditingToggle";
 
 // Service Pages
 import DiagnosticoPage from "./pages/servicos/DiagnosticoPage";
@@ -46,11 +50,17 @@ import AdBluePage from "./pages/servicos/AdBluePage";
 import ChavesPage from "./pages/servicos/ChavesPage";
 import QuadrantesPage from "./pages/servicos/QuadrantesPage";
 
+// Checkout Pages
+import CheckoutPage from "./pages/checkout/CheckoutPage";
+import CheckoutSuccessPage from "./pages/checkout/CheckoutSuccessPage";
+import CheckoutCancelPage from "./pages/checkout/CheckoutCancelPage";
+
 
 const App = () => (
   <HelmetProvider>
       <UnifiedAuthProvider>
-        <EditableContentProvider>
+        <CartProvider>
+          <EditableContentProvider>
           <GlobalEditingProvider>
             <TooltipProvider>
               <Toaster />
@@ -64,10 +74,17 @@ const App = () => (
                     {/* Auth Routes */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/registo" element={<RegistrationPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<PasswordResetPage />} />
                     
                     {/* Cliente Routes */}
                     <Route path="/conta" element={<ClienteDashboard />} />
                     <Route path="/minha-conta" element={<ClienteDashboard />} />
+                    
+                    {/* Checkout Routes */}
+                    <Route path="/checkout" element={<CheckoutPage />} />
+                    <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+                    <Route path="/checkout/cancel" element={<CheckoutCancelPage />} />
                     
                     {/* Protected Admin Routes */}
                     <Route path="/admin" element={
@@ -120,7 +137,8 @@ const App = () => (
               </InlineEditorProvider>
             </TooltipProvider>
           </GlobalEditingProvider>
-        </EditableContentProvider>
+          </EditableContentProvider>
+        </CartProvider>
       </UnifiedAuthProvider>
   </HelmetProvider>
 );

@@ -93,19 +93,20 @@ export const RegistrationPage = () => {
     try {
       const clienteRoleId = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
       
+      // Map form fields to Directus user fields
       const userData = {
         email: formData.email,
         password: formData.password,
         first_name: formData.first_name,
         last_name: formData.last_name,
-        role: clienteRoleId,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        postal_code: formData.postal_code,
-        country: formData.country,
-        tax_id: formData.tax_id || null,
-        company_name: formData.company_name || null,
+        role: clienteRoleId, // Cliente role ID
+        telefone: formData.phone, // Portuguese field name
+        morada: formData.address, // Portuguese field name
+        cidade: formData.city, // Portuguese field name
+        codigo_postal: formData.postal_code, // Portuguese field name
+        pais: formData.country, // Portuguese field name
+        nif: formData.tax_id || null, // Portuguese field name
+        nome_empresa: formData.company_name || null, // Portuguese field name
         status: 'active'
       };
 

@@ -3,7 +3,6 @@ import { TrueInlineEditor } from '@/components/inline/TrueInlineEditor';
 import { ContentParser } from '@/components/remirror/ContentParser';
 import { formatContentForDisplay } from '@/utils/contentParserV2';
 import { DirectusServiceExtension } from '@/services/directusServiceExtension';
-import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { useInlineEditor } from '@/components/universal/inline-editor-context';
 import { useGlobalEditingState } from '@/hooks/global-editing-utils';
@@ -40,10 +39,20 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
 }: UniversalContentEditorProps<T>) => {
   const Tag = tag || 'div';
   const [isEditing, setIsEditing] = useState(false);
-  const { isInDirectusEditor } = useDirectusEditorContext();
-  const { isAuthenticated, canEdit: userCanEdit } = useUnifiedAuth();
+  const { canEdit: userCanEdit, user } = useUnifiedAuth();
   const { isInlineEditingEnabled } = useInlineEditor();
   const globalEditingState = useGlobalEditingState();
+  
+  // Check if we're in Directus Visual Editor
+  const isInDirectusEditor = useMemo(() => {
+    try {
+      const isInIframe = window.self !== window.top;
+      const referrer = document.referrer;
+      return isInIframe && (referrer.includes('localhost:8065') || referrer.includes('/admin/'));
+    } catch {
+      return false;
+    }
+  }, []);
   
   // Create unique session ID for this editor instance
   const sessionId = `${collection}-${itemId}-${field}`;
@@ -68,11 +77,37 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
   
   const [parsedContent, setParsedContent] = useState('');
 
-  // Unified permission check - simplified
+  // Unified permission check - ONLY Administrator and Editor roles can edit
   const canEdit = useMemo(() => {
+    // userCanEdit already checks for admin/editor roles in UnifiedAuthContext
     const hasPermission = isInDirectusEditor || userCanEdit;
     const editingEnabled = isInlineEditingEnabled;
-    return hasPermission && editingEnabled;
+    const result = hasPermission && editingEnabled;
+    
+    // Debug logging disabled to reduce console noise
+    // Uncomment below for debugging permission issues
+    /*
+    if (process.env.NODE_ENV === 'development') {
+      const logKey = `canEdit-${collection}-${field}`;
+      const prevResult = (window as any)[logKey];
+      if (prevResult !== result) {
+        console.log('🔐 UniversalContentEditor canEdit check:', {
+          collection,
+          field,
+          userRole: user?.role,
+          isInDirectusEditor,
+          userCanEdit,
+          isInlineEditingEnabled,
+          hasPermission,
+          editingEnabled,
+          canEdit: result
+        });
+        (window as any)[logKey] = result;
+      }
+    }
+    */
+    
+    return result;
   }, [isInDirectusEditor, userCanEdit, isInlineEditingEnabled]);
 
 
@@ -108,19 +143,19 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
 
   // Handle edit button click - memoized to prevent unnecessary re-renders
   const handleEdit = useCallback(() => {
-    console.log('🖱️ Click detected, canEdit:', canEdit);
+    // Reduced logging
     if (canEdit) {
-      console.log('✅ Starting edit mode for:', { collection, itemId, field });
+      console.log('✅ Starting edit mode:', { collection, field });
       setIsEditing(true);
       globalEditingState.startEditing(sessionId);
     } else {
       console.log('❌ Edit prevented - permissions denied');
     }
-  }, [canEdit, globalEditingState, sessionId, collection, itemId, field]);
+  }, [canEdit, globalEditingState, sessionId, collection, field]);
 
   const handleSave = async (newContent: string) => {
     if (!canEdit) {
-      console.log('❌ UniversalContentEditor: Cannot save, permissions denied');
+      console.warn('❌ Cannot save, permissions denied');
       return;
     }
     
