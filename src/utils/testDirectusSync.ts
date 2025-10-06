@@ -57,7 +57,7 @@ export function testRefreshUtilities() {
   ];
   
   utilities.forEach(util => {
-    const available = typeof (window as any)[util] === 'function';
+    const available = typeof (window as unknown as Record<string, unknown>)[util] === 'function';
     console.log(`  ${util}: ${available ? '✅ AVAILABLE' : '❌ MISSING'}`);
   });
 }
@@ -120,7 +120,7 @@ export function runAllTests() {
 
 // Expose test functions globally
 if (typeof window !== 'undefined') {
-  (window as any).testDirectusSync = {
+  (window as Window & { testDirectusSync?: Record<string, unknown> }).testDirectusSync = {
     runAll: runAllTests,
     testIframeDetection,
     testEventListeners,

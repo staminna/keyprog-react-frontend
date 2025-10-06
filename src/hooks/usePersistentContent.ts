@@ -257,21 +257,17 @@ export const usePersistentContent = ({
       let result;
       
       if (collection === 'sub_menu_content') {
-        try {
-          const existingItem = await DirectusServiceExtension.getCollectionItemSafe(collection, itemId);
-          
-          if (existingItem && existingItem.id) {
-            result = await DirectusServiceExtension.updateField(collection, itemId, field, content);
-          } else {
-            const newItem = {
-              id: itemId,
-              [field]: content,
-              status: 'published'
-            };
-            result = await DirectusServiceExtension.createItem(collection, newItem);
-          }
-        } catch (subMenuError) {
-          throw subMenuError;
+        const existingItem = await DirectusServiceExtension.getCollectionItemSafe(collection, itemId);
+        
+        if (existingItem && existingItem.id) {
+          result = await DirectusServiceExtension.updateField(collection, itemId, field, content);
+        } else {
+          const newItem = {
+            id: itemId,
+            [field]: content,
+            status: 'published'
+          };
+          result = await DirectusServiceExtension.createItem(collection, newItem);
         }
       } else {
         result = await DirectusServiceExtension.updateField(collection, itemId, field, content);

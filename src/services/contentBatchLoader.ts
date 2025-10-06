@@ -12,14 +12,16 @@ import { DirectusServiceExtension } from './directusServiceExtension';
 import { DirectusService } from './directusService';
 import { directus, readItems } from '@/lib/directus';
 
+type DirectusItem = Record<string, unknown>;
+
 interface CacheEntry {
-  data: any;
+  data: DirectusItem | null;
   timestamp: number;
 }
 
 interface PendingRequest {
-  resolve: (value: any) => void;
-  reject: (error: any) => void;
+  resolve: (value: DirectusItem | null) => void;
+  reject: (error: Error) => void;
 }
 
 class ContentBatchLoader {
@@ -59,7 +61,7 @@ class ContentBatchLoader {
         // Wait for the existing request
         return new Promise((resolve, reject) => {
           this.pendingRequests.get(cacheKey)!.push({ resolve, reject });
-        }).then((item: any) => {
+        }).then((item: DirectusItem | null) => {
           const value = item && field in item ? item[field] : null;
           return value !== null && value !== undefined ? String(value) : '';
         });
@@ -82,7 +84,7 @@ class ContentBatchLoader {
     // Return promise that will be resolved when batch completes
     return new Promise((resolve, reject) => {
       this.pendingRequests.get(cacheKey)!.push({
-        resolve: (item: any) => {
+        resolve: (item: DirectusItem | null) => {
           const value = item && field in item ? item[field] : null;
           resolve(value !== null && value !== undefined ? String(value) : '');
         },
@@ -142,7 +144,7 @@ class ContentBatchLoader {
           try {
             // Use Directus SDK to fetch all items in a single API call
             const response = await directus.request(
-              readItems(collection as any, {
+              readItems(collection as never, {
                 filter: {
                   id: {
                     _in: itemIdArray
@@ -162,7 +164,7 @@ class ContentBatchLoader {
             }
 
             // Handle items that weren't found
-            const foundIds = new Set(items.map((item: any) => String(item.id)));
+            const foundIds = new Set(items.map((item: DirectusItem) => String(item.id)));
             for (const itemId of itemIdArray) {
               if (!foundIds.has(String(itemId))) {
                 const cacheKey = this.getCacheKey(collection, itemId);
@@ -206,7 +208,7 @@ class ContentBatchLoader {
   /**
    * Get item from cache if not expired
    */
-  private getFromCache(cacheKey: string): any | null {
+  private getFromCache(cacheKey: string): DirectusItem | null {
     const entry = this.cache.get(cacheKey);
 
     if (!entry) {
@@ -225,7 +227,7 @@ class ContentBatchLoader {
   /**
    * Set cache entry
    */
-  private setCache(cacheKey: string, data: any) {
+  private setCache(cacheKey: string, data: DirectusItem | null) {
     this.cache.set(cacheKey, {
       data,
       timestamp: Date.now(),
@@ -235,7 +237,7 @@ class ContentBatchLoader {
   /**
    * Resolve all pending requests for a cache key
    */
-  private resolvePendingRequests(cacheKey: string, item: any) {
+  private resolvePendingRequests(cacheKey: string, item: DirectusItem | null) {
     const pending = this.pendingRequests.get(cacheKey);
 
     if (pending) {
@@ -249,7 +251,7 @@ class ContentBatchLoader {
   /**
    * Reject all pending requests for a cache key
    */
-  private rejectPendingRequests(cacheKey: string, error: any) {
+  private rejectPendingRequests(cacheKey: string, error: Error) {
     const pending = this.pendingRequests.get(cacheKey);
 
     if (pending) {

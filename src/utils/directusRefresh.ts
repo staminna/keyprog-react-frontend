@@ -66,7 +66,7 @@ export function refreshDirectusItem(collection: string, itemId: string | number)
  * Enable verbose logging for debugging sync issues
  */
 export function enableDirectusDebugLogging() {
-  (window as any).__DIRECTUS_DEBUG__ = true;
+  (window as Window & { __DIRECTUS_DEBUG__?: boolean }).__DIRECTUS_DEBUG__ = true;
   console.log('🔍 Directus debug logging enabled');
 }
 
@@ -74,14 +74,19 @@ export function enableDirectusDebugLogging() {
  * Disable verbose logging
  */
 export function disableDirectusDebugLogging() {
-  (window as any).__DIRECTUS_DEBUG__ = false;
+  (window as Window & { __DIRECTUS_DEBUG__?: boolean }).__DIRECTUS_DEBUG__ = false;
   console.log('🔇 Directus debug logging disabled');
 }
 
 // Expose utilities globally for console access
 if (typeof window !== 'undefined') {
-  (window as any).refreshDirectusContent = refreshDirectusContent;
-  (window as any).refreshDirectusItem = refreshDirectusItem;
-  (window as any).enableDirectusDebugLogging = enableDirectusDebugLogging;
-  (window as any).disableDirectusDebugLogging = disableDirectusDebugLogging;
+  (window as Window & {
+    refreshDirectusContent?: typeof refreshDirectusContent;
+    refreshDirectusItem?: typeof refreshDirectusItem;
+    enableDirectusDebugLogging?: typeof enableDirectusDebugLogging;
+    disableDirectusDebugLogging?: typeof disableDirectusDebugLogging;
+  }).refreshDirectusContent = refreshDirectusContent;
+  (window as Window & { refreshDirectusItem?: typeof refreshDirectusItem }).refreshDirectusItem = refreshDirectusItem;
+  (window as Window & { enableDirectusDebugLogging?: typeof enableDirectusDebugLogging }).enableDirectusDebugLogging = enableDirectusDebugLogging;
+  (window as Window & { disableDirectusDebugLogging?: typeof disableDirectusDebugLogging }).disableDirectusDebugLogging = disableDirectusDebugLogging;
 }
