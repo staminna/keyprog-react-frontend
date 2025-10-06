@@ -86,10 +86,12 @@ interface DirectusContactInfo {
   contact_form_link: string;
 }
 
+export type SubMenuCategory = 'loja' | 'servicos' | 'suporte';
+
 export interface DirectusSubMenuContent {
   id: string;
   slug: string;
-  category: 'loja' | 'servicos' | 'suporte';
+  category: SubMenuCategory;
   title: string;
   description?: string;
   content?: string;
@@ -185,8 +187,9 @@ const getDirectusURL = () => {
   }
   
   if (isBrowser) {
-    // In development browser, use browser-specific URL or fallback to localhost
-    return import.meta.env.VITE_DIRECTUS_URL_BROWSER || import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
+    // In development browser, use the current origin to leverage Vite proxy
+    // This avoids CORS issues by proxying through the Vite dev server
+    return window.location.origin;
   } else {
     // In development server-side, use container name
     return import.meta.env.VITE_DIRECTUS_URL || 'http://keyprog:8065';

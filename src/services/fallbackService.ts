@@ -1,4 +1,4 @@
-import type { 
+import {
   DirectusSettings,
   DirectusHeaderMenu,
   DirectusFooterMenu,
@@ -8,7 +8,8 @@ import type {
   DirectusContacts,
   DirectusHero,
   DirectusSubMenuContent,
-  DirectusProduct
+  DirectusProduct,
+  SubMenuCategory
 } from '@/lib/directus';
 
 // Fallback data for when Directus is down
@@ -300,13 +301,13 @@ export class FallbackService {
   }
 
   // Fallback sub-menu content
-  static getSubMenuContent(category: string, slug: string): DirectusSubMenuContent | null {
+  static getSubMenuContent(category: SubMenuCategory, slug: string): DirectusSubMenuContent | null {
     const allContent = this.getAllSubMenuContent();
     return allContent.find(content => content.category === category && content.slug === slug) || null;
   }
 
   // Fallback sub-menu content by category
-  static getSubMenuContentByCategory(category: string): DirectusSubMenuContent[] {
+  static getSubMenuContentByCategory(category: SubMenuCategory): DirectusSubMenuContent[] {
     const allContent = this.getAllSubMenuContent();
     return allContent.filter(content => content.category === category);
   }

@@ -62,6 +62,42 @@ document.addEventListener('DOMContentLoaded', () => {
           enabled: event.data.enabled
         }, '*');
       }
+
+      // Handle content updates from Directus
+      if (event.data.type === 'directus:content-updated') {
+        console.log('🔄 Visual Editor Bridge: Content update received from Directus', event.data);
+        
+        // Dispatch custom event that components can listen to
+        window.dispatchEvent(new CustomEvent('directus:content-updated', {
+          detail: {
+            collection: event.data.collection,
+            itemId: event.data.itemId,
+            field: event.data.field,
+            value: event.data.value,
+            timestamp: Date.now()
+          }
+        }));
+
+        // Also post message for components using postMessage listeners
+        window.postMessage({
+          type: 'directus:content-updated',
+          collection: event.data.collection,
+          itemId: event.data.itemId,
+          field: event.data.field,
+          value: event.data.value,
+          timestamp: Date.now()
+        }, '*');
+      }
+
+      // Handle generic refresh request from Directus
+      if (event.data.type === 'directus:refresh' || event.data.type === 'directus:reload') {
+        console.log('🔄 Visual Editor Bridge: Refresh request from Directus');
+        
+        // Dispatch refresh event
+        window.dispatchEvent(new CustomEvent('directus:refresh', {
+          detail: { timestamp: Date.now() }
+        }));
+      }
     }
   });
   

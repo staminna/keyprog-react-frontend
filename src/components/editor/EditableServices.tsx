@@ -68,7 +68,7 @@ const EditableServices = () => {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service) => (
+          {services.map((service, index) => (
             <Card key={service.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <UniversalContentEditor
@@ -77,7 +77,7 @@ const EditableServices = () => {
                   field="title"
                   tag="h3"
                   className="text-xl font-semibold mb-3"
-                  value={service.title}
+                  value={`Serviço ${index + 1}`}
                 />
                 <UniversalContentEditor
                   collection="services"
@@ -85,7 +85,7 @@ const EditableServices = () => {
                   field="description"
                   tag="div"
                   className="text-muted-foreground"
-                  value={service.description}
+                  value="Descrição do serviço"
                 />
               </CardContent>
             </Card>

@@ -18,7 +18,8 @@ import {
   type DirectusHero,
   type DirectusSchema,
   type DirectusSubMenuContent,
-  type DirectusContactInfo
+  type DirectusContactInfo,
+  type SubMenuCategory
 } from '@/lib/directus';
 import { deleteItem as directusDeleteItem } from '@directus/sdk';
 
@@ -338,9 +339,13 @@ export class DirectusService {
       await this.initialize();
     }
     
+    // Wait for initialization to complete if in progress
+    if (this.initPromise && !this.isAuthenticated) {
+      await this.initPromise;
+    }
+    
     // If in Directus Editor, skip authentication check
     if (this.isInDirectusEditor && this.parentToken && this.editorDirectusClient) {
-      console.log('🎯 Skipping authentication check - using Directus Editor inherited token');
       this.isAuthenticated = true;
       return;
     }
@@ -511,21 +516,31 @@ export class DirectusService {
 
       const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/items/hero?_=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+          'Authorization': `Bearer ${token}`
         }
       });
+      
       if (!response.ok) {
-        console.error('Failed to fetch hero data, using fallback.');
-        return fallback;
+        // Only use fallback for server errors (500+) or network issues
+        // For auth errors (401, 403), throw so we know auth is broken
+        if (response.status >= 500) {
+          console.error(`Server error ${response.status}, using fallback`);
+          return fallback;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
       const result = await response.json();
       return result.data;
     } catch (error) {
-      console.error('Error in getHero, using fallback:', error);
-      return fallback;
+      // Only use fallback for network errors (Directus down)
+      // Re-throw auth and other errors so they're visible
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error('❌ Network error - Directus appears to be down, using fallback:', error);
+        return fallback;
+      }
+      console.error('❌ Error fetching hero data:', error);
+      throw error; // Re-throw so calling code knows there's a problem
     }
   }
 
@@ -595,17 +610,23 @@ export class DirectusService {
         const verifyData = await verifyResponse.json();
         console.log('🔍 Verification fetch:', verifyData.data);
         
-        // Check if the data actually persisted
+        // Check if the data actually persisted - only verify the fields we updated
         const persistedCorrectly = Object.keys(data).every(key => {
           const expected = data[key];
           const actual = verifyData.data[key];
-          return expected === actual;
+          const matches = expected === actual;
+          if (!matches) {
+            console.warn(`⚠️ Field '${key}' mismatch:`, { expected, actual });
+          }
+          return matches;
         });
         
         if (!persistedCorrectly) {
           console.warn('⚠️ Data verification failed - update may not have persisted');
-          console.warn('Expected:', data);
-          console.warn('Got:', verifyData.data);
+          console.warn('Expected fields:', data);
+          console.warn('Got from server:', Object.fromEntries(
+            Object.keys(data).map(key => [key, verifyData.data[key]])
+          ));
         } else {
           console.log('✅ Data verified - update persisted correctly');
         }
@@ -871,7 +892,7 @@ export class DirectusService {
   }
 
   // Get sub-menu content by category and slug
-  static async getSubMenuContent(category: string, slug: string): Promise<DirectusSubMenuContent | null> {
+  static async getSubMenuContent(category: SubMenuCategory, slug: string): Promise<DirectusSubMenuContent | null> {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
@@ -891,7 +912,7 @@ export class DirectusService {
   }
 
   // Get all sub-menu content by category
-  static async getSubMenuContentByCategory(category: string): Promise<DirectusSubMenuContent[]> {
+  static async getSubMenuContentByCategory(category: SubMenuCategory): Promise<DirectusSubMenuContent[]> {
     try {
       await this.ensureAuthenticated();
       const content = await directus.request(
@@ -956,10 +977,7 @@ export class DirectusService {
         `${import.meta.env.VITE_DIRECTUS_URL}/items/${collection}/${id}?_=${Date.now()}`,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+            'Authorization': `Bearer ${token}`
           }
         }
       );
@@ -1026,14 +1044,84 @@ export class DirectusService {
   static async updateCollectionItem(collection: string, id: string | number, data: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
       await this.ensureAuthenticated();
-      const updatedItem = await directus.request(
-        // @ts-expect-error - Dynamic collection access
-        updateItem(collection, id, data)
-      );
-      return updatedItem as Record<string, unknown>;
+      
+      let token = await this.getToken();
+      if (!token) {
+        // Fallback to static token if no session token is available
+        token = import.meta.env.VITE_DIRECTUS_TOKEN;
+      }
+
+      if (!token) {
+        throw new Error('No authentication token available for update operation');
+      }
+
+      const apiUrl = `${import.meta.env.VITE_DIRECTUS_URL}/items/${collection}/${id}`;
+      console.log(`🔄 Updating ${collection} item #${id} at ${apiUrl}`);
+      
+      const body = JSON.stringify(data);
+      console.log('Request body:', body);
+
+      const updateResponse = await fetch(apiUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        body: body
+      });
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error(`❌ Failed to update ${collection} item. Server response:`, errorData);
+          throw new Error(errorData.errors?.[0]?.message || `Failed to update item. Status: ${updateResponse.status}`);
+        } catch (e) {
+          console.error(`❌ Failed to update ${collection} item. Non-JSON response:`, errorText);
+          throw new Error(`Failed to update item. Status: ${updateResponse.status}, Response: ${errorText}`);
+        }
+      }
+
+      const updatedItem = await updateResponse.json();
+      console.log('✅ API Response:', updatedItem.data);
+
+      // Verification step with cache-busting to ensure data persisted
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s for DB + cache to update
+      const verifyResponse = await fetch(`${apiUrl}?_=${Date.now()}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+
+      if (verifyResponse.ok) {
+        const verifyData = await verifyResponse.json();
+        const persistedCorrectly = Object.keys(data).every(key => {
+          const expected = data[key];
+          const actual = verifyData.data[key];
+          if (expected !== actual) {
+            console.warn(`⚠️ Field '${key}' mismatch after update:`, { expected, actual });
+          }
+          return expected === actual;
+        });
+
+        if (persistedCorrectly) {
+          console.log(`✅ Data for ${collection} item #${id} verified - update persisted correctly.`);
+        } else {
+          console.warn(`⚠️ Data verification failed for ${collection} item #${id}. The update may not have persisted correctly.`);
+        }
+        return verifyData.data;
+      }
+
+      return updatedItem.data;
     } catch (error) {
-      console.error(`Error updating ${collection} item:`, error);
-      throw error;
+      console.error(`❌ Error in updateCollectionItem for ${collection} item #${id}:`, error);
+      throw error; // Re-throw the error to make it visible to the calling component
     }
   }
 

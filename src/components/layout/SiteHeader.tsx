@@ -51,7 +51,6 @@ const SiteHeader = () => {
         
         // Use local Keyprog logo
         const logoUrl = '/keyprog-logo.png';
-        console.log('Using local Keyprog logo:', logoUrl);
         
         // Note: If local logo fails to load, the onError handler will show the fallback circle
         setLogoUrl(logoUrl);

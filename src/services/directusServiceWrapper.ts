@@ -12,8 +12,8 @@ export class DirectusServiceWrapper {
    * Get settings with content formatting
    */
   static async getSettings(): Promise<DirectusSettings> {
-    const settings = await DirectusService.getSettings();
-    return ContentFormatter.processResponse(settings);
+    const settings = await DirectusService.getSettingsItem();
+    return ContentFormatter.processResponse(settings) as DirectusSettings;
   }
 
   /**
@@ -78,7 +78,7 @@ export class DirectusServiceWrapper {
    * Get sub-menu content with content formatting
    */
   static async getSubMenuContent(category: string, slug: string) {
-    const content = await DirectusService.getSubMenuContent(category, slug);
+    const content = await DirectusService.getSubMenuContent(category as 'loja' | 'servicos' | 'suporte', slug);
     return ContentFormatter.processResponse(content);
   }
 
@@ -86,7 +86,7 @@ export class DirectusServiceWrapper {
    * Get sub-menu content by category with content formatting
    */
   static async getSubMenuContentByCategory(category: string) {
-    const content = await DirectusService.getSubMenuContentByCategory(category);
+    const content = await DirectusService.getSubMenuContentByCategory(category as 'loja' | 'servicos' | 'suporte');
     return ContentFormatter.processResponse(content);
   }
 

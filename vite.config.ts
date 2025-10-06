@@ -18,14 +18,46 @@ export default defineConfig(({ mode }) => {
         "127.0.0.1",
         "0.0.0.0"
       ],
+      proxy: {
+        '/items': {
+          target: 'http://localhost:8065',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/users': {
+          target: 'http://localhost:8065',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/files': {
+          target: 'http://localhost:8065',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/assets': {
+          target: 'http://localhost:8065',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/auth': {
+          target: 'http://localhost:8065',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/server': {
+          target: 'http://localhost:8065',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
       hmr: {
-        clientPort: 3000, // Important for Docker HMR
+        clientPort: 3000,
         protocol: 'ws',
         host: 'localhost',
         port: 3000,
       },
       watch: {
-        usePolling: true, // Important for Docker on some systems
+        usePolling: true,
       },
       headers: {
         "Content-Security-Policy": isDev ? 
@@ -65,6 +97,25 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
+    },
+    // PERFORMANCE OPTIMIZATION: Remove console.logs in production
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
+    build: {
+      // Optimize chunk size
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'directus-vendor': ['@directus/sdk'],
+          },
+        },
+      },
+      // Increase chunk size warning limit
+      chunkSizeWarningLimit: 1000,
+      // Enable sourcemaps for debugging production issues
+      sourcemap: mode === 'production',
     },
   };
 });

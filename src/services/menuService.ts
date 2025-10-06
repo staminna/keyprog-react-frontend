@@ -41,6 +41,7 @@ export class MenuService {
    * Get submenu content with fallback for empty content
    */
   static async getSubMenuContent(category: string, slug: string): Promise<Record<string, unknown>> {
+    // Type assertion is safe here as we validate the category at runtime
     try {
       console.log(`MenuService: Original request for category=${category}, slug=${slug}`);
       
@@ -59,7 +60,7 @@ export class MenuService {
       console.log(`MenuService: Corrected category=${correctCategory}, slug=${correctSlug}`);
       
       // Get content from Directus
-      const content = await DirectusService.getSubMenuContent(correctCategory, correctSlug);
+      const content = await DirectusService.getSubMenuContent(correctCategory as 'loja' | 'servicos' | 'suporte', correctSlug);
       console.log(`MenuService: Directus content result:`, content ? 'Found' : 'Not found');
       
       // If content exists in Directus, return it with fallback properties if needed
@@ -88,13 +89,12 @@ export class MenuService {
       };
     }
   }
-  
   /**
    * Get all submenu content for a category
    */
   static async getSubMenuContentByCategory(category: string): Promise<Record<string, unknown>[]> {
     try {
-      const content = await DirectusService.getSubMenuContentByCategory(category);
+      const content = await DirectusService.getSubMenuContentByCategory(category as 'loja' | 'servicos' | 'suporte');
       
       // If we have content, ensure it has not_found_message
       if (content && content.length > 0) {

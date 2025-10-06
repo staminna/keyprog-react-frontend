@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { initializeDirectusAutoLogin } from './services/autoLogin';
+import './utils/directusRefresh'; // Load refresh utilities for debugging
+import './utils/testDirectusSync'; // Load sync test utilities
 
 // Initialize Directus autologin
 initializeDirectusAutoLogin().catch(error => {
@@ -47,8 +49,15 @@ if (window.parent !== window) {
   }
 }
 
+// PERFORMANCE FIX: Disable StrictMode in production to prevent double renders
+const isProduction = import.meta.env.PROD;
+
 createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  isProduction ? (
     <App />
-  </React.StrictMode>,
+  ) : (
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  )
 );
