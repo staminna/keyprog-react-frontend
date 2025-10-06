@@ -13,7 +13,8 @@
     "deploy": "./deploy.sh",
     "docker:build": "docker-compose -f docker-compose.prod.yml build",
     "docker:up": "docker-compose -f docker-compose.prod.yml up -d",
-    "docker:down": "docker-compose -f docker-compose.prod.yml down"
+    "docker:down": "docker-compose -f docker-compose.prod.yml down",
+    "prepare": "husky"
   },
   "dependencies": {
     "@directus/sdk": "^20.0.3",
@@ -112,6 +113,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.12",
     "globals": "^15.12.0",
+    "husky": "^9.1.7",
     "lovable-tagger": "^1.1.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",

@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run TruffleHog to detect secrets
+echo "🔍 Scanning for secrets with TruffleHog..."
+trufflehog git file://. --since-commit HEAD --results=verified,unknown --fail
+
+# Run tests if they exist
+# npm test

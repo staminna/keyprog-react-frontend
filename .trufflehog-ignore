@@ -1,0 +1,21 @@
+# TruffleHog Ignore Patterns
+# Add patterns here to ignore false positives
+# Format: One pattern per line
+
+# Example patterns (uncomment and modify as needed):
+# node_modules/
+# *.test.js
+# *.example
+# test-data/
+
+# Ignore example environment files (they contain fake keys)
+.env.example
+.env.production.example
+.env.frontend
+
+# Ignore lock files
+package-lock.json
+bun.lockb
+
+# Ignore documentation
+*.md
