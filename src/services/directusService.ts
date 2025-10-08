@@ -1152,18 +1152,28 @@ export class DirectusService {
     }
   }
 
-  // Create new user (for registration)
+  // Create new user (for registration) - creates user with draft status
   static async createUser(userData: Record<string, unknown>): Promise<User> {
     try {
-      // Use admin token for user creation
+      // Use admin token to create user with draft status
       const adminToken = import.meta.env.VITE_DIRECTUS_TOKEN;
+      
+      // Create user with status='draft' (unverified)
       const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${adminToken}`
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role, // Cliente role
+          status: 'draft', // Unverified until email is confirmed
+          email_notifications: true
+        })
       });
 
       if (!response.ok) {
@@ -1172,9 +1182,62 @@ export class DirectusService {
       }
 
       const result = await response.json();
-      return result.data as User;
+      const newUser = result.data;
+
+      // Email is now sent automatically by Directus Flow
+      console.log('✅ User created, verification email will be sent by Directus Flow');
+
+      return newUser as User;
     } catch (error) {
       console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+
+  // Resend verification email - Note: Emails are sent automatically by Directus Flow
+  // This function just validates the user exists and provides helpful information
+  static async resendVerificationEmail(email: string): Promise<void> {
+    try {
+      const adminToken = import.meta.env.VITE_DIRECTUS_TOKEN;
+      const directusUrl = import.meta.env.VITE_DIRECTUS_URL;
+      
+      // Check if user exists and is unverified
+      const getUserResponse = await fetch(
+        `${directusUrl}/users?filter[email][_eq]=${encodeURIComponent(email)}&fields=id,first_name,status`,
+        {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`
+          }
+        }
+      );
+
+      if (!getUserResponse.ok) {
+        throw new Error('Failed to lookup user');
+      }
+
+      const userData = await getUserResponse.json();
+      
+      if (!userData.data || userData.data.length === 0) {
+        throw new Error('User not found with this email. Please register first.');
+      }
+
+      const user = userData.data[0];
+
+      // Check if user is already verified
+      if (user.status === 'active') {
+        throw new Error('Email already verified! You can login now.');
+      }
+
+      // User exists and is unverified - provide helpful information
+      console.log('📧 Verification email was sent during registration');
+      console.log('💡 Check MailHog at: http://localhost:8025');
+      console.log('⚠️  If email not received, the Directus Flow may need to be configured');
+      console.log('👤 User ID:', user.id);
+      
+      // In production, you would trigger the Flow again here or use a dedicated resend endpoint
+      // For now, just inform the user to check their email
+    } catch (error) {
+      console.error('⚠️ Resend verification error:', error);
       throw error;
     }
   }

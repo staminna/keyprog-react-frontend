@@ -94,6 +94,7 @@ export const RegistrationPage = () => {
       const clienteRoleId = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
       
       // Map form fields to Directus user fields
+      // Set status to 'draft' until email is verified
       const userData = {
         email: formData.email,
         password: formData.password,
@@ -107,15 +108,17 @@ export const RegistrationPage = () => {
         pais: formData.country, // Portuguese field name
         nif: formData.tax_id || null, // Portuguese field name
         nome_empresa: formData.company_name || null, // Portuguese field name
-        status: 'active'
+        status: 'draft', // User must verify email before becoming active
+        email_notifications: true // Enable email notifications for verification
       };
 
       await DirectusService.createUser(userData);
       
       setSuccess(true);
       
+      // Redirect to email verification page instead of login
       setTimeout(() => {
-        navigate('/login?registered=true');
+        navigate('/verify-email?email=' + encodeURIComponent(formData.email));
       }, 2000);
 
     } catch (err) {
@@ -135,7 +138,10 @@ export const RegistrationPage = () => {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Conta Criada!</h1>
           <p className="text-gray-600 mb-4">
-            A sua conta foi criada com sucesso. A redirecionar para o login...
+            A sua conta foi criada com sucesso. Por favor verifique o seu email para ativar a conta.
+          </p>
+          <p className="text-sm text-gray-500">
+            Enviámos um link de verificação para <strong>{formData.email}</strong>
           </p>
         </div>
       </div>

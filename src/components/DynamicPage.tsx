@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { DirectusService } from '@/services/directusService';
 import type { DirectusPages } from '@/lib/directus';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +14,9 @@ interface DynamicPageProps {
 
 const DynamicPage = ({ slug: propSlug }: DynamicPageProps) => {
   const { slug: urlSlug } = useParams<{ slug: string }>();
-  const slug = propSlug || urlSlug;
+  const location = useLocation();
+  // Get slug from prop, URL param, or pathname
+  const slug = propSlug || urlSlug || location.pathname.replace('/', '');
   
   const [page, setPage] = useState<DirectusPages | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +39,7 @@ const DynamicPage = ({ slug: propSlug }: DynamicPageProps) => {
         if (!pageData) {
           setError('Page not found');
         } else {
-          setPage(pageData);
+          setPage(pageData as unknown as DirectusPages);
         }
       } catch (err) {
         console.error('Error fetching page:', err);
@@ -104,11 +106,10 @@ const DynamicPage = ({ slug: propSlug }: DynamicPageProps) => {
   // Render page content with universal inline editing
   return (
     <UniversalPageWrapper 
-      pageCollection="pages" 
-      pageItemId={page.id} 
-      pageSlug={slug}
-      className="container mx-auto px-4 py-8"
+      collection="pages" 
+      itemId={page.id}
     >
+      <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Page Title */}
         {page.title && (
@@ -125,25 +126,158 @@ const DynamicPage = ({ slug: propSlug }: DynamicPageProps) => {
 
         {/* Page Content */}
         {page.content && (
-          <UniversalEditableContent
-            collection="pages"
-            itemId={page.id}
-            field="content"
-            value={typeof page.content === 'string' ? page.content : JSON.stringify(page.content)}
-            tag="div"
-            className="prose prose-lg max-w-none"
-            placeholder="Enter page content..."
-          >
+          <div className="prose prose-lg max-w-none">
             {typeof page.content === 'string' ? (
               <div dangerouslySetInnerHTML={{ __html: page.content }} />
             ) : (
-              <DynamicContentRenderer content={page.content} />
+              <TipTapContentRenderer content={page.content} />
             )}
-          </UniversalEditableContent>
+          </div>
         )}
+      </div>
       </div>
     </UniversalPageWrapper>
   );
+};
+
+// TipTap node types
+interface TipTapMark {
+  type: string;
+  attrs?: Record<string, unknown>;
+}
+
+interface TipTapNode {
+  type: string;
+  text?: string;
+  attrs?: Record<string, unknown>;
+  content?: TipTapNode[];
+  marks?: TipTapMark[];
+}
+
+interface TipTapContent {
+  type?: string;
+  content?: TipTapNode[];
+}
+
+// Component to render TipTap JSON content
+const TipTapContentRenderer = ({ content }: { content: TipTapContent | TipTapNode[] }) => {
+  if (!content || typeof content !== 'object') {
+    return null;
+  }
+
+  // Handle TipTap document structure
+  if (!Array.isArray(content) && content.type === 'doc' && Array.isArray(content.content)) {
+    return (
+      <div className="space-y-4">
+        {content.content.map((node: TipTapNode, index: number) => (
+          <TipTapNodeComponent key={index} node={node} />
+        ))}
+      </div>
+    );
+  }
+
+  // Handle array of content blocks
+  if (Array.isArray(content)) {
+    return (
+      <div className="space-y-4">
+        {content.map((node: TipTapNode, index: number) => (
+          <TipTapNodeComponent key={index} node={node} />
+        ))}
+      </div>
+    );
+  }
+
+  return <TipTapNodeComponent node={content as TipTapNode} />;
+};
+
+// Component to render individual TipTap nodes
+const TipTapNodeComponent = ({ node }: { node: TipTapNode }) => {
+  if (!node || typeof node !== 'object') {
+    return null;
+  }
+
+  switch (node.type) {
+    case 'heading': {
+      const HeadingTag = `h${node.attrs?.level || 2}` as keyof JSX.IntrinsicElements;
+      return (
+        <HeadingTag className="font-bold text-foreground mb-4">
+          {node.content?.map((child: TipTapNode, i: number) => (
+            <TipTapNodeComponent key={i} node={child} />
+          ))}
+        </HeadingTag>
+      );
+    }
+
+    case 'paragraph':
+      return (
+        <p className="text-muted-foreground leading-relaxed mb-4">
+          {node.content?.map((child: TipTapNode, i: number) => (
+            <TipTapNodeComponent key={i} node={child} />
+          ))}
+        </p>
+      );
+
+    case 'bulletList':
+      return (
+        <ul className="list-disc list-inside space-y-2 mb-4">
+          {node.content?.map((child: TipTapNode, i: number) => (
+            <TipTapNodeComponent key={i} node={child} />
+          ))}
+        </ul>
+      );
+
+    case 'orderedList':
+      return (
+        <ol className="list-decimal list-inside space-y-2 mb-4">
+          {node.content?.map((child: TipTapNode, i: number) => (
+            <TipTapNodeComponent key={i} node={child} />
+          ))}
+        </ol>
+      );
+
+    case 'listItem':
+      return (
+        <li>
+          {node.content?.map((child: TipTapNode, i: number) => (
+            <TipTapNodeComponent key={i} node={child} />
+          ))}
+        </li>
+      );
+
+    case 'text': {
+      const textContent = node.text || '';
+      let className = '';
+      
+      if (node.marks) {
+        const hasBold = node.marks.some((m: TipTapMark) => m.type === 'bold');
+        const hasItalic = node.marks.some((m: TipTapMark) => m.type === 'italic');
+        const hasLink = node.marks.find((m: TipTapMark) => m.type === 'link');
+        
+        if (hasBold) className += ' font-bold';
+        if (hasItalic) className += ' italic';
+        
+        if (hasLink) {
+          return (
+            <a 
+              href={hasLink.attrs?.href || '#'} 
+              className="text-primary hover:underline"
+              target={hasLink.attrs?.target}
+            >
+              {textContent}
+            </a>
+          );
+        }
+      }
+      
+      return <span className={className}>{textContent}</span>;
+    }
+
+    case 'hardBreak':
+      return <br />;
+
+    default:
+      return null;
+  }
 };
 
 // Component to render dynamic content blocks with inline editing

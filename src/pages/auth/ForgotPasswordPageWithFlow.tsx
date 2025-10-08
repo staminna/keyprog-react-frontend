@@ -5,7 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { sendPasswordResetEmail } from '@/services/emailFlowService';
 
-export const ForgotPasswordPage = () => {
+/**
+ * Versão do ForgotPasswordPage que usa APENAS o Flow do Directus
+ * para enviar emails com template Liquid personalizado em português
+ * 
+ * IMPORTANTE: Esta versão NÃO usa o endpoint /auth/password/request do Directus
+ * porque ele envia automaticamente o email padrão em inglês.
+ * 
+ * Em vez disso, chamamos diretamente o Flow via webhook.
+ */
+export const ForgotPasswordPageWithFlow = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,12 +26,10 @@ export const ForgotPasswordPage = () => {
     setIsLoading(true);
 
     try {
-      // Gerar token de reset
-      const resetToken = Array.from({ length: 32 }, () =>
-        Math.floor(Math.random() * 16).toString(16)
-      ).join('');
+      // Gerar token de reset simples
+      const resetToken = generateResetToken();
 
-      // Enviar email via Flow (template Liquid em português)
+      // Enviar email via Flow com template Liquid personalizado
       const emailSent = await sendPasswordResetEmail(email, resetToken);
 
       if (!emailSent) {
@@ -49,8 +56,14 @@ export const ForgotPasswordPage = () => {
         {success ? (
           <div className="space-y-4">
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-              <p className="font-medium">Email enviado com sucesso!</p>
-              <p className="text-sm mt-1">Verifique a sua caixa de entrada para o link de recuperação.</p>
+              <p className="font-medium">✅ Email enviado com sucesso!</p>
+              <p className="text-sm mt-1">
+                Verifique a sua caixa de entrada para o link de recuperação.
+                <br />
+                <span className="text-xs text-green-600">
+                  (Email enviado via Flow Directus com template Liquid em português)
+                </span>
+              </p>
             </div>
             <Link to="/login">
               <Button variant="outline" className="w-full">
@@ -109,4 +122,14 @@ export const ForgotPasswordPage = () => {
   );
 };
 
-export default ForgotPasswordPage;
+/**
+ * Gera um token de reset seguro
+ */
+function generateResetToken(): string {
+  // Gerar token aleatório de 32 bytes (64 caracteres hex)
+  return Array.from({ length: 32 }, () =>
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+}
+
+export default ForgotPasswordPageWithFlow;

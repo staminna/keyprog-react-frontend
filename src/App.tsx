@@ -28,6 +28,7 @@ import EditorPage from '@/pages/auth/EditorPage';
 import AdminPage from '@/pages/auth/AdminPage';
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
 import PasswordResetPage from '@/pages/auth/PasswordResetPage';
+import EmailVerificationPage from '@/pages/auth/EmailVerificationPage';
 import RegistrationPage from '@/pages/customer/RegistrationPage';
 import ClienteDashboard from '@/pages/customer/ClienteDashboard';
 import SiteHeader from "@/components/layout/SiteHeader";
@@ -74,6 +75,7 @@ const App = () => (
                     {/* Auth Routes */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/registo" element={<RegistrationPage />} />
+                    <Route path="/verify-email" element={<EmailVerificationPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/reset-password" element={<PasswordResetPage />} />
                     
@@ -126,6 +128,8 @@ const App = () => (
                     <Route path="/suporte" element={<Suporte />} />
                     <Route path="/pesquisa" element={<SearchPage />} />
                     <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                    <Route path="/termos" element={<DynamicPage />} />
+                    <Route path="/privacidade" element={<DynamicPage />} />
                     <Route path="/pages/:slug" element={<DynamicPage />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />

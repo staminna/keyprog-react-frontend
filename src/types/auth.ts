@@ -7,6 +7,7 @@ export interface User {
   lastName?: string;
   role?: string;
   roleId?: string;
+  status?: 'active' | 'draft' | 'suspended' | 'archived';
   authenticated: boolean;
 }
 

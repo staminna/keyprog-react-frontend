@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { DirectusService } from '@/services/directusService';
 import { DirectusServiceExtension } from '@/services/directusServiceExtension';
 import useDirectusEditorContext from '@/hooks/useDirectusEditorContext';
@@ -111,18 +111,23 @@ export function useDirectusContent<T = Record<string, unknown>>(
   const [error, setError] = useState<Error | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
+  // Use ref to track syncing state without causing re-renders
+  const isSyncingRef = useRef(false);
+  
   // Get authentication and permission context
   const { isInDirectusEditor, isAuthenticated } = useDirectusEditorContext();
   const { canEditCollection } = useRolePermissions();
   
   // Check if user has permission to edit this content
   const hasAuthPermission = isInDirectusEditor || isAuthenticated;
-  const hasRolePermission = canEditCollection(collection);
+  const hasRolePermission = canEditCollection();
   const canEdit = hasAuthPermission && hasRolePermission;
   
   // Fetch data from Directus
   const fetchData = useCallback(async () => {
-    if (isSyncing) return; // Prevent multiple simultaneous fetches
+    if (isSyncingRef.current) return; // Prevent multiple simultaneous fetches
+    
+    isSyncingRef.current = true;
     
     setIsSyncing(true);
     
@@ -177,10 +182,11 @@ export function useDirectusContent<T = Record<string, unknown>>(
       console.error(`Error fetching data from ${collection}:`, error);
       setError(error instanceof Error ? error : new Error(`Failed to fetch data from ${collection}`));
     } finally {
+      isSyncingRef.current = false;
       setIsSyncing(false);
       setIsLoading(false);
     }
-  }, [collection, itemId, slug, fallbackCollection, transform, isSyncing]);
+  }, [collection, itemId, slug, fallbackCollection, transform]); // REMOVED isSyncing from dependencies to prevent infinite loop
   
   // Update a specific field
   const updateField = useCallback(async (field: string, value: unknown): Promise<boolean> => {
