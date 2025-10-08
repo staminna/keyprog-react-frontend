@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, ArrowRight, Tag } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
+import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 
 const Noticias = () => {
   const [news, setNews] = useState<DirectusNews[]>([]);
@@ -52,10 +53,22 @@ const Noticias = () => {
       
       <main className="container py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gradient-primary mb-4">Notícias</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Atualizações do setor, novidades de produtos e casos de estudo.
-          </p>
+          <UniversalContentEditor
+            collection="pages"
+            itemId="noticias"
+            field="title"
+            tag="h1"
+            className="text-4xl font-bold text-gradient-primary mb-4"
+            value="Notícias"
+          />
+          <UniversalContentEditor
+            collection="pages"
+            itemId="noticias"
+            field="description"
+            tag="p"
+            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+            value="Atualizações do setor, novidades de produtos e casos de estudo."
+          />
         </div>
         
         {loading ? (

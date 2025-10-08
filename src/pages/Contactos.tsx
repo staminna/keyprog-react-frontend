@@ -4,6 +4,7 @@ import { DirectusContacts } from '@/lib/directus';
 import { Skeleton } from '@/components/ui/skeleton';
 import ContactInfo from '@/components/ContactInfo';
 import SEOHead from '@/components/SEOHead';
+import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 
 const Contactos = () => {
   const [contacts, setContacts] = useState<DirectusContacts | null>(null);
@@ -42,10 +43,22 @@ const Contactos = () => {
       />
       
       <main className="container py-12">
-        <h1 className="text-3xl font-bold">Contactos</h1>
-        <p className="mt-2 text-muted-foreground">
-          Fale connosco para pedidos, dúvidas e parcerias.
-        </p>
+        <UniversalContentEditor
+          collection="pages"
+          itemId="contactos"
+          field="title"
+          tag="h1"
+          className="text-3xl font-bold"
+          value="Contactos"
+        />
+        <UniversalContentEditor
+          collection="pages"
+          itemId="contactos"
+          field="description"
+          tag="p"
+          className="mt-2 text-muted-foreground"
+          value="Fale connosco para pedidos, dúvidas e parcerias."
+        />
         
         {/* Enhanced Contact Info Component with Directus Integration */}
         <div className="mt-8 max-w-3xl mx-auto">

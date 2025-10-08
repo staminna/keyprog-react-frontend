@@ -186,14 +186,9 @@ const getDirectusURL = () => {
     return import.meta.env.VITE_DIRECTUS_URL || 'https://keyprog.varrho.com';
   }
   
-  if (isBrowser) {
-    // In development browser, use the current origin to leverage Vite proxy
-    // This avoids CORS issues by proxying through the Vite dev server
-    return window.location.origin;
-  } else {
-    // In development server-side, use container name
-    return import.meta.env.VITE_DIRECTUS_URL || 'http://keyprog:8065';
-  }
+  // In development, always use the VITE_DIRECTUS_URL from environment
+  // This ensures we connect to the correct Directus instance (localhost:8065)
+  return import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8065';
 };
 
 const DIRECTUS_URL = getDirectusURL();

@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Mail, Phone, MessageCircle, HelpCircle } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
+import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 
 const Suporte = () => {
   const faqItems = [
@@ -45,10 +46,22 @@ const Suporte = () => {
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Centro de Suporte</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Estamos aqui para ajudar. Encontre respostas às suas questões ou contacte a nossa equipa de suporte técnico.
-            </p>
+            <UniversalContentEditor
+              collection="pages"
+              itemId="suporte"
+              field="title"
+              tag="h1"
+              className="text-4xl font-bold mb-4"
+              value="Centro de Suporte"
+            />
+            <UniversalContentEditor
+              collection="pages"
+              itemId="suporte"
+              field="description"
+              tag="p"
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
+              value="Estamos aqui para ajudar. Encontre respostas às suas questões ou contacte a nossa equipa de suporte técnico."
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

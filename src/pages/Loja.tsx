@@ -10,6 +10,7 @@ import { ShoppingCart, Euro, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
+import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 
 const Loja = () => {
   const [products, setProducts] = useState<DirectusServices[]>([]);
@@ -91,11 +92,22 @@ const Loja = () => {
       <main className="container py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gradient-primary mb-4">Loja Keyprog</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore a nossa gama completa de emuladores, equipamentos, software e estabilizadores 
-            para eletrónica automóvel.
-          </p>
+          <UniversalContentEditor
+            collection="pages"
+            itemId="loja"
+            field="title"
+            tag="h1"
+            className="text-4xl font-bold text-gradient-primary mb-4"
+            value="Loja Keyprog"
+          />
+          <UniversalContentEditor
+            collection="pages"
+            itemId="loja"
+            field="description"
+            tag="p"
+            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+            value="Explore a nossa gama completa de emuladores, equipamentos, software e estabilizadores para eletrónica automóvel."
+          />
         </div>
 
         {/* Search and Filters */}
