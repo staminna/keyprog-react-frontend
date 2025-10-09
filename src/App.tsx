@@ -127,7 +127,6 @@ const App = () => (
                     <Route path="/contactos" element={<Contactos />} />
                     <Route path="/suporte" element={<Suporte />} />
                     <Route path="/pesquisa" element={<SearchPage />} />
-                    <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                     <Route path="/termos" element={<DynamicPage />} />
                     <Route path="/privacidade" element={<DynamicPage />} />
                     <Route path="/pages/:slug" element={<DynamicPage />} />

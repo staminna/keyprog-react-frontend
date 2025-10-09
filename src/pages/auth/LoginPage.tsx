@@ -82,13 +82,31 @@ export const LoginPage = () => {
       // Get user information to determine role
       const user = await DirectusService.getCurrentUser();
       
+      console.log('📋 Login - User data retrieved:', { 
+        hasUser: !!user, 
+        hasRoleId: !!user?.roleId,
+        roleId: user?.roleId,
+        email: user?.email 
+      });
+      
       if (!user || !user.roleId) {
-        setError('Não foi possível determinar as permissões do utilizador');
+        console.error('❌ Login failed - user data incomplete:', { user });
+        setError('Não foi possível determinar as permissões do utilizador. Contacte o administrador.');
         setIsLoading(false);
         return;
       }
 
       const userRoleId = user.roleId;
+      
+      console.log('🔍 Role comparison:', {
+        userRoleId,
+        userRoleIdType: typeof userRoleId,
+        ADMIN_ROLE_ID,
+        EDITOR_ROLE_ID,
+        isAdmin: userRoleId === ADMIN_ROLE_ID,
+        isEditor: userRoleId === EDITOR_ROLE_ID,
+        requestedReturnUrl
+      });
       
       // Only check email verification for Cliente role
       if (userRoleId === CLIENTE_ROLE_ID) {
@@ -141,6 +159,8 @@ export const LoginPage = () => {
           redirectUrl = requestedReturnUrl;
         }
         
+        console.log('🎯 Redirecting Editor user to:', redirectUrl, '(roleId:', userRoleId, ')');
+        
         console.log('✅ Admin/Editor login successful - redirecting to:', redirectUrl);
         
         // Store credentials for auto-login (only for admin/editor)
@@ -179,13 +199,42 @@ export const LoginPage = () => {
       }
 
       // CRITICAL FIX: Re-check authentication to update context
-      await checkAuth();
+      console.log('🔄 Calling checkAuth to update context...');
+      try {
+        const checkResult = await checkAuth();
+        console.log('✅ checkAuth completed, result:', checkResult);
+      } catch (checkAuthError) {
+        console.error('❌ checkAuth failed:', checkAuthError);
+        // Continue anyway - we already have the user data
+      }
       
       // Add small delay to ensure state is updated
+      console.log('⏳ Waiting 150ms for state update...');
       await new Promise(resolve => setTimeout(resolve, 150));
+      console.log('✅ State update delay completed');
 
       // Navigate to appropriate URL
-      navigate(redirectUrl);
+      console.log('🚀 Attempting navigation to:', redirectUrl);
+      
+      try {
+        navigate(redirectUrl, { replace: true });
+        console.log('✅ navigate() called successfully');
+        
+        // Fallback: Force navigation if React Router doesn't work
+        setTimeout(() => {
+          if (window.location.pathname === '/login') {
+            console.warn('⚠️ Still on login page after 500ms, forcing navigation...');
+            window.location.href = redirectUrl;
+          }
+        }, 500);
+      } catch (navError) {
+        console.error('❌ Navigation failed:', navError);
+        // Force navigation using window.location
+        window.location.href = redirectUrl;
+      }
+      
+      // Keep loading state while navigation happens
+      // Don't set isLoading to false here - let the component unmount
       
     } catch (err) {
       setError('Erro na autenticação. Por favor tente novamente.');

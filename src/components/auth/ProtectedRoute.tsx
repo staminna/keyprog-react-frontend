@@ -38,6 +38,14 @@ export const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteP
       const userRoleId = user?.roleId || user?.role;
       const userRoleName = user?.role;
       
+      console.log('🔒 ProtectedRoute authorization check:', {
+        pathname: location.pathname,
+        userRoleId,
+        userRoleName,
+        requiredRoles,
+        userObject: user
+      });
+      
       // SECURITY: Explicitly block Cliente role from accessing protected routes
       const clienteRoleId = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
       if (userRoleId === clienteRoleId) {
@@ -56,23 +64,35 @@ export const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteP
       // Check if user has required role
       const hasRequiredRole = requiredRoles.some(role => {
         // Match by UUID (role ID)
-        if (userRoleId === role) return true;
+        if (userRoleId === role) {
+          console.log('✅ Role matched by ID:', role);
+          return true;
+        }
         
         // Match by role name (case-insensitive)
-        if (userRoleName?.toLowerCase() === role.toLowerCase()) return true;
+        if (userRoleName?.toLowerCase() === role.toLowerCase()) {
+          console.log('✅ Role matched by name (exact):', role);
+          return true;
+        }
         
         // Match common role names
         if (role.toLowerCase() === 'admin' || role.toLowerCase() === 'administrator') {
-          return userRoleName?.toLowerCase().includes('admin');
+          const matches = userRoleName?.toLowerCase().includes('admin');
+          console.log('🔍 Admin check:', { role, userRoleName, matches });
+          return matches;
         }
         
         if (role.toLowerCase() === 'editor' || role.toLowerCase() === 'editor-user') {
-          return userRoleName?.toLowerCase().includes('editor');
+          const matches = userRoleName?.toLowerCase().includes('editor');
+          console.log('🔍 Editor check:', { role, userRoleName, matches });
+          return matches;
         }
         
+        console.log('❌ No match for role:', role);
         return false;
       });
 
+      console.log('🎯 Authorization result:', { hasRequiredRole, willAuthorize: hasRequiredRole });
       setIsAuthorized(hasRequiredRole);
     } catch (error) {
       console.error('Authorization check failed:', error);

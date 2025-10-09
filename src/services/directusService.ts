@@ -220,19 +220,48 @@ export class DirectusService {
 
       console.log('Attempting login with provided credentials...');
       
-      const result = await (authClient as { login: (credentials: { email: string; password: string }) => Promise<{ access_token?: string }> }).login({ 
-        email, 
-        password 
+      // The Directus SDK login method expects a credentials object
+      // Reference: @directus/sdk authentication expects { email, password, otp? }
+      await (authClient as any).login({
+        email: email,
+        password: password
       });
 
-      // Verify we actually received a valid token
-      if (!result.access_token) {
-        console.error('No access token received from Directus login');
+      // Wait a bit for the token to be stored
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify we have a valid token stored by checking if we can get it
+      const token = await authClient.getToken();
+      if (!token) {
+        console.error('No access token available after login');
         this.isAuthenticated = false;
         return false;
       }
 
-      console.log('Authentication successful');
+      console.log('Authentication successful, token stored');
+      console.log('🔑 Token preview:', token.substring(0, 20) + '...');
+      
+      // Verify the token works by making a test request
+      try {
+        const testResponse = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=id`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!testResponse.ok) {
+          console.error('❌ Token verification failed immediately after login:', testResponse.status);
+          this.isAuthenticated = false;
+          return false;
+        }
+        
+        console.log('✅ Token verified successfully');
+      } catch (verifyError) {
+        console.error('❌ Token verification request failed:', verifyError);
+        this.isAuthenticated = false;
+        return false;
+      }
+
       this.isAuthenticated = true;
       return true;
 
@@ -300,25 +329,56 @@ export class DirectusService {
       
       // Get user info using fetch to avoid SDK typing issues
       try {
-        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=id,email,first_name,last_name,role.id,role.name`, {
+        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=id,email,first_name,last_name,role.id,role.name,status,policies.id,policies.name`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
         if (!response.ok) {
+          console.error('Failed to get current user:', response.status, response.statusText);
           return null;
         }
         
         const result = await response.json();
         if (result && result.data) {
+          console.log('📋 User data from Directus:', {
+            email: result.data.email,
+            hasRole: !!result.data.role,
+            roleId: result.data.role?.id,
+            roleName: result.data.role?.name,
+            hasPolicies: !!(result.data.policies && result.data.policies.length > 0),
+            policiesCount: result.data.policies?.length || 0
+          });
+          
+          // Handle users with null role but have policies (newer Directus versions)
+          // In Directus 11+, users can have EITHER roles OR policies
+          let roleId = result.data.role?.id;
+          let roleName = result.data.role?.name;
+          
+          if (!roleId && result.data.policies && result.data.policies.length > 0) {
+            // User has policies but no role - this is a policy-based permission user
+            // Default to Editor role for backward compatibility with frontend logic
+            console.log('✅ User has policies but no role (policy-based permissions)');
+            console.log('📋 User policies:', result.data.policies.map(p => ({ id: p.id, name: p.name })));
+            roleId = '97ef35d8-3d16-458d-8c93-78e35b7105a4'; // Editor role ID for compatibility
+            roleName = 'editor';
+          }
+          
+          // CRITICAL: If user has neither role nor policies, they cannot authenticate
+          if (!roleId && (!result.data.policies || result.data.policies.length === 0)) {
+            console.error('❌ User has neither role nor policies - cannot authenticate');
+            return null;
+          }
+          
           return {
             id: result.data.id,
             email: result.data.email,
             firstName: result.data.first_name,
             lastName: result.data.last_name,
-            role: result.data.role?.name,
-            roleId: result.data.role?.id,
+            role: roleName || 'editor',
+            roleId: roleId,
+            status: result.data.status,
             authenticated: true
           };
         }

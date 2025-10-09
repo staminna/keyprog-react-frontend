@@ -80,6 +80,13 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
           const isValid = await DirectusService.verifyToken();
           if (isValid) {
             const userInfo = await DirectusService.getCurrentUser();
+            console.log('📋 User info retrieved:', { 
+              hasUser: !!userInfo, 
+              hasRoleId: !!userInfo?.roleId,
+              roleId: userInfo?.roleId,
+              email: userInfo?.email 
+            });
+            
             if (userInfo && userInfo.roleId) {
               const roleType = getRoleType(userInfo.roleId);
               
@@ -95,6 +102,8 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
               setIsAuthenticated(true);
               console.log('✅ Session auth successful:', roleType);
               return true;
+            } else {
+              console.warn('⚠️ User info incomplete - missing roleId or user data');
             }
           } else {
             console.log('⚠️ Session token invalid, clearing...');
