@@ -222,7 +222,14 @@ export class DirectusService {
       
       // The Directus SDK login method expects a credentials object
       // Reference: @directus/sdk authentication expects { email, password, otp? }
-      await (authClient as any).login({
+      // Type assertion needed because the SDK doesn't export the authentication client type properly
+      interface AuthenticationData {
+        access_token?: string;
+        refresh_token?: string;
+        expires?: number;
+      }
+      
+      await (authClient as { login: (credentials: { email: string; password: string; otp?: string }) => Promise<AuthenticationData> }).login({
         email: email,
         password: password
       });
