@@ -7,10 +7,10 @@ import { useEditableField } from '@/hooks/useEditableField';
 import { EditableText } from '@/components/ui/EditableText';
 import { Loader2 } from 'lucide-react';
 
-// Role IDs from .env
-const ADMIN_ROLE_ID = '0582d74b-a83f-4076-849f-b588e627c868';
-const EDITOR_ROLE_ID = '97ef35d8-3d16-458d-8c93-78e35b7105a4';
-const CLIENTE_ROLE_ID = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID || '6c969db6-03d6-4240-b944-d0ba2bc56fc4';
+// Role IDs from environment variables
+const ADMIN_ROLE_ID = import.meta.env.VITE_DIRECTUS_ADMIN_ROLE_ID;
+const EDITOR_ROLE_ID = import.meta.env.VITE_DIRECTUS_EDITOR_ROLE_ID;
+const CLIENTE_ROLE_ID = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
 
 interface LoginPageContent {
   heading?: string;
@@ -53,7 +53,7 @@ export const LoginPage = () => {
     heading: 'Keyprog',
     subheading: 'Inicie sessão para continuar',
     email_label: 'Email',
-    email_placeholder: 'seu.email@exemplo.com',
+    email_placeholder: 'Insira o seu endereço de email.',
     password_label: 'Password',
     password_placeholder: '••••••••',
     submit_button: 'Iniciar Sessão',
@@ -310,7 +310,7 @@ export const LoginPage = () => {
               autoComplete="email"
               style={{ color: '#000000' }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={content.email_placeholder || 'seu.email@exemplo.com'}
+              placeholder={content.email_placeholder || 'Insira o seu endereço de email.'}
             />
           </div>
 

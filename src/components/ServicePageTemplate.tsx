@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import NotFoundContent from '@/components/NotFoundContent';
 import SEOHead from '@/components/SEOHead';
-import { SimpleEditableText } from '@/components/universal/SimpleEditableText';
+import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 import { CheckCircle, ArrowLeft, Star, Euro, Clock, Shield } from 'lucide-react';
 
 interface ServiceData {
@@ -34,7 +34,6 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
     const fetchService = async () => {
       setLoading(true);
       try {
-        // Get all services and find the one with matching slug
         const services = await DirectusService.getServices();
         const foundService = services.find(s => s.slug === serviceSlug);
         
@@ -54,7 +53,6 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
     fetchService();
   }, [serviceSlug]);
 
-  // Helper function to format price
   const formatPrice = (price: string | number) => {
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('pt-PT', {
@@ -136,7 +134,7 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
               )}
             </div>
             
-            <SimpleEditableText
+            <UniversalContentEditor
               collection="services"
               itemId={service.id}
               field="title"
@@ -146,7 +144,7 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
               placeholder="Enter service title..."
             />
             
-            <SimpleEditableText
+            <UniversalContentEditor
               collection="services"
               itemId={service.id}
               field="description"
@@ -178,7 +176,14 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500" />
-                      O que está incluído
+                      <UniversalContentEditor
+                        collection="service_templates"
+                        itemId="default"
+                        field="features_title"
+                        value="O que está incluído"
+                        tag="span"
+                        placeholder="Features title..."
+                      />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -197,17 +202,40 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
               {/* Service Details */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Detalhes do Serviço</CardTitle>
+                  <CardTitle>
+                    <UniversalContentEditor
+                      collection="service_templates"
+                      itemId="default"
+                      field="details_title"
+                      value="Detalhes do Serviço"
+                      tag="span"
+                      placeholder="Details title..."
+                    />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="prose prose-lg max-w-none">
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold mb-1">Garantia de Qualidade</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Todos os nossos serviços incluem garantia e suporte técnico especializado.
-                        </p>
+                        <UniversalContentEditor
+                          collection="service_templates"
+                          itemId="default"
+                          field="quality_title"
+                          value="Garantia de Qualidade"
+                          tag="h4"
+                          className="font-semibold mb-1"
+                          placeholder="Quality title..."
+                        />
+                        <UniversalContentEditor
+                          collection="service_templates"
+                          itemId="default"
+                          field="quality_description"
+                          value="Todos os nossos serviços incluem garantia e suporte técnico especializado."
+                          tag="p"
+                          className="text-sm text-muted-foreground"
+                          placeholder="Quality description..."
+                        />
                       </div>
                     </div>
                     
@@ -216,10 +244,24 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
                     <div className="flex items-start gap-3">
                       <Clock className="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold mb-1">Atendimento Rápido</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Diagnóstico e orçamento em 24h. Intervenções rápidas e eficientes.
-                        </p>
+                        <UniversalContentEditor
+                          collection="service_templates"
+                          itemId="default"
+                          field="speed_title"
+                          value="Atendimento Rápido"
+                          tag="h4"
+                          className="font-semibold mb-1"
+                          placeholder="Speed title..."
+                        />
+                        <UniversalContentEditor
+                          collection="service_templates"
+                          itemId="default"
+                          field="speed_description"
+                          value="Diagnóstico e orçamento em 24h. Intervenções rápidas e eficientes."
+                          tag="p"
+                          className="text-sm text-muted-foreground"
+                          placeholder="Speed description..."
+                        />
                       </div>
                     </div>
                     
@@ -228,10 +270,24 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
                     <div className="flex items-start gap-3">
                       <Star className="w-5 h-5 text-yellow-500 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold mb-1">Experiência Comprovada</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Mais de 10 anos de experiência em eletrónica automóvel.
-                        </p>
+                        <UniversalContentEditor
+                          collection="service_templates"
+                          itemId="default"
+                          field="experience_title"
+                          value="Experiência Comprovada"
+                          tag="h4"
+                          className="font-semibold mb-1"
+                          placeholder="Experience title..."
+                        />
+                        <UniversalContentEditor
+                          collection="service_templates"
+                          itemId="default"
+                          field="experience_description"
+                          value="Mais de 10 anos de experiência em eletrónica automóvel."
+                          tag="p"
+                          className="text-sm text-muted-foreground"
+                          placeholder="Experience description..."
+                        />
                       </div>
                     </div>
                   </div>
@@ -266,12 +322,27 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
               {/* Contact Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Precisa de Ajuda?</CardTitle>
+                  <CardTitle className="text-lg">
+                    <UniversalContentEditor
+                      collection="service_templates"
+                      itemId="default"
+                      field="help_title"
+                      value="Precisa de Ajuda?"
+                      tag="span"
+                      placeholder="Help title..."
+                    />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Entre em contacto connosco para mais informações sobre este serviço.
-                  </p>
+                  <UniversalContentEditor
+                    collection="service_templates"
+                    itemId="default"
+                    field="help_description"
+                    value="Entre em contacto connosco para mais informações sobre este serviço."
+                    tag="p"
+                    className="text-sm text-muted-foreground"
+                    placeholder="Help description..."
+                  />
                   <div className="space-y-2 text-sm">
                     <div>
                       <strong>Email:</strong> info@keyprog.pt
@@ -286,7 +357,16 @@ const ServicePageTemplate: React.FC<ServicePageTemplateProps> = ({ serviceSlug }
               {/* Related Services */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Outros Serviços</CardTitle>
+                  <CardTitle className="text-lg">
+                    <UniversalContentEditor
+                      collection="service_templates"
+                      itemId="default"
+                      field="related_title"
+                      value="Outros Serviços"
+                      tag="span"
+                      placeholder="Related services title..."
+                    />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">

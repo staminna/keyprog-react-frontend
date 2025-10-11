@@ -8,10 +8,10 @@ import { clearAuthSession } from './authUtils';
 // Re-export the context so hooks can import it from here
 export { UnifiedAuthContext };
 
-// Role IDs from environment variables
-const ADMIN_ROLE_ID = import.meta.env.VITE_DIRECTUS_ADMIN_ROLE_ID;
-const EDITOR_ROLE_ID = import.meta.env.VITE_DIRECTUS_EDITOR_ROLE_ID;
-const CLIENTE_ROLE_ID = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID;
+// Role IDs from .env
+const ADMIN_ROLE_ID = '0582d74b-a83f-4076-849f-b588e627c868';
+const EDITOR_ROLE_ID = '97ef35d8-3d16-458d-8c93-78e35b7105a4';
+const CLIENTE_ROLE_ID = import.meta.env.VITE_DIRECTUS_CLIENTE_ROLE_ID || '6c969db6-03d6-4240-b944-d0ba2bc56fc4';
 
 // Determine role type from role ID or role object
 const getRoleType = (roleIdOrObject: string | { id: string; name: string; admin_access?: boolean }): UserRole => {
@@ -284,57 +284,6 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
   useEffect(() => {
     checkAuth();
   }, []);
-
-  // Logout synchronization with Directus Visual Editor
-  useEffect(() => {
-    // Only monitor logout in Directus Visual Editor
-    if (!isInDirectusVisualEditor()) {
-      return;
-    }
-
-    console.log('🔍 Monitoring Directus Visual Editor logout...');
-
-    // Method 1: Poll for token validity every 5 seconds
-    const tokenCheckInterval = setInterval(async () => {
-      try {
-        const token = await sessionDirectus.getToken();
-        
-        if (!token) {
-          console.log('🚪 Directus logged out - no token found, logging out React app...');
-          await logout();
-          return;
-        }
-
-        // Verify token is still valid
-        const isValid = await DirectusService.verifyToken();
-        if (!isValid) {
-          console.log('🚪 Directus logged out - token invalid, logging out React app...');
-          await logout();
-        }
-      } catch (error) {
-        console.error('Error checking token validity:', error);
-        // If there's an error checking, assume logged out
-        await logout();
-      }
-    }, 5000); // Check every 5 seconds
-
-    // Method 2: Listen for storage events (when Directus clears auth)
-    const handleStorageChange = (e: StorageEvent) => {
-      // Check if Directus auth token was removed
-      if (e.key === 'directus-token' && e.newValue === null) {
-        console.log('🚪 Directus logged out - storage event detected, logging out React app...');
-        logout();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // Cleanup
-    return () => {
-      clearInterval(tokenCheckInterval);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [logout]);
 
   const value: UnifiedAuthContextType = {
     isAuthenticated,

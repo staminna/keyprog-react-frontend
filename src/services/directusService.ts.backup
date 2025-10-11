@@ -336,7 +336,7 @@ export class DirectusService {
       
       // Get user info using fetch to avoid SDK typing issues
       try {
-        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=id,email,first_name,last_name,role.*,status,policies.*`, {
+        const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/me?fields=id,email,first_name,last_name,role.id,role.name,role.admin_access,status,policies.id,policies.name`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -1319,44 +1319,6 @@ export class DirectusService {
     } catch (error) {
       console.error('⚠️ Resend verification error:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Activate a user account by setting status to 'active'
-   * @param userId - The user ID to activate
-   * @returns Promise<boolean> - True if activation successful
-   */
-  static async activateUserAccount(userId: string): Promise<boolean> {
-    try {
-      const token = await sessionDirectus.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users/${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          status: 'active'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to activate user account:', errorData);
-        return false;
-      }
-
-      console.log('✅ User account activated successfully');
-      return true;
-    } catch (error) {
-      console.error('Error activating user account:', error);
-      return false;
     }
   }
 

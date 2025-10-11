@@ -31,6 +31,7 @@ import PasswordResetPage from '@/pages/auth/PasswordResetPage';
 import EmailVerificationPage from '@/pages/auth/EmailVerificationPage';
 import RegistrationPage from '@/pages/customer/RegistrationPage';
 import ClienteDashboard from '@/pages/customer/ClienteDashboard';
+import PerfilPage from '@/pages/customer/PerfilPage';
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { UnifiedAuthProvider } from "@/contexts/UnifiedAuthContext";
@@ -82,6 +83,8 @@ const App = () => (
                     {/* Cliente Routes */}
                     <Route path="/conta" element={<ClienteDashboard />} />
                     <Route path="/minha-conta" element={<ClienteDashboard />} />
+                    <Route path="/perfil" element={<PerfilPage />} />
+                    <Route path="/conta/perfil" element={<PerfilPage />} />
                     
                     {/* Checkout Routes */}
                     <Route path="/checkout" element={<CheckoutPage />} />
@@ -90,7 +93,7 @@ const App = () => (
                     
                     {/* Protected Admin Routes */}
                     <Route path="/admin" element={
-                      <ProtectedRoute requiredRoles={['admin', 'administrator']}>
+                      <ProtectedRoute requiredRoles={['admin', 'administrator', 'editor', 'editor-user']}>
                         <AdminPage />
                       </ProtectedRoute>
                     } />
