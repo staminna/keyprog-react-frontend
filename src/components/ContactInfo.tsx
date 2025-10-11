@@ -15,11 +15,11 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ className = '' }) => {
   const [contactData, setContactData] = useState<DirectusContactInfo>({
     id: '1',
     title: 'Como Podemos Ajudar?',
-    email: 'suporte@keyprog.pt',
-    phone: '+351 XXX XXX XXX',
+    email: 'info@keyprog.pt',
+    phone: '+351 964 463 161',
     chat_hours: 'Seg-Sex: 9h-18h',
     contact_form_text: 'Formulário de Contacto',
-    contact_form_link: '/contactos'
+    contact_form_link: '/contactos/formulario'
   });
   
   const [loading, setLoading] = useState(true);
@@ -78,15 +78,15 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ className = '' }) => {
       <div className="flex items-center justify-center mb-8">
         {canEdit ? (
           <InlineRichText
-            collection="contact_info"
+            collection="contacts"
             itemId={contactData.id}
             field="title"
             value={contactData.title}
             className="text-3xl font-bold text-center"
           />
         ) : (
-          <h2 className="text-3xl font-bold text-center flex items-center">
-            <span className="mr-2">❓</span> {contactData.title}
+          <h2 className="text-3xl font-bold text-center">
+            {contactData.title}
           </h2>
         )}
       </div>
@@ -99,7 +99,7 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ className = '' }) => {
             <h3 className="text-xl font-semibold mb-1">Email</h3>
             {canEdit ? (
               <InlineRichText
-                collection="contact_info"
+                collection="contacts"
                 itemId={contactData.id}
                 field="email"
                 value={contactData.email}
@@ -118,7 +118,7 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ className = '' }) => {
             <h3 className="text-xl font-semibold mb-1">Telefone</h3>
             {canEdit ? (
               <InlineRichText
-                collection="contact_info"
+                collection="contacts"
                 itemId={contactData.id}
                 field="phone"
                 value={contactData.phone}
@@ -137,7 +137,7 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ className = '' }) => {
             <h3 className="text-xl font-semibold mb-1">Chat Online</h3>
             {canEdit ? (
               <InlineRichText
-                collection="contact_info"
+                collection="contacts"
                 itemId={contactData.id}
                 field="chat_hours"
                 value={contactData.chat_hours}
@@ -157,7 +157,7 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ className = '' }) => {
           <a href={contactData.contact_form_link}>
             {canEdit ? (
               <InlineRichText
-                collection="contact_info"
+                collection="contacts"
                 itemId={contactData.id}
                 field="contact_form_text"
                 value={contactData.contact_form_text}

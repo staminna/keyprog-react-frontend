@@ -187,7 +187,13 @@ class ContentBatchLoader {
           }
         }
       } catch (error) {
-        console.error(`Batch load failed for collection ${collection}:`, error);
+        // Suppress console errors for 403/404 (missing pages) to reduce noise
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const is403or404 = errorMessage.includes('Forbidden') || errorMessage.includes('403') || errorMessage.includes('404');
+        
+        if (!is403or404) {
+          console.error(`Batch load failed for collection ${collection}:`, error);
+        }
 
         // Reject all pending requests for this batch
         for (const itemId of itemIds) {

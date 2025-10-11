@@ -1069,7 +1069,14 @@ export class DirectusService {
       const result = await response.json();
       return result.data as Record<string, unknown>;
     } catch (error) {
-      console.error(`Error fetching ${collection} item:`, error);
+      // Suppress console errors for 403/404 (missing pages) to reduce noise
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const is403or404 = errorMessage.includes('Forbidden') || errorMessage.includes('403') || errorMessage.includes('404');
+      
+      if (!is403or404) {
+        console.error(`Error fetching ${collection} item:`, error);
+      }
+      // Still throw the error so calling code can handle it gracefully
       throw error;
     }
   }
@@ -1093,24 +1100,10 @@ export class DirectusService {
           : directus;
         
         try {
-          // First try to get as a singleton (preferred approach)
-          try {
-            const contactInfo = await client.request(readSingleton('contact_info'));
-            return contactInfo as unknown as DirectusContactInfo;
-          } catch (singletonError) {
-            // If singleton approach fails, try as a regular item
-            const parsedError = parseDirectusError(singletonError);
-            
-            // Only log if it's not a 404 (not found) error
-            if (parsedError.type !== DirectusErrorType.NOT_FOUND) {
-              logDirectusError(parsedError, 'getContactInfo:singleton');
-            }
-            
-            // Try as regular item
-            // @ts-expect-error - Explicitly using contact_info collection
-            const contactInfo = await client.request(readItem('contact_info', '1'));
-            return contactInfo as unknown as DirectusContactInfo;
-          }
+          // Try to get contact info from the 'contacts' collection
+          // @ts-expect-error - Explicitly using contacts collection
+          const contactInfo = await client.request(readItem('contacts', '1'));
+          return contactInfo as unknown as DirectusContactInfo;
         } catch (error) {
           const parsedError = parseDirectusError(error);
           logDirectusError(parsedError, 'getContactInfo');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DirectusService } from '@/services/directusService';
 import { UnifiedAuthContext } from '@/types/unifiedAuth';
 import { sessionDirectus } from '@/lib/directus';
@@ -230,7 +230,7 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     try {
       setIsAuthenticated(false);
       setUser(null);
@@ -240,7 +240,7 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
       setIsAuthenticated(false);
       setUser(null);
     }
-  };
+  }, []);
 
   const updateProfile = async (data: Partial<UnifiedUser>): Promise<boolean> => {
     if (!user || !user.id) {

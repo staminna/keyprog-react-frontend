@@ -104,6 +104,16 @@ export function parseDirectusError(error: unknown): DirectusError {
 export function logDirectusError(error: DirectusError, context?: string): void {
   const contextPrefix = context ? `[${context}] ` : '';
   
+  // Suppress 403/404 errors for missing collections/items to reduce console noise
+  const is403or404 = error.statusCode === 403 || error.statusCode === 404 || 
+                     error.message.includes('Forbidden') || 
+                     error.message.includes('do not have permission');
+  
+  if (is403or404 && (error.type === DirectusErrorType.PERMISSION || error.type === DirectusErrorType.NOT_FOUND)) {
+    // Silently ignore - these are expected for missing pages/collections
+    return;
+  }
+  
   switch (error.type) {
     case DirectusErrorType.AUTHENTICATION:
       console.warn(`${contextPrefix}Authentication error: ${error.message}`);

@@ -207,9 +207,15 @@ export const usePersistentContent = ({
         }
       } catch (error) {
         clearTimeout(timeoutId);
-        // Only log errors in development
+        // Only log errors in development, but suppress 403/404 (missing pages)
         if (import.meta.env.DEV) {
-          console.error('Failed to load content:', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const is403or404 = errorMessage.includes('Forbidden') || errorMessage.includes('403') || errorMessage.includes('404');
+          
+          if (!is403or404) {
+            console.error('Failed to load content:', error);
+          }
+          // Silently handle 403/404 - page doesn't exist, use fallback value
         }
         
         if (isMountedRef.current) {

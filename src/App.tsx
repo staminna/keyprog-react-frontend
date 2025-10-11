@@ -14,6 +14,7 @@ import FileService from "./pages/FileService";
 import Simulador from "./pages/Simulador";
 import Noticias from "./pages/Noticias";
 import Contactos from "./pages/Contactos";
+import ContactFormPage from "./pages/ContactFormPage";
 import Suporte from "./pages/Suporte";
 import SearchPage from './pages/SearchPage';
 import DynamicPage from "@/components/DynamicPage";
