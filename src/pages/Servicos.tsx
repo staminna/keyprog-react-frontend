@@ -234,7 +234,7 @@ const Servicos = () => {
             collection="hero"
             field="services_cta_button1"
             value="Pedir Orçamento"
-            linkTo="/contacto"
+            linkTo="/contactos/formulario"
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           />
           <PageButton
@@ -242,7 +242,7 @@ const Servicos = () => {
             collection="hero"
             field="services_cta_button2"
             value="Saber Mais"
-            linkTo="/sobre"
+            linkTo="/contactos"
             className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
           />
         </div>

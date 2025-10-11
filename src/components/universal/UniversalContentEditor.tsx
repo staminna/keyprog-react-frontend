@@ -232,8 +232,8 @@ export const UniversalContentEditor = <T extends React.ElementType = 'div'>({
         )}
       </Tag>
       
-      {/* Status indicators */}
-      {(isSaving || error) && (
+      {/* Status indicators - ONLY show to editors/authenticated users */}
+      {canEdit && (isSaving || error) && (
         <div className="absolute -top-2 -right-2 flex items-center space-x-1">
           {isSaving && (
             <div className="bg-blue-500 text-white text-xs px-1 py-0.5 rounded flex items-center">
