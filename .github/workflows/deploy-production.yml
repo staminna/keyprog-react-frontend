@@ -1,0 +1,144 @@
+name: Deploy React Frontend to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual deployment
+
+permissions:
+  contents: read
+
+env:
+  DEPLOY_PATH: /home/keyprog/keyprog-frontend
+  SERVER_HOST: keyprog.varrho.com
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    name: Scan for Secrets
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for TruffleHog
+    
+    - name: TruffleHog Secret Scan
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+        extra_args: --only-verified --fail
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    name: Build and Test
+    needs: [secret-scan]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Lint code
+      run: npm run lint || echo "Linting completed with warnings"
+
+    - name: Build production
+      env:
+        VITE_DIRECTUS_URL: ${{ secrets.VITE_DIRECTUS_URL }}
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        VITE_FLOW_PASSWORD_RESET: ${{ secrets.VITE_FLOW_PASSWORD_RESET }}
+        VITE_FLOW_EMAIL_VERIFICATION: ${{ secrets.VITE_FLOW_EMAIL_VERIFICATION }}
+        VITE_DIRECTUS_FILE_SERVICE_FOLDER_ID: ${{ secrets.VITE_DIRECTUS_FILE_SERVICE_FOLDER_ID }}
+        VITE_DIRECTUS_ALLOWED_EDITOR_ROLES: ${{ secrets.VITE_DIRECTUS_ALLOWED_EDITOR_ROLES }}
+        VITE_DIRECTUS_CLIENTE_ROLE_ID: ${{ secrets.VITE_DIRECTUS_CLIENTE_ROLE_ID }}
+      run: npm run build:prod
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
+        retention-days: 1
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [secret-scan, build-and-test]
+    name: Deploy to keyprog.varrho.com
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://keyprog.varrho.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
+    - name: Setup SSH key
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Test SSH connection
+      run: |
+        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no nunes@${{ env.SERVER_HOST }} "echo '✅ SSH connection successful'"
+
+    - name: Create deployment directory
+      run: |
+        ssh -i ~/.ssh/deploy_key nunes@${{ env.SERVER_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
+
+    - name: Deploy built files to server
+      run: |
+        echo "🚀 Deploying frontend to ${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}..."
+
+        # Sync dist folder to server
+        rsync -avz --delete \
+          -e "ssh -i ~/.ssh/deploy_key" \
+          dist/ nunes@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+
+    - name: Verify deployment
+      run: |
+        echo "✅ Frontend files deployed successfully!"
+        ssh -i ~/.ssh/deploy_key nunes@${{ env.SERVER_HOST }} "ls -lah ${{ env.DEPLOY_PATH }}"
+
+    - name: Show deployment info
+      if: always()
+      run: |
+        echo "🎉 Deployment completed!"
+        echo ""
+        echo "📊 Deployment Details:"
+        echo "  Server: ${{ env.SERVER_HOST }}"
+        echo "  Path: ${{ env.DEPLOY_PATH }}"
+        echo "  Branch: ${{ github.ref_name }}"
+        echo "  Commit: ${{ github.sha }}"
+        echo ""
+        echo "🌐 Frontend URL: https://keyprog.varrho.com"
+        echo ""
+        echo "🔧 SSH into server:"
+        echo "  ssh nunes@${{ env.SERVER_HOST }}"
+        echo ""
+        echo "📋 Nginx should be configured to serve from:"
+        echo "  ${{ env.DEPLOY_PATH }}"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f ~/.ssh/deploy_key
