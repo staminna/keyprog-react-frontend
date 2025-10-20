@@ -2,6 +2,11 @@
 
 # React Frontend Production Deployment Script
 # Deploys to keyprog.varrho.com:/home/keyprog/keyprog-frontend
+#
+# Usage:
+#   ./deploy-to-production.sh         # Interactive mode (asks for confirmation)
+#   ./deploy-to-production.sh --yes   # Auto-confirm mode (for CI/CD)
+#   ./deploy-to-production.sh -y      # Auto-confirm mode (short flag)
 
 set -e
 
@@ -61,22 +66,32 @@ if [ ! -f ".env.production" ]; then
     print_warning "Using environment variables from current shell"
 fi
 
-# Confirm deployment
-echo ""
-echo -e "${YELLOW}⚠️  You are about to deploy to PRODUCTION${NC}"
-read -p "Continue? (yes/no): " confirm
-if [ "$confirm" != "yes" ]; then
-    echo "Deployment cancelled"
-    exit 0
+# Check for auto-confirm flag
+AUTO_CONFIRM=${1:-no}
+
+if [ "$AUTO_CONFIRM" != "--yes" ] && [ "$AUTO_CONFIRM" != "-y" ]; then
+    # Confirm deployment
+    echo ""
+    echo -e "${YELLOW}⚠️  You are about to deploy to PRODUCTION${NC}"
+    read -p "Continue? (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "Deployment cancelled"
+        exit 0
+    fi
+else
+    echo ""
+    echo -e "${GREEN}🚀 Auto-confirming deployment (--yes flag provided)${NC}"
 fi
 
 # Build the application
 echo ""
 echo -e "${BLUE}🔨 Building React application for production...${NC}"
 
-# Load production environment variables
+# Load production environment variables (filter out comments and empty lines)
 if [ -f ".env.production" ]; then
-    export $(cat .env.production | xargs)
+    set -a
+    source <(grep -v '^#' .env.production | grep -v '^$' | sed 's/\r$//')
+    set +a
 fi
 
 npm run build:prod
