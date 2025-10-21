@@ -2,9 +2,9 @@ name: React Frontend CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ develop ]  # Only run on develop, not main
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop ]  # Run on PRs to main or develop
 
 env:
   REGISTRY: ghcr.io
