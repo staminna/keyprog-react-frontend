@@ -27,7 +27,7 @@ jobs:
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        extra_args: --only-verified --since-commit HEAD~1
+        extra_args: --only-verified
 
   build-and-test:
     runs-on: ubuntu-latest
