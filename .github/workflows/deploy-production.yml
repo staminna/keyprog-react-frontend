@@ -11,6 +11,7 @@ permissions:
 env:
   DEPLOY_PATH: /home/keyprog/keyprog-frontend
   SERVER_HOST: keyprog.varrho.com
+  SERVER_USER: root
 
 jobs:
   secret-scan:
@@ -98,11 +99,11 @@ jobs:
 
     - name: Test SSH connection
       run: |
-        ssh -o StrictHostKeyChecking=no nunes@${{ env.SERVER_HOST }} "echo '✅ SSH connection successful'"
+        ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "echo '✅ SSH connection successful'"
 
     - name: Create deployment directory
       run: |
-        ssh nunes@${{ env.SERVER_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
+        ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
 
     - name: Deploy built files to server
       run: |
@@ -110,12 +111,12 @@ jobs:
 
         # Sync dist folder to server
         rsync -avz --delete \
-          dist/ nunes@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+          dist/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
 
     - name: Verify deployment
       run: |
         echo "✅ Frontend files deployed successfully!"
-        ssh nunes@${{ env.SERVER_HOST }} "ls -lah ${{ env.DEPLOY_PATH }}"
+        ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "ls -lah ${{ env.DEPLOY_PATH }}"
 
     - name: Show deployment info
       if: always()
