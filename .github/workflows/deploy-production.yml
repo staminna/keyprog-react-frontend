@@ -86,22 +86,23 @@ jobs:
         name: dist
         path: dist/
 
-    - name: Setup SSH key
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Add server to known hosts
       run: |
         mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
         ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
 
     - name: Test SSH connection
       run: |
-        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no nunes@${{ env.SERVER_HOST }} "echo '✅ SSH connection successful'"
+        ssh -o StrictHostKeyChecking=no nunes@${{ env.SERVER_HOST }} "echo '✅ SSH connection successful'"
 
     - name: Create deployment directory
       run: |
-        ssh -i ~/.ssh/deploy_key nunes@${{ env.SERVER_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
+        ssh nunes@${{ env.SERVER_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
 
     - name: Deploy built files to server
       run: |
@@ -109,13 +110,12 @@ jobs:
 
         # Sync dist folder to server
         rsync -avz --delete \
-          -e "ssh -i ~/.ssh/deploy_key" \
           dist/ nunes@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
 
     - name: Verify deployment
       run: |
         echo "✅ Frontend files deployed successfully!"
-        ssh -i ~/.ssh/deploy_key nunes@${{ env.SERVER_HOST }} "ls -lah ${{ env.DEPLOY_PATH }}"
+        ssh nunes@${{ env.SERVER_HOST }} "ls -lah ${{ env.DEPLOY_PATH }}"
 
     - name: Show deployment info
       if: always()
