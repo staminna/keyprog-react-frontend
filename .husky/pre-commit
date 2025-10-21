@@ -1,9 +1,47 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run TruffleHog to detect secrets
-echo "🔍 Scanning for secrets with TruffleHog..."
-trufflehog git file://. --since-commit HEAD --results=verified,unknown --fail
+echo "🔒 Running pre-commit security checks..."
+echo ""
 
-# Run tests if they exist
-# npm test
+# Check 1: Block .env files (except .env.example)
+echo "📋 Checking for .env files..."
+ENV_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.env($|\..*$)' | grep -v '\.env\.example' || true)
+
+if [ -n "$ENV_FILES" ]; then
+    echo "❌ ERROR: Attempting to commit .env files!"
+    echo ""
+    echo "The following files should NOT be committed:"
+    echo "$ENV_FILES" | sed 's/^/  - /'
+    echo ""
+    echo "To fix:"
+    echo "  git reset HEAD $ENV_FILES"
+    echo ""
+    exit 1
+fi
+echo "✅ No .env files detected"
+echo ""
+
+# Check 2: Run TruffleHog to detect secrets
+echo "🔍 Scanning for secrets with TruffleHog..."
+if ! trufflehog git file://. --since-commit HEAD --only-verified --fail 2>&1; then
+    echo ""
+    echo "❌ TruffleHog detected secrets in your commit!"
+    echo ""
+    echo "Please remove any hardcoded credentials, tokens, or API keys."
+    echo "Use environment variables instead (.env.local)."
+    echo ""
+    exit 1
+fi
+echo "✅ No secrets detected"
+echo ""
+
+# Check 3: Verify .gitignore includes .env files
+if ! grep -q "^\.env$" .gitignore 2>/dev/null; then
+    echo "⚠️  WARNING: .env not found in .gitignore"
+    echo "   Add it to prevent future accidents"
+    echo ""
+fi
+
+echo "✅ All security checks passed!"
+echo ""

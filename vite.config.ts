@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
   
   return {
+    // Set base path for production deployment
+    // Use '/' for root domain deployment or '/subdirectory/' for subdirectory deployment
+    base: mode === 'production' ? '/' : '/',
+    
     server: {
       host: "0.0.0.0",
       port: 3000,
