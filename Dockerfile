@@ -1,5 +1,5 @@
 # Optimized single-stage build for React application
-FROM --platform=linux/amd64 node:23-alpine
+FROM node:23-alpine
 
 WORKDIR /app
 
@@ -14,8 +14,8 @@ ENV PATH="/root/.bun/bin:$PATH"
 # Copy package files for dependency caching
 COPY package.json bun.lockb ./
 
-# Install dependencies with frozen lockfile
-RUN bun install --frozen-lockfile
+# Install dependencies
+RUN bun install
 
 # Copy source files
 COPY . .

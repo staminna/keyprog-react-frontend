@@ -80,7 +80,7 @@ fi
 # Build Docker image locally
 echo ""
 echo -e "${BLUE}🔨 Building Docker image locally...${NC}"
-docker build -t $IMAGE_NAME:$IMAGE_TAG .
+docker build --platform linux/amd64 -t $IMAGE_NAME:$IMAGE_TAG .
 
 if [ $? -ne 0 ]; then
     print_error "Docker build failed!"
