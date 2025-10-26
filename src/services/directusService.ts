@@ -27,6 +27,10 @@ import { parseDirectusError, logDirectusError, DirectusErrorType } from './direc
 import type { User } from '@/types/auth';
 
 export class DirectusService {
+  static getBaseUrl(): string {
+    // Return the base URL without the /items suffix
+    return process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8065';
+  }
   private static isAuthenticated = false;
   private static authPromise: Promise<boolean> | null = null;
   private static useStaticToken = false;

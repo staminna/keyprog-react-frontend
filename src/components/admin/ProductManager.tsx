@@ -17,13 +17,10 @@ interface ProductFormData {
   name: string;
   description: string;
   price: number;
-  slug: string;
-  category: string;
-  status: 'draft' | 'published' | 'archived';
-  featured: boolean;
-  inventory_count: number;
-  sku: string;
-  tags: string[];
+  image?: string;
+  category?: number;
+  status?: 'draft' | 'published' | 'archived';
+  stock: number;
 }
 
 export default function ProductManager() {
@@ -36,28 +33,25 @@ export default function ProductManager() {
     name: '',
     description: '',
     price: 0,
-    slug: '',
-    category: '',
+    image: undefined,
+    category: undefined,
     status: 'draft',
-    featured: false,
-    inventory_count: 0,
-    sku: '',
-    tags: []
+    stock: 0
   });
 
   // Real-time updates
   useProductUpdates((event) => {
     switch (event.type) {
       case 'create':
-        setProducts(prev => [event.item, ...prev]);
+        setProducts(prev => [event.item as unknown as Product, ...prev]);
         toast.success('Novo produto adicionado');
         break;
       case 'update':
-        setProducts(prev => prev.map(p => p.id === event.item.id ? event.item : p));
+        setProducts(prev => prev.map(p => p.id === (event.item as unknown as Product).id ? event.item as unknown as Product : p));
         toast.info('Produto atualizado');
         break;
       case 'delete':
-        setProducts(prev => prev.filter(p => p.id !== event.key));
+        setProducts(prev => prev.filter(p => p.id !== Number(event.key)));
         toast.info('Produto removido');
         break;
     }
@@ -84,28 +78,11 @@ export default function ProductManager() {
     }
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  };
-
-  const handleFormChange = (field: keyof ProductFormData, value: string | number | boolean) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      
-      // Auto-generate slug from name
-      if (field === 'name' && typeof value === 'string' && value) {
-        updated.slug = generateSlug(value);
-      }
-      
-      return updated;
-    });
+  const handleFormChange = (field: keyof ProductFormData, value: string | number | boolean | undefined) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,13 +111,10 @@ export default function ProductManager() {
       name: product.name,
       description: product.description || '',
       price: product.price,
-      slug: product.slug,
-      category: product.category || '',
+      image: product.image,
+      category: product.category,
       status: product.status,
-      featured: product.featured || false,
-      inventory_count: product.inventory_count || 0,
-      sku: product.sku || '',
-      tags: product.tags || []
+      stock: product.stock || 0
     });
     setShowForm(true);
   };
@@ -152,17 +126,16 @@ export default function ProductManager() {
       name: '',
       description: '',
       price: 0,
-      slug: '',
-      category: '',
+      image: undefined,
+      category: undefined,
       status: 'draft',
-      featured: false,
-      inventory_count: 0,
-      sku: '',
-      tags: []
+      stock: 0
     });
   };
 
-  const getStatusBadge = (status: Product['status']) => {
+  const getStatusBadge = (status?: Product['status']) => {
+    if (!status) return null;
+    
     const variants = {
       draft: 'bg-yellow-100 text-yellow-800',
       published: 'bg-green-100 text-green-800',
@@ -226,24 +199,14 @@ export default function ProductManager() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Nome do Produto</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => handleFormChange('name', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sku">SKU</Label>
-                      <Input
-                        id="sku"
-                        value={formData.sku}
-                        onChange={(e) => handleFormChange('sku', e.target.value)}
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="name">Nome do Produto</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleFormChange('name', e.target.value)}
+                      required
+                    />
                   </div>
 
                   <div>
@@ -269,23 +232,26 @@ export default function ProductManager() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="inventory">Stock</Label>
+                      <Label htmlFor="stock">Stock</Label>
                       <Input
-                        id="inventory"
+                        id="stock"
                         type="number"
-                        value={formData.inventory_count}
-                        onChange={(e) => handleFormChange('inventory_count', parseInt(e.target.value) || 0)}
+                        value={formData.stock}
+                        onChange={(e) => handleFormChange('stock', parseInt(e.target.value) || 0)}
                       />
                     </div>
                     <div>
                       <Label htmlFor="category">Categoria</Label>
-                      <Select value={formData.category} onValueChange={(value) => handleFormChange('category', value)}>
+                      <Select 
+                        value={formData.category?.toString()} 
+                        onValueChange={(value) => handleFormChange('category', parseInt(value))}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecionar categoria" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.slug}>
+                            <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>
                           ))}
@@ -294,38 +260,18 @@ export default function ProductManager() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="slug">Slug</Label>
-                      <Input
-                        id="slug"
-                        value={formData.slug}
-                        onChange={(e) => handleFormChange('slug', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="status">Estado</Label>
-                      <Select value={formData.status} onValueChange={(value) => handleFormChange('status', value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Rascunho</SelectItem>
-                          <SelectItem value="published">Publicado</SelectItem>
-                          <SelectItem value="archived">Arquivado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="featured"
-                      checked={formData.featured}
-                      onCheckedChange={(checked) => handleFormChange('featured', checked)}
-                    />
-                    <Label htmlFor="featured">Produto em destaque</Label>
+                  <div>
+                    <Label htmlFor="status">Estado</Label>
+                    <Select value={formData.status} onValueChange={(value) => handleFormChange('status', value as 'draft' | 'published' | 'archived')}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Rascunho</SelectItem>
+                        <SelectItem value="published">Publicado</SelectItem>
+                        <SelectItem value="archived">Arquivado</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="flex gap-2">
@@ -352,23 +298,20 @@ export default function ProductManager() {
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-lg">{product.name}</h3>
                         {getStatusBadge(product.status)}
-                        {product.featured && (
-                          <Badge className="bg-blue-100 text-blue-800">Destaque</Badge>
-                        )}
                       </div>
                       
                       <p className="text-gray-600 mb-2">{product.description}</p>
                       
                       <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>€{product.price}</span>
-                        {product.sku && <span>SKU: {product.sku}</span>}
-                        <span>Stock: {product.inventory_count || 0}</span>
+                        <span>€{product.price?.toFixed(2)}</span>
+                        <span>Stock: {product.stock || 0}</span>
+                        {product.category && <span>Categoria: {product.category}</span>}
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" asChild>
-                        <a href={`/loja/produtos/${product.slug}`} target="_blank">
+                        <a href={`/loja/${product.id}`} target="_blank" rel="noopener noreferrer">
                           <Eye className="h-4 w-4" />
                         </a>
                       </Button>

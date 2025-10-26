@@ -1,29 +1,48 @@
-import { directus, type DirectusSchema, type DirectusProduct } from '@/lib/directus';
+import { directus } from '@/lib/directus';
 import { DirectusService } from './directusService';
 import { FallbackService } from './fallbackService';
 import { readItems, readItem, createItem, updateItem } from '@directus/sdk';
 
-export interface Product {
+// Define the Directus types that match your schema
+type DirectusFile = {
   id: string;
+};
+
+type DirectusProductImage = {
+  id: number;
+  directus_files_id: string | DirectusFile;
+  sort: number;
+  products_id?: number;
+};
+
+type DirectusProduct = {
+  id: number;
+  name: string;
+  description?: string;
+  price: string | number;
+  status?: 'draft' | 'published' | 'archived';
+  category?: number;
+  stock?: number;
+  images?: DirectusProductImage[];
+};
+
+export interface ProductImage {
+  id: number;
+  directus_files_id: {
+    id: string;
+  };
+  sort: number;
+}
+
+export interface Product {
+  id: number; // Matches Directus integer ID
   name: string;
   description?: string;
   price: number;
-  slug: string;
-  category?: string;
-  images?: string[];
-  status: 'draft' | 'published' | 'archived';
-  inventory_count?: number;
-  sku?: string;
-  weight?: number;
-  dimensions?: {
-    length?: number;
-    width?: number;
-    height?: number;
-  };
-  tags?: string[];
-  featured?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  images: ProductImage[]; // Multiple images via M2M relationship
+  status?: 'draft' | 'published' | 'archived';
+  category?: number; // Foreign key to categories (integer)
+  stock?: number; // Available stock count from Directus
 }
 
 export interface ProductCategory {
@@ -47,6 +66,10 @@ export interface ProductFilter {
 }
 
 export class ProductService {
+  static getImageUrl(imageId: string, width = 400, height = 400, quality = 80): string {
+    if (!imageId) return '';
+    return `${DirectusService.getBaseUrl()}/assets/${imageId}?width=${width}&height=${height}&quality=${quality}&fit=cover`;
+  }
   static async getProducts(filter?: ProductFilter, limit = 50, offset = 0): Promise<Product[]> {
     try {
       await DirectusService.authenticate();
@@ -59,29 +82,21 @@ export class ProductService {
         if (filter.price_max !== undefined) {
           queryFilter.price = { ...(queryFilter.price as Record<string, unknown> || {}), _lte: filter.price_max };
         }
-        if (filter.tags && filter.tags.length > 0) {
-          queryFilter.tags = { _intersects: filter.tags };
-        }
-        if (filter.featured !== undefined) queryFilter.featured = { _eq: filter.featured };
         if (filter.status) queryFilter.status = { _eq: filter.status };
       }
 
       const products = await directus.request(
-        readItems('products', {
+        readItems('products' as const, {
           filter: queryFilter,
           limit,
           offset,
-          sort: ['-created_at'],
-          _fields: ['*', 'category.name', 'category.slug'] as readonly string[],
-          get fields() {
-            return this._fields;
-          },  
-          set fields(value) {
-            this._fields = value;
-          },
-          meta: ['filter_count']
+          sort: ['id'],
+          fields: [
+            'id', 'name', 'description', 'price', 'status', 'category', 'stock',
+            { images: ['id', 'sort', { directus_files_id: ['id'] }] }
+          ]
         })
-      );
+      ) as unknown as DirectusProduct[];
 
       return products as unknown as Product[];
     } catch (error) {
@@ -103,9 +118,6 @@ export class ProductService {
         if (filter.price_max !== undefined) {
           filteredProducts = filteredProducts.filter(p => p.price <= filter.price_max!);
         }
-        if (filter.featured !== undefined) {
-          filteredProducts = filteredProducts.filter(p => p.featured === filter.featured);
-        }
         if (filter.status) {
           filteredProducts = filteredProducts.filter(p => p.status === filter.status);
         }
@@ -123,34 +135,47 @@ export class ProductService {
     }
   }
 
-  static async getProduct(slug: string): Promise<Product | null> {
+  static async getProduct(id: number): Promise<Product | null> {
     try {
       await DirectusService.authenticate();
       
       const product = await directus.request(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        readItem('products' as any, slug, {
-          fields: ['*', 'category.name', 'category.slug']
+        readItem('products' as const, id, {
+          fields: [
+            'id', 'name', 'description', 'price', 'status', 'category', 'stock',
+            { images: ['id', 'sort', { directus_files_id: ['id'] }] }
+          ]
         })
-      );
+      ) as unknown as DirectusProduct | null;
 
-      return product as Product;
+      if (!product) return null;
+
+      // Convert DirectusProduct to Product
+      return {
+        ...product,
+        price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+        images: (product.images || []).map(img => ({
+          id: img.id,
+          directus_files_id: {
+            id: typeof img.directus_files_id === 'string' 
+              ? img.directus_files_id 
+              : img.directus_files_id?.id || ''
+          },
+          sort: img.sort || 0
+        }))
+      };
     } catch (error) {
       console.error('Error fetching product:', error);
       // Use fallback data when Directus is down
       console.log('Using fallback product data');
       const fallbackProducts = FallbackService.getProducts();
-      const product = fallbackProducts.find(p => p.id === slug || p.slug === slug);
+      const product = fallbackProducts.find(p => p.id === id);
       return product as Product || null;
     }
   }
 
-  static async getFeaturedProducts(limit = 6): Promise<Product[]> {
-    return this.getProducts({ featured: true, status: 'published' }, limit);
-  }
-
-  static async getProductsByCategory(categorySlug: string, limit = 20): Promise<Product[]> {
-    return this.getProducts({ category: categorySlug, status: 'published' }, limit);
+  static async getProductsByCategory(categoryId: number, limit = 20): Promise<Product[]> {
+    return this.getProducts({ category: categoryId.toString(), status: 'published' }, limit);
   }
 
   static async searchProducts(query: string, limit = 20): Promise<Product[]> {
@@ -161,18 +186,14 @@ export class ProductService {
         readItems('products', {
           filter: {
             _or: [
-              { slug: { _eq: query } },
               { name: { _contains: query } },
               { description: { _contains: query } }
             ]
           },
-          _fields_1: ['*', 'category.name', 'category.slug'] as readonly string[],
-          get fields() {
-            return this._fields_1;
-          },
-          set fields(value) {
-            this._fields_1 = value;
-          },
+          fields: [
+            'id', 'name', 'description', 'price', 'image', 'status', 'category', 'stock',
+            'images.directus_files_id.*'
+          ],
           limit: limit
         })
       );
@@ -184,26 +205,41 @@ export class ProductService {
     }
   }
 
-  static async createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product | null> {
+  static async createProduct(productData: Omit<Product, 'id'>): Promise<Product | null> {
     try {
       await DirectusService.authenticate();
       
+      const { images, ...productWithoutImages } = productData;
+      
       const newProduct = await directus.request(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        createItem('products' as any, {
-          ...productData,
-          status: productData.status || 'draft'
+        createItem('products' as const, {
+          ...productWithoutImages,
+          status: productData.status || 'draft',
+          stock: productData.stock || 0
         })
-      );
+      ) as unknown as DirectusProduct;
 
-      return newProduct as unknown as Product;
+      // If there are images to associate, create the relationships
+      if (images && images.length > 0) {
+        for (const img of images) {
+          await directus.request(
+            createItem('products_images' as const, {
+              products_id: newProduct.id,
+              directus_files_id: img.directus_files_id.id,
+              sort: img.sort || 0
+            })
+          );
+        }
+      }
+
+      return this.getProduct(newProduct.id);
     } catch (error) {
       console.error('Error creating product:', error);
       throw error;
     }
   }
 
-  static async updateProduct(id: string, productData: Partial<Product>): Promise<Product | null> {
+  static async updateProduct(id: number, productData: Partial<Product>): Promise<Product | null> {
     try {
       await DirectusService.authenticate();
       
@@ -289,7 +325,42 @@ export class ProductService {
     }
   }
 
-  static getImageUrl(imageId: string): string {
-    return DirectusService.getImageUrl(imageId);
+  /**
+   * Get all product images (handles both single image and M2M images)
+   * @param product - Product object
+   * @returns Array of image UUIDs
+   */
+  static getProductImages(product: Product): string[] {
+    if (!product.images || product.images.length === 0) return [];
+    
+    return product.images
+      .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+      .map(img => 
+        typeof img.directus_files_id === 'string' 
+          ? img.directus_files_id 
+          : img.directus_files_id?.id || ''
+      )
+      .filter(Boolean);
+  }
+
+  /**
+   * Get primary product image (first image)
+   * @param product - Product object
+   * @returns Image UUID or null
+   */
+  static getPrimaryImage(product: Product): string | null {
+    const images = this.getProductImages(product);
+    return images[0] || null;
+  }
+
+  /**
+   * Get all image URLs for display
+   * @param product - Product object
+   * @returns Array of full image URLs
+   */
+  static getProductImageUrls(product: Product): string[] {
+    return this.getProductImages(product).map(imageId => 
+      DirectusService.getImageUrl(imageId)
+    );
   }
 }

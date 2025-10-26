@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { ProductService, type Product } from '@/services/productService';
 import { DirectusService } from '@/services/directusService';
-import type { DirectusServices } from '@/lib/directus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 import { UniversalContentEditor } from '@/components/universal/UniversalContentEditor';
 
 const Loja = () => {
-  const [products, setProducts] = useState<DirectusServices[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<DirectusServices[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -24,9 +24,9 @@ const Loja = () => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const services = await DirectusService.getServices();
-        setProducts(services);
-        setFilteredProducts(services);
+        const productsData = await ProductService.getProducts({ status: 'published' }, 100);
+        setProducts(productsData);
+        setFilteredProducts(productsData);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -44,21 +44,21 @@ const Loja = () => {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(product =>
-        product.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
+      filtered = filtered.filter(product => product.category?.toString() === selectedCategory);
     }
 
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory]);
 
   // Get unique categories
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category?.toString()).filter(Boolean)))];
 
   // Helper function to format price
   const formatPrice = (price: number) => {
@@ -69,22 +69,28 @@ const Loja = () => {
   };
 
   // Add to cart handler
-  const handleAddToCart = (product: DirectusServices) => {
+  const handleAddToCart = (product: Product) => {
     if (!product.price) {
       toast.error('Produto sem preço definido');
       return;
     }
 
+    // Get the primary image URL if available
+    const primaryImageId = ProductService.getPrimaryImage(product);
+    const imageUrl = primaryImageId 
+      ? DirectusService.getImageUrl(primaryImageId)
+      : '';
+
     addItem({
-      product_id: product.id,
-      name: product.title || 'Produto sem nome',
-      slug: product.slug,
+      product_id: product.id.toString(),
+      name: product.name || 'Produto sem nome',
+      slug: product.id.toString(), // Use ID as slug since products don't have slug field
       price: product.price,
-      image: product.image,
+      image: imageUrl,
       description: product.description,
     });
 
-    toast.success(`${product.title} adicionado ao carrinho!`);
+    toast.success(`${product.name} adicionado ao carrinho!`);
   };
 
   return (
@@ -157,28 +163,71 @@ const Loja = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                <div className="aspect-square bg-muted relative overflow-hidden">
-                  {product.image ? (
-                    <img
-                      src={DirectusService.getImageUrl(product.image)}
-                      alt={product.title || 'Product'}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <ShoppingCart className="h-16 w-16" />
-                    </div>
-                  )}
-                  {product.category && (
-                    <Badge className="absolute top-2 left-2" variant="secondary">
-                      {product.category}
-                    </Badge>
-                  )}
+                <div className="aspect-square bg-muted relative overflow-hidden group">
+                  <div className="relative w-full h-full">
+                    {/* Main Image */}
+                    {product.images && product.images.length > 0 ? (
+                      <>
+                        <div className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-0">
+                          <img
+                            src={DirectusService.getImageUrl(product.images[0].directus_files_id.id)}
+                            alt={product.name || 'Product'}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        
+                        {/* Second Image (shown on hover) */}
+                        {product.images.length > 1 && (
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <img
+                              src={DirectusService.getImageUrl(product.images[1].directus_files_id.id)}
+                              alt={product.name || 'Product'}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <ShoppingCart className="h-16 w-16" />
+                      </div>
+                    )}
+                    
+                    {/* Category Badge */}
+                    {product.category && (
+                      <Badge className="absolute top-2 left-2" variant="secondary">
+                        {product.category}
+                      </Badge>
+                    )}
+                    
+                    {/* Image Counter Badge */}
+                    {product.images && product.images.length > 1 && (
+                      <Badge className="absolute top-2 right-2" variant="default">
+                        {product.images.length} {product.images.length === 1 ? 'foto' : 'fotos'}
+                      </Badge>
+                    )}
+                    
+                    {/* Image Navigation Dots */}
+                    {product.images && product.images.length > 1 && (
+                      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                        {product.images.map((_, index) => (
+                          <span 
+                            key={index}
+                            className={`w-2 h-2 rounded-full ${
+                              index === 0 ? 'bg-primary' : 'bg-white/50'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <CardHeader className="p-4">
                   <CardTitle className="text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                    {product.title}
+                    {product.name}
                   </CardTitle>
                   {product.description && (
                     <p className="text-xs text-muted-foreground line-clamp-2">
@@ -201,7 +250,7 @@ const Loja = () => {
                   
                   <div className="flex gap-2">
                     <Button asChild size="sm" className="flex-1">
-                      <Link to={`/loja/${product.slug}`}>
+                      <Link to={`/loja/${product.id}`}>
                         Ver Detalhes
                       </Link>
                     </Button>

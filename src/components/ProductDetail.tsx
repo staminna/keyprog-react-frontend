@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ProductService, type Product } from '@/services/productService';
 import { DirectusService } from '@/services/directusService';
-import type { DirectusServices } from '@/lib/directus';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -10,23 +10,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, ArrowLeft, ShoppingCart, Heart, Share2, Euro, Truck, Shield, Clock } from 'lucide-react';
 
 interface ProductDetailProps {
-  slug?: string; // Optional prop to override URL slug
+  id?: string; // Optional prop to override URL id
 }
 
-const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
-  const { slug: urlSlug } = useParams<{ slug: string }>();
-  const slug = propSlug || urlSlug;
+const ProductDetail = ({ id: propId }: ProductDetailProps) => {
+  const { id: urlId } = useParams<{ id: string }>();
+  const id = propId || urlId;
   
-  const [product, setProduct] = useState<DirectusServices | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<DirectusServices[]>([]);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!slug) {
-        setError('No product slug provided');
+      if (!id) {
+        setError('No product ID provided');
         setIsLoading(false);
         return;
       }
@@ -35,15 +36,24 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
         setIsLoading(true);
         setError(null);
         
+        const productId = parseInt(id, 10);
+        if (isNaN(productId)) {
+          setError('Invalid product ID');
+          setIsLoading(false);
+          return;
+        }
+        
         const [productData, allProducts] = await Promise.all([
-          DirectusService.getService(slug), // Using services collection for products
-          DirectusService.getServices()
+          ProductService.getProduct(productId),
+          ProductService.getProducts({ status: 'published' }, 100)
         ]);
         
         if (!productData) {
           setError('Product not found');
         } else {
           setProduct(productData);
+          // Get all image URLs
+          setImageUrls(ProductService.getProductImageUrls(productData));
           // Get related products (exclude current product)
           setRelatedProducts(
             allProducts
@@ -60,7 +70,7 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
     };
 
     fetchProduct();
-  }, [slug]);
+  }, [id]);
 
   // Helper function to format price
   const formatPrice = (price: number) => {
@@ -156,10 +166,10 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
           <div className="space-y-4">
             {/* Main Image */}
             <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-              {product.image ? (
+              {imageUrls.length > 0 ? (
                 <img
-                  src={DirectusService.getImageUrl(product.image)}
-                  alt={product.title || 'Product Image'}
+                  src={imageUrls[selectedImageIndex]}
+                  alt={`${product.name} - Image ${selectedImageIndex + 1}`}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -169,30 +179,35 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
               )}
             </div>
 
-            {/* Thumbnail Images (placeholder for future multiple images) */}
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map((index) => (
-                <button
-                  key={index}
-                  className={`aspect-square w-20 bg-muted rounded border-2 ${
-                    selectedImageIndex === index - 1 ? 'border-primary' : 'border-transparent'
-                  }`}
-                  onClick={() => setSelectedImageIndex(index - 1)}
-                >
-                  {product.image && index === 1 ? (
+            {/* Image Gallery Thumbnails */}
+            {imageUrls.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {imageUrls.map((url, index) => (
+                  <button
+                    key={index}
+                    className={`aspect-square w-20 bg-muted rounded border-2 flex-shrink-0 transition-all ${
+                      selectedImageIndex === index 
+                        ? 'border-primary ring-2 ring-primary ring-offset-2' 
+                        : 'border-transparent hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedImageIndex(index)}
+                  >
                     <img
-                      src={DirectusService.getImageUrl(product.image)}
-                      alt={`${product.title} ${index}`}
+                      src={url}
+                      alt={`${product.name} thumbnail ${index + 1}`}
                       className="w-full h-full object-cover rounded"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <ShoppingCart className="h-6 w-6" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {/* Image Counter */}
+            {imageUrls.length > 1 && (
+              <div className="text-center text-sm text-muted-foreground">
+                Imagem {selectedImageIndex + 1} de {imageUrls.length}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -201,11 +216,11 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
             <div>
               {product.category && (
                 <Badge variant="secondary" className="mb-2">
-                  {product.category}
+                  Category {product.category}
                 </Badge>
               )}
               <h1 className="text-3xl font-bold text-gradient-primary mb-2">
-                {product.title}
+                {product.name}
               </h1>
             </div>
 
@@ -226,24 +241,13 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
               </div>
             )}
 
-            {/* Product Features */}
-            {product.features && (
+            {/* Stock Information */}
+            {product.stock !== undefined && (
               <div>
-                <h3 className="font-semibold mb-3">Características:</h3>
-                <div className="space-y-2">
-                  {Array.isArray(product.features) ? (
-                    product.features.map((feature, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm">
-                      <div dangerouslySetInnerHTML={{ __html: product.features }} />
-                    </div>
-                  )}
-                </div>
+                <h3 className="font-semibold mb-3">Disponibilidade:</h3>
+                <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+                  {product.stock > 0 ? `${product.stock} em stock` : 'Esgotado'}
+                </Badge>
               </div>
             )}
 
@@ -298,26 +302,34 @@ const ProductDetail = ({ slug: propSlug }: ProductDetailProps) => {
               {relatedProducts.map((relatedProduct) => (
                 <Link
                   key={relatedProduct.id}
-                  to={`/loja/${relatedProduct.slug}`}
+                  to={`/loja/${relatedProduct.id}`}
                   className="block group"
                 >
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-square bg-muted">
-                      {relatedProduct.image ? (
-                        <img
-                          src={DirectusService.getImageUrl(relatedProduct.image)}
-                          alt={relatedProduct.title || 'Product'}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <ShoppingCart className="h-12 w-12" />
-                        </div>
+                    <div className="aspect-square bg-muted relative">
+                      {(() => {
+                        const primaryImage = ProductService.getPrimaryImage(relatedProduct);
+                        return primaryImage ? (
+                          <img
+                            src={DirectusService.getImageUrl(primaryImage)}
+                            alt={relatedProduct.name || 'Product'}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <ShoppingCart className="h-12 w-12" />
+                          </div>
+                        );
+                      })()}
+                      {relatedProduct.images && relatedProduct.images.length > 1 && (
+                        <Badge className="absolute top-2 right-2 text-xs">
+                          {relatedProduct.images.length}
+                        </Badge>
                       )}
                     </div>
                     <CardHeader className="p-4">
                       <CardTitle className="text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                        {relatedProduct.title}
+                        {relatedProduct.name}
                       </CardTitle>
                       {relatedProduct.price && (
                         <p className="text-lg font-bold text-primary">

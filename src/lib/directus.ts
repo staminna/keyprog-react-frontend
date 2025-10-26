@@ -155,21 +155,23 @@ interface DirectusSchema {
   sub_menu_content: DirectusSubMenuContent[];
 }
 
+export interface DirectusProductImage {
+  id: number;
+  products_id: number;
+  directus_files_id: string;  // UUID of the image file
+  sort: number;  // Order of images
+}
+
 export interface DirectusProduct {
-  id: string;
+  id: number; // Directus uses integer for product ID
   name: string;
   description?: string;
   price: number;
-  slug: string;
-  category?: string;
-  images?: string[];
-  status: 'draft' | 'published' | 'archived';
-  inventory_count?: number;
-  sku?: string;
-  featured?: boolean;
-  tags?: string[];
-  created_at?: string;
-  updated_at?: string;
+  image?: string; // Single image UUID (deprecated, use images instead)
+  images?: DirectusProductImage[]; // M2M relationship for multiple images
+  status?: 'draft' | 'published' | 'archived';
+  category?: number; // Foreign key to categories table (integer)
+  stock?: number; // Available stock count
 }
 
 // Automatically determine the correct Directus URL based on environment
