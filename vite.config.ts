@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     
     server: {
       host: "0.0.0.0",
-      port: 3000,
+      port: 3002,
       strictPort: true,
       allowedHosts: [
         "keyprog.varrho.com",
@@ -55,10 +55,10 @@ export default defineConfig(({ mode }) => {
         },
       },
       hmr: {
-        clientPort: 3000,
+        clientPort: 3002,
         protocol: 'ws',
         host: 'localhost',
-        port: 3000,
+        port: 3002,
       },
       watch: {
         usePolling: true,
@@ -67,14 +67,14 @@ export default defineConfig(({ mode }) => {
         "Content-Security-Policy": isDev ? 
           // Development CSP - allows HTTP connections
           "default-src 'self'; " +
-          "connect-src 'self' http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com ws://keyprog.varrho.com:3000 wss://keyprog.varrho.com:3000 ws: wss: blob:; " +
+          "connect-src 'self' http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com ws://keyprog.varrho.com:3002 wss://keyprog.varrho.com:3002 ws: wss: blob:; " +
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
           "img-src 'self' data: blob: http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com; " +
           "font-src 'self' data: https://fonts.gstatic.com; " +
           "frame-ancestors 'self' http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com; " +
-          "child-src 'self' blob: http://localhost:3000 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com; " +
-          "frame-src 'self' http://localhost:3000 http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com"
+          "child-src 'self' blob: http://localhost:3002 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com; " +
+          "frame-src 'self' http://localhost:3002 http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com"
           :
           // Production CSP - HTTPS only
           "default-src 'self'; " +
@@ -90,7 +90,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     preview: {
-      port: 3000,
+      port: 3002,
       strictPort: true,
     },
     plugins: [
