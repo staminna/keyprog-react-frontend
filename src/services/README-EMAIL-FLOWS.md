@@ -127,7 +127,7 @@ await sendPasswordResetEmail(email, resetToken);
 
 ### 2. Utilizador Recebe Email
 - Email bonito em português 🇵🇹
-- Link: `http://localhost:3000/reset-password?token=abc123`
+- Link: `http://localhost:3002/reset-password?token=abc123`
 
 ### 3. Utilizador Clica no Link
 ```typescript
@@ -179,7 +179,7 @@ curl -X POST http://localhost:8065/flows/trigger/93097043-26b6-4311-8aae-e1e2632
   -H "Content-Type: application/json" \
   -d '{
     "email": "teste@keyprog.pt",
-    "resetUrl": "http://localhost:3000/reset-password?token=abc123"
+    "resetUrl": "http://localhost:3002/reset-password?token=abc123"
   }'
 ```
 

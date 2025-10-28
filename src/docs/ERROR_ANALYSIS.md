@@ -10,7 +10,7 @@ While we've successfully removed the `doc(paragraph(...))` syntax from all pages
 
 ```
 Warning: validateDOMNesting(...): %s cannot appear as a descendant of <%s>.%s <div> p 
-at PageSection (http://localhost:3000/src/components/editable/PageSection.tsx)
+at PageSection (http://localhost:3002/src/components/editable/PageSection.tsx)
 ```
 
 **Analysis:**

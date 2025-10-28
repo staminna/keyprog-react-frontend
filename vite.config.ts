@@ -74,7 +74,7 @@ export default defineConfig(({ mode }) => {
           "font-src 'self' data: https://fonts.gstatic.com; " +
           "frame-ancestors 'self' http://localhost:3002 http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com; " +
           "child-src 'self' blob: http://localhost:3002 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com; " +
-          "frame-src 'self' http://localhost:3000 http://localhost:3002 http://localhost:5173 http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com"
+          "frame-src 'self' http://localhost:3002 http://localhost:3002 http://localhost:5173 http://localhost:8065 http://keyprog:8055 https://keyprog.varrho.com http://keyprog.varrho.com"
           :
           // Production CSP - HTTPS only
           "default-src 'self'; " +
