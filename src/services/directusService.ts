@@ -1307,7 +1307,7 @@ export class DirectusService {
 
       // User exists and is unverified - provide helpful information
       console.log('📧 Verification email was sent during registration');
-      console.log('💡 Check MailHog at: http://localhost:8025');
+      console.log('💡 Check Mailpit at: http://localhost:8025');
       console.log('⚠️  If email not received, the Directus Flow may need to be configured');
       console.log('👤 User ID:', user.id);
       

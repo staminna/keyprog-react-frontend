@@ -183,7 +183,7 @@ curl -X POST http://localhost:8065/flows/trigger/93097043-26b6-4311-8aae-e1e2632
   }'
 ```
 
-Depois verifique o MailHog: http://localhost:8025
+Depois verifique o Mailpit: http://localhost:8025
 
 ---
 
