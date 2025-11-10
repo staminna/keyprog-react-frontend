@@ -21,8 +21,9 @@ type DirectusProduct = {
   description?: string;
   price: string | number;
   status?: 'draft' | 'published' | 'archived';
-  category?: number;
+  category?: number | { id: number; title: string };
   stock?: number;
+  image?: string | { id: string };
   images?: DirectusProductImage[];
 };
 
@@ -39,9 +40,10 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
-  images: ProductImage[]; // Multiple images via M2M relationship
+  image?: string | { id: string }; // Single image field (UUID or object)
+  images?: ProductImage[]; // Multiple images via M2M relationship
   status?: 'draft' | 'published' | 'archived';
-  category?: number; // Foreign key to categories (integer)
+  category?: number | { id: number; title: string }; // Foreign key to categories (integer) or category object
   stock?: number; // Available stock count from Directus
 }
 
@@ -92,9 +94,10 @@ export class ProductService {
           offset,
           sort: ['id'],
           fields: [
-            'id', 'name', 'description', 'price', 'status', 'category', 'stock',
-            { images: ['id', 'sort', { directus_files_id: ['id'] }] }
-          ]
+            'id', 'name', 'description', 'price', 'status', 'stock', 'image',
+            { category: ['id', 'title'] } as any,
+            { images: ['id', 'sort', { directus_files_id: ['id'] }] } as any
+          ] as any
         })
       ) as unknown as DirectusProduct[];
 
@@ -142,9 +145,9 @@ export class ProductService {
       const product = await directus.request(
         readItem('products' as const, id, {
           fields: [
-            'id', 'name', 'description', 'price', 'status', 'category', 'stock',
-            { images: ['id', 'sort', { directus_files_id: ['id'] }] }
-          ]
+            'id', 'name', 'description', 'price', 'status', 'category', 'stock', 'image',
+            { images: ['id', 'sort', { directus_files_id: ['id'] }] } as any
+          ] as any
         })
       ) as unknown as DirectusProduct | null;
 
@@ -170,7 +173,7 @@ export class ProductService {
       console.log('Using fallback product data');
       const fallbackProducts = FallbackService.getProducts();
       const product = fallbackProducts.find(p => p.id === id);
-      return product as Product || null;
+      return (product as unknown as Product) || null;
     }
   }
 
@@ -193,7 +196,7 @@ export class ProductService {
           fields: [
             'id', 'name', 'description', 'price', 'image', 'status', 'category', 'stock',
             'images.directus_files_id.*'
-          ],
+          ] as any,
           limit: limit
         })
       );
@@ -216,14 +219,14 @@ export class ProductService {
           ...productWithoutImages,
           status: productData.status || 'draft',
           stock: productData.stock || 0
-        })
+        } as any)
       ) as unknown as DirectusProduct;
 
       // If there are images to associate, create the relationships
       if (images && images.length > 0) {
         for (const img of images) {
           await directus.request(
-            createItem('products_images' as const, {
+            createItem('products_images' as any, {
               products_id: newProduct.id,
               directus_files_id: img.directus_files_id.id,
               sort: img.sort || 0

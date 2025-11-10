@@ -37,6 +37,49 @@ const Loja = () => {
     fetchProducts();
   }, []);
 
+  // Helper function to get category ID
+  const getCategoryId = (category: number | { id: number; title: string } | undefined): string => {
+    if (!category) return '';
+    return typeof category === 'number' ? category.toString() : category.id.toString();
+  };
+
+  // Helper function to get category name
+  const getCategoryName = (category: number | { id: number; title: string } | undefined): string => {
+    if (!category) return '';
+    return typeof category === 'number' ? category.toString() : category.title;
+  };
+
+  // Helper function to get product image URL (handles both single image and images array)
+  const getProductImageUrl = (product: Product, index: number = 0): string | null => {
+    // Check if product has images array (M2M relationship)
+    if (product.images && product.images.length > index) {
+      const imageId = product.images[index].directus_files_id?.id;
+      return imageId ? DirectusService.getImageUrl(imageId) : null;
+    }
+    
+    // Check if product has single image field
+    if (product.image && index === 0) {
+      // Handle both string ID and object with id property
+      const imageId = typeof product.image === 'string' ? product.image : (product.image as any)?.id;
+      return imageId ? DirectusService.getImageUrl(imageId) : null;
+    }
+    
+    return null;
+  };
+
+  // Helper function to check if product has images
+  const hasProductImages = (product: Product): boolean => {
+    return !!(product.images && product.images.length > 0) || !!product.image;
+  };
+
+  // Helper function to get image count
+  const getImageCount = (product: Product): number => {
+    if (product.images && product.images.length > 0) {
+      return product.images.length;
+    }
+    return product.image ? 1 : 0;
+  };
+
   // Filter products based on search and category
   useEffect(() => {
     let filtered = products;
@@ -51,14 +94,28 @@ const Loja = () => {
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category?.toString() === selectedCategory);
+      filtered = filtered.filter(product => getCategoryId(product.category) === selectedCategory);
     }
 
     setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory]);
+  }, [products, searchTerm, selectedCategory, getCategoryId]);
 
-  // Get unique categories
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category?.toString()).filter(Boolean)))];
+  // Get unique categories with their names
+  const categoryMap = new Map<string, string>();
+  products.forEach(p => {
+    if (p.category) {
+      const id = getCategoryId(p.category);
+      const name = getCategoryName(p.category);
+      if (id && name) {
+        categoryMap.set(id, name);
+      }
+    }
+  });
+  
+  const categories = [
+    { id: 'all', name: 'Todos' },
+    ...Array.from(categoryMap.entries()).map(([id, name]) => ({ id, name }))
+  ];
 
   // Helper function to format price
   const formatPrice = (price: number) => {
@@ -129,16 +186,22 @@ const Loja = () => {
               />
             </div>
             <div className="flex gap-2 flex-wrap">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category === 'all' ? 'Todos' : category}
-                </Button>
-              ))}
+              {categories.map((category) => {
+                const count = category.id === 'all' 
+                  ? products.length 
+                  : products.filter(p => getCategoryId(p.category) === category.id).length;
+                
+                return (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                  >
+                    {category.id === 'all' ? category.name : `${category.name} (${count})`}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -166,22 +229,24 @@ const Loja = () => {
                 <div className="aspect-square bg-muted relative overflow-hidden group">
                   <div className="relative w-full h-full">
                     {/* Main Image */}
-                    {product.images && product.images.length > 0 ? (
+                    {hasProductImages(product) ? (
                       <>
                         <div className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-0">
-                          <img
-                            src={DirectusService.getImageUrl(product.images[0].directus_files_id.id)}
-                            alt={product.name || 'Product'}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
+                          {getProductImageUrl(product, 0) && (
+                            <img
+                              src={getProductImageUrl(product, 0)!}
+                              alt={product.name || 'Product'}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          )}
                         </div>
                         
                         {/* Second Image (shown on hover) */}
-                        {product.images.length > 1 && (
+                        {getImageCount(product) > 1 && getProductImageUrl(product, 1) && (
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <img
-                              src={DirectusService.getImageUrl(product.images[1].directus_files_id.id)}
+                              src={getProductImageUrl(product, 1)!}
                               alt={product.name || 'Product'}
                               className="w-full h-full object-cover"
                               loading="lazy"
@@ -198,21 +263,21 @@ const Loja = () => {
                     {/* Category Badge */}
                     {product.category && (
                       <Badge className="absolute top-2 left-2" variant="secondary">
-                        {product.category}
+                        {getCategoryName(product.category)}
                       </Badge>
                     )}
                     
                     {/* Image Counter Badge */}
-                    {product.images && product.images.length > 1 && (
+                    {getImageCount(product) > 1 && (
                       <Badge className="absolute top-2 right-2" variant="default">
-                        {product.images.length} {product.images.length === 1 ? 'foto' : 'fotos'}
+                        {getImageCount(product)} {getImageCount(product) === 1 ? 'foto' : 'fotos'}
                       </Badge>
                     )}
                     
                     {/* Image Navigation Dots */}
-                    {product.images && product.images.length > 1 && (
+                    {getImageCount(product) > 1 && (
                       <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-                        {product.images.map((_, index) => (
+                        {Array.from({ length: getImageCount(product) }).map((_, index) => (
                           <span 
                             key={index}
                             className={`w-2 h-2 rounded-full ${
