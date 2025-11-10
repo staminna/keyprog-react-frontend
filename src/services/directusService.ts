@@ -1234,7 +1234,11 @@ export class DirectusService {
     try {
       // Use admin token to create user with draft status
       const adminToken = import.meta.env.VITE_DIRECTUS_TOKEN;
-      
+
+      // Generate unique verification tokens
+      const emailVerificationToken = crypto.randomUUID();
+      const adminApprovalToken = crypto.randomUUID();
+
       // Create user with status='draft' (unverified)
       const response = await fetch(`${import.meta.env.VITE_DIRECTUS_URL}/users`, {
         method: 'POST',
@@ -1248,8 +1252,21 @@ export class DirectusService {
           first_name: userData.first_name,
           last_name: userData.last_name,
           role: userData.role, // Cliente role
-          status: 'draft', // Unverified until email is confirmed
-          email_notifications: true
+          status: 'draft', // Unverified until both email and admin approval
+          email_notifications: true,
+          // Dual verification fields
+          email_verified: false,
+          admin_approved: false,
+          email_verification_token: emailVerificationToken,
+          admin_approval_token: adminApprovalToken,
+          // Additional user data
+          telefone: userData.telefone,
+          morada: userData.morada,
+          cidade: userData.cidade,
+          codigo_postal: userData.codigo_postal,
+          pais: userData.pais,
+          nif: userData.nif,
+          nome_empresa: userData.nome_empresa
         })
       });
 

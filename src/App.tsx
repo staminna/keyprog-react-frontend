@@ -30,6 +30,7 @@ import AdminPage from '@/pages/auth/AdminPage';
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
 import PasswordResetPage from '@/pages/auth/PasswordResetPage';
 import EmailVerificationPage from '@/pages/auth/EmailVerificationPage';
+import ApproveUserPage from '@/pages/admin/ApproveUserPage';
 import RegistrationPage from '@/pages/customer/RegistrationPage';
 import ClienteDashboard from '@/pages/customer/ClienteDashboard';
 import PerfilPage from '@/pages/customer/PerfilPage';
@@ -78,6 +79,7 @@ const App = () => (
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/registo" element={<RegistrationPage />} />
                     <Route path="/verify-email" element={<EmailVerificationPage />} />
+                    <Route path="/admin/approve-user" element={<ApproveUserPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/reset-password" element={<PasswordResetPage />} />
                     

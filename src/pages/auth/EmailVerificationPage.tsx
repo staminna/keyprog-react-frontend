@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { DirectusService } from '@/services/directusService';
-import { Loader2, Mail, CheckCircle, XCircle } from 'lucide-react';
+import { verifyUserEmail } from '@/services/verificationService';
+import { Loader2, Mail, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 export const EmailVerificationPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending');
+  const [status, setStatus] = useState<'pending' | 'success' | 'waiting-admin' | 'error'>('pending');
   const [message, setMessage] = useState('');
   const [resending, setResending] = useState(false);
   const email = searchParams.get('email') || '';
 
   const handleResendEmail = async () => {
     if (!email) return;
-    
+
     setResending(true);
     try {
       await DirectusService.resendVerificationEmail(email);
@@ -29,7 +30,7 @@ export const EmailVerificationPage = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       const token = searchParams.get('token');
-      
+
       if (!token) {
         // No token - show waiting for verification message
         setStatus('pending');
@@ -38,35 +39,27 @@ export const EmailVerificationPage = () => {
       }
 
       try {
-        // Token is the user ID from the Directus Flow email
-        const adminToken = import.meta.env.VITE_DIRECTUS_TOKEN;
-        
-        // Activate the user by updating their status
-        const activateResponse = await fetch(
-          `${import.meta.env.VITE_DIRECTUS_URL}/users/${token}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminToken}`
-            },
-            body: JSON.stringify({
-              status: 'active'
-            })
-          }
-        );
+        // Use the new dual verification service
+        const result = await verifyUserEmail(token);
 
-        if (activateResponse.ok) {
-          setStatus('success');
-          setMessage('Email verificado com sucesso! Pode agora fazer login.');
-          
-          // Redirect to login after 3 seconds
-          setTimeout(() => {
-            navigate('/login?verified=true');
-          }, 3000);
+        if (result.success) {
+          if (result.userActivated) {
+            // Both verifications complete - user can login
+            setStatus('success');
+            setMessage('Email verificado! Conta ativada com sucesso. Pode agora fazer login.');
+
+            // Redirect to login after 3 seconds
+            setTimeout(() => {
+              navigate('/login?verified=true');
+            }, 3000);
+          } else {
+            // Email verified but needs admin approval
+            setStatus('waiting-admin');
+            setMessage('Email verificado com sucesso! Aguarde a aprovação do administrador para poder fazer compras.');
+          }
         } else {
           setStatus('error');
-          setMessage('Link de verificação inválido ou expirado');
+          setMessage(result.message);
         }
       } catch (error) {
         console.error('Verification error:', error);
@@ -112,6 +105,25 @@ export const EmailVerificationPage = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Email Verificado!</h1>
             <p className="text-gray-600 mb-4">{message}</p>
             <p className="text-sm text-gray-500">A redirecionar para o login...</p>
+          </>
+        )}
+
+        {status === 'waiting-admin' && (
+          <>
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-10 h-10 text-yellow-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Email Verificado!</h1>
+            <p className="text-gray-600 mb-4">{message}</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-yellow-800">
+                <strong>Próximo passo:</strong> O administrador irá rever o seu registo e aprovar a sua conta.
+                Receberá uma notificação quando a conta for aprovada.
+              </p>
+            </div>
+            <p className="text-sm text-gray-500">
+              Pode fechar esta janela. Entraremos em contacto em breve!
+            </p>
           </>
         )}
 

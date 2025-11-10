@@ -8,10 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { StripeService } from '@/services/stripeService';
+import { canUserPurchase } from '@/services/verificationService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ShoppingCart, CreditCard, AlertCircle } from 'lucide-react';
+import { Loader2, ShoppingCart, CreditCard, AlertCircle, Mail, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const CheckoutPage = () => {
@@ -20,6 +21,50 @@ export const CheckoutPage = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [canPurchase, setCanPurchase] = useState<boolean | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'checking' | 'verified' | 'pending-email' | 'pending-admin' | 'error'>('checking');
+
+  // Check if user can purchase (dual verification)
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (user?.id) {
+        try {
+          const canBuy = await canUserPurchase(user.id);
+          setCanPurchase(canBuy);
+
+          if (!canBuy) {
+            // Fetch user details to determine which verification is missing
+            const response = await fetch(
+              `${import.meta.env.VITE_DIRECTUS_URL}/users/${user.id}?fields=email_verified,admin_approved`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${import.meta.env.VITE_DIRECTUS_TOKEN}`
+                }
+              }
+            );
+            const data = await response.json();
+            const userData = data.data;
+
+            if (!userData.email_verified) {
+              setVerificationStatus('pending-email');
+            } else if (!userData.admin_approved) {
+              setVerificationStatus('pending-admin');
+            } else {
+              setVerificationStatus('error');
+            }
+          } else {
+            setVerificationStatus('verified');
+          }
+        } catch (err) {
+          console.error('Error checking purchase permission:', err);
+          setCanPurchase(false);
+          setVerificationStatus('error');
+        }
+      }
+    };
+
+    checkVerification();
+  }, [user]);
 
   // Redirect if cart is empty or user not authenticated
   useEffect(() => {
@@ -41,6 +86,12 @@ export const CheckoutPage = () => {
   const handleCheckout = async () => {
     if (!user?.id) {
       setError('Deve estar autenticado para finalizar a compra');
+      return;
+    }
+
+    // Check verification before processing
+    if (!canPurchase) {
+      setError('A sua conta ainda não está totalmente verificada. Complete a verificação para continuar.');
       return;
     }
 
@@ -89,6 +140,39 @@ export const CheckoutPage = () => {
     <main className="container py-12">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Finalizar Compra</h1>
+
+        {/* Verification Status Alert */}
+        {verificationStatus !== 'verified' && verificationStatus !== 'checking' && (
+          <Alert className="mb-6" variant={verificationStatus === 'error' ? 'destructive' : 'default'}>
+            {verificationStatus === 'pending-email' && (
+              <>
+                <Mail className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Verificação de Email Pendente:</strong> Por favor verifique o seu email para ativar as compras.
+                  Verifique a sua caixa de entrada para o link de verificação.
+                </AlertDescription>
+              </>
+            )}
+            {verificationStatus === 'pending-admin' && (
+              <>
+                <Clock className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Aprovação Pendente:</strong> A sua conta está a aguardar aprovação do administrador.
+                  Será notificado quando a aprovação for concedida.
+                </AlertDescription>
+              </>
+            )}
+            {verificationStatus === 'error' && (
+              <>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Verificação Incompleta:</strong> A sua conta requer verificação antes de poder fazer compras.
+                  Entre em contacto connosco se precisar de assistência.
+                </AlertDescription>
+              </>
+            )}
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Order Summary */}
