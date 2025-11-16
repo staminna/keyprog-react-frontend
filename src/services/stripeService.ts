@@ -63,7 +63,7 @@ export class StripeService {
           success_url: successUrl,
           cancel_url: cancelUrl,
           mode: 'payment',
-          payment_method_types: ['card', 'multibanco'], // Portuguese payment methods
+          payment_method_types: ['card', 'multibanco', 'mbway'], // Portuguese payment methods
         }),
       });
 

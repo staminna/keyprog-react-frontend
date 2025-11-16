@@ -132,20 +132,39 @@ const Loja = () => {
       return;
     }
 
-    // Get the primary image URL if available
-    const primaryImageId = ProductService.getPrimaryImage(product);
-    const imageUrl = primaryImageId 
-      ? DirectusService.getImageUrl(primaryImageId)
-      : '';
+    // Get the primary image URL using the same helper that displays images
+    let imageUrl = getProductImageUrl(product, 0) || '';
+    
+    // If no image URL, try to extract from product.image directly
+    if (!imageUrl && product.image) {
+      const imageId = typeof product.image === 'string' ? product.image : (product.image as any)?.id;
+      if (imageId) {
+        imageUrl = DirectusService.getImageUrl(imageId);
+      }
+    }
 
-    addItem({
+    // Debug logging
+    console.group('🛍️ Adding to cart: ' + product.name);
+    console.log('Product ID:', product.id);
+    console.log('Has images array:', !!(product.images && product.images.length > 0));
+    console.log('Has single image:', !!product.image);
+    console.log('Product.image value:', product.image);
+    console.log('Extracted imageUrl:', imageUrl);
+    console.log('Full product:', product);
+    console.groupEnd();
+
+    const cartItem = {
       product_id: product.id.toString(),
       name: product.name || 'Produto sem nome',
-      slug: product.id.toString(), // Use ID as slug since products don't have slug field
+      slug: product.id.toString(),
       price: product.price,
       image: imageUrl,
       description: product.description,
-    });
+    };
+    
+    console.log('📦 Cart item to be added:', cartItem);
+
+    addItem(cartItem);
 
     toast.success(`${product.name} adicionado ao carrinho!`);
   };
@@ -226,18 +245,22 @@ const Loja = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                <div className="aspect-square bg-muted relative overflow-hidden group">
+                <div className="aspect-square bg-muted relative overflow-hidden">
                   <div className="relative w-full h-full">
                     {/* Main Image */}
                     {hasProductImages(product) ? (
                       <>
-                        <div className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-0">
+                        <div className="absolute inset-0 transition-opacity duration-300">
                           {getProductImageUrl(product, 0) && (
                             <img
                               src={getProductImageUrl(product, 0)!}
                               alt={product.name || 'Product'}
                               className="w-full h-full object-cover"
                               loading="lazy"
+                              onError={(e) => {
+                                console.log('Image failed to load:', getProductImageUrl(product, 0));
+                                e.currentTarget.style.display = 'none';
+                              }}
                             />
                           )}
                         </div>
@@ -250,6 +273,10 @@ const Loja = () => {
                               alt={product.name || 'Product'}
                               className="w-full h-full object-cover"
                               loading="lazy"
+                              onError={(e) => {
+                                console.log('Second image failed to load:', getProductImageUrl(product, 1));
+                                e.currentTarget.style.display = 'none';
+                              }}
                             />
                           </div>
                         )}

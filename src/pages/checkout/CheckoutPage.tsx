@@ -12,7 +12,7 @@ import { canUserPurchase } from '@/services/verificationService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ShoppingCart, CreditCard, AlertCircle, Mail, Clock } from 'lucide-react';
+import { Loader2, ShoppingCart, CreditCard, AlertCircle, Mail, Clock, Package } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const CheckoutPage = () => {
@@ -81,6 +81,15 @@ export const CheckoutPage = () => {
       style: 'currency',
       currency: 'EUR',
     }).format(price);
+  };
+
+  // Helper to get proper image URL (handles both full URLs and UUIDs)
+  const getImageUrl = (image?: string): string => {
+    if (!image) return '';
+    // If it already starts with http, it's a full URL
+    if (image.startsWith('http')) return image;
+    // Otherwise, construct the URL from UUID
+    return `${import.meta.env.VITE_DIRECTUS_URL}/assets/${image}`;
   };
 
   const handleCheckout = async () => {
@@ -188,15 +197,29 @@ export const CheckoutPage = () => {
                 <div className="space-y-4">
                   {items.map((item) => (
                     <div key={item.product_id} className="flex gap-4">
-                      {item.image && (
-                        <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                      <div className="w-20 h-20 flex-shrink-0 bg-muted rounded overflow-hidden flex items-center justify-center">
+                        {item.image ? (
                           <img
-                            src={`${import.meta.env.VITE_DIRECTUS_URL}/assets/${item.image}`}
+                            src={getImageUrl(item.image)}
                             alt={item.name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log('Checkout item image failed to load:', item.image);
+                              // Replace with placeholder icon
+                              e.currentTarget.style.display = 'none';
+                              const parent = e.currentTarget.parentElement;
+                              if (parent && !parent.querySelector('.fallback-icon')) {
+                                const iconDiv = document.createElement('div');
+                                iconDiv.className = 'fallback-icon w-full h-full flex items-center justify-center text-muted-foreground';
+                                iconDiv.innerHTML = '<svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>';
+                                parent.appendChild(iconDiv);
+                              }
+                            }}
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <Package className="h-10 w-10 text-muted-foreground" />
+                        )}
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-medium">{item.name}</h3>
                         <p className="text-sm text-gray-500 mt-1">
@@ -271,7 +294,7 @@ export const CheckoutPage = () => {
                 {/* Payment Info */}
                 <div className="text-xs text-gray-500 space-y-1">
                   <p>✓ Pagamento seguro via Stripe</p>
-                  <p>✓ Cartão de crédito, Multibanco, MB Way</p>
+                  <p>✓ Cartão de crédito, Multibanco, MB WAY</p>
                   <p>✓ Dados protegidos com encriptação SSL</p>
                 </div>
 

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, ArrowLeft, ShoppingCart, Heart, Share2, Euro, Truck, Shield, Clock } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
+import { toast } from 'sonner';
 
 interface ProductDetailProps {
   id?: string; // Optional prop to override URL id
@@ -23,6 +25,38 @@ const ProductDetail = ({ id: propId }: ProductDetailProps) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const { addItem } = useCart();
+
+  // Helper function to get product image URL (handles both single image and images array)
+  const getProductImageUrl = (product: Product, index: number = 0): string | null => {
+    // Check if product has images array (M2M relationship)
+    if (product.images && product.images.length > index) {
+      const imageId = product.images[index].directus_files_id?.id;
+      return imageId ? DirectusService.getImageUrl(imageId) : null;
+    }
+    
+    // Check if product has single image field
+    if (product.image && index === 0) {
+      // Handle both string ID and object with id property
+      const imageId = typeof product.image === 'string' ? product.image : (product.image as any)?.id;
+      return imageId ? DirectusService.getImageUrl(imageId) : null;
+    }
+    
+    return null;
+  };
+
+  // Helper function to check if product has images
+  const hasProductImages = (product: Product): boolean => {
+    return !!(product.images && product.images.length > 0) || !!product.image;
+  };
+
+  // Helper function to get image count
+  const getImageCount = (product: Product): number => {
+    if (product.images && product.images.length > 0) {
+      return product.images.length;
+    }
+    return product.image ? 1 : 0;
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -52,8 +86,16 @@ const ProductDetail = ({ id: propId }: ProductDetailProps) => {
           setError('Product not found');
         } else {
           setProduct(productData);
-          // Get all image URLs
-          setImageUrls(ProductService.getProductImageUrls(productData));
+          
+          // Build image URLs array using helper function
+          const urls: string[] = [];
+          const imageCount = getImageCount(productData);
+          for (let i = 0; i < imageCount; i++) {
+            const url = getProductImageUrl(productData, i);
+            if (url) urls.push(url);
+          }
+          setImageUrls(urls);
+          
           // Get related products (exclude current product)
           setRelatedProducts(
             allProducts
@@ -78,6 +120,40 @@ const ProductDetail = ({ id: propId }: ProductDetailProps) => {
       style: 'currency',
       currency: 'EUR'
     }).format(price);
+  };
+
+  // Add to cart handler
+  const handleAddToCart = () => {
+    if (!product || !product.price) {
+      toast.error('Produto sem preço definido');
+      return;
+    }
+
+    // Use the first image from imageUrls array (already loaded and displaying)
+    const imageUrl = imageUrls.length > 0 ? imageUrls[0] : '';
+
+    // Debug logging
+    console.group('🛍️ Adding to cart from detail page: ' + product.name);
+    console.log('Product ID:', product.id);
+    console.log('Image URLs array:', imageUrls);
+    console.log('Selected imageUrl:', imageUrl);
+    console.log('Full product:', product);
+    console.groupEnd();
+
+    const cartItem = {
+      product_id: product.id.toString(),
+      name: product.name || 'Produto sem nome',
+      slug: product.id.toString(),
+      price: product.price,
+      image: imageUrl,
+      description: product.description,
+    };
+    
+    console.log('📦 Cart item to be added:', cartItem);
+
+    addItem(cartItem);
+
+    toast.success(`${product.name} adicionado ao carrinho!`);
   };
 
   // Loading state
@@ -171,6 +247,11 @@ const ProductDetail = ({ id: propId }: ProductDetailProps) => {
                   src={imageUrls[selectedImageIndex]}
                   alt={`${product.name} - Image ${selectedImageIndex + 1}`}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.log('Image failed to load:', imageUrls[selectedImageIndex]);
+                    console.log('Product data:', product);
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -196,6 +277,10 @@ const ProductDetail = ({ id: propId }: ProductDetailProps) => {
                       src={url}
                       alt={`${product.name} thumbnail ${index + 1}`}
                       className="w-full h-full object-cover rounded"
+                      onError={(e) => {
+                        console.log('Thumbnail failed to load:', url);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   </button>
                 ))}
@@ -254,9 +339,14 @@ const ProductDetail = ({ id: propId }: ProductDetailProps) => {
             {/* Action Buttons */}
             <div className="space-y-4">
               <div className="flex gap-3">
-                <Button size="lg" className="flex-1">
+                <Button 
+                  size="lg" 
+                  className="flex-1"
+                  onClick={handleAddToCart}
+                  disabled={!product.stock || product.stock === 0}
+                >
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  Adicionar ao Carrinho
+                  {product.stock && product.stock > 0 ? 'Adicionar ao Carrinho' : 'Esgotado'}
                 </Button>
                 <Button variant="outline" size="lg">
                   <Heart className="h-4 w-4" />
