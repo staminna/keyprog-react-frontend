@@ -82,11 +82,10 @@ export const LoginPage = () => {
       // Get user information to determine role
       const user = await DirectusService.getCurrentUser();
       
-      console.log('📋 Login - User data retrieved:', { 
-        hasUser: !!user, 
+      console.log('📋 Login - User data retrieved:', {
+        hasUser: !!user,
         hasRoleId: !!user?.roleId,
-        roleId: user?.roleId,
-        email: user?.email 
+        roleId: user?.roleId
       });
       
       if (!user || !user.roleId) {
@@ -139,7 +138,7 @@ export const LoginPage = () => {
           return;
         }
       }
-      console.log('👤 User logged in:', { email: user.email, roleId: userRoleId });
+      console.log('👤 User logged in successfully with roleId:', userRoleId);
 
       // Determine redirect URL based on user role
       let redirectUrl = '/';

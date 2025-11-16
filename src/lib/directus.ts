@@ -233,8 +233,8 @@ export const directus = createDirectus<DirectusSchema>(DIRECTUS_URL)
 export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
   .with(rest({
     onRequest: (options) => {
-      return { 
-        ...options, 
+      return {
+        ...options,
         timeout: 10000,
         credentials: 'include'
       };
@@ -243,18 +243,44 @@ export const sessionDirectus = createDirectus<DirectusSchema>(DIRECTUS_URL)
   .with(authentication('json', {
     credentials: 'include',
     autoRefresh: true,
-    msRefreshBeforeExpires: 30000,
-    // CRITICAL: Store token in localStorage for persistence across refreshes
+    msRefreshBeforeExpires: 30000, // Refresh 30 seconds before expiration
+    // CRITICAL: Store FULL authentication data (access_token + refresh_token) in localStorage
     storage: {
       get: async () => {
-        const token = localStorage.getItem('directus_session_token');
-        return token ? JSON.parse(token) : null;
+        try {
+          const authData = localStorage.getItem('directus_auth_data');
+          if (!authData) return null;
+
+          const parsed = JSON.parse(authData);
+          // Verify we have both tokens
+          if (!parsed.access_token || !parsed.refresh_token) {
+            console.warn('⚠️ Incomplete auth data in storage, clearing...');
+            localStorage.removeItem('directus_auth_data');
+            return null;
+          }
+
+          return parsed;
+        } catch (error) {
+          console.error('Error reading auth data from storage:', error);
+          localStorage.removeItem('directus_auth_data');
+          return null;
+        }
       },
       set: async (data) => {
-        if (data) {
-          localStorage.setItem('directus_session_token', JSON.stringify(data));
-        } else {
-          localStorage.removeItem('directus_session_token');
+        try {
+          if (data && data.access_token && data.refresh_token) {
+            // Store the complete authentication data object
+            localStorage.setItem('directus_auth_data', JSON.stringify(data));
+            console.log('✅ Auth tokens stored successfully');
+          } else if (!data) {
+            // Clear auth data on logout
+            localStorage.removeItem('directus_auth_data');
+            console.log('🗑️ Auth tokens cleared');
+          } else {
+            console.warn('⚠️ Attempted to store incomplete auth data:', data);
+          }
+        } catch (error) {
+          console.error('Error storing auth data:', error);
         }
       }
     }

@@ -19,47 +19,35 @@ const getRoleType = (roleIdOrObject: string | { id: string; name: string; admin_
   if (typeof roleIdOrObject === 'object' && roleIdOrObject !== null) {
     const roleName = roleIdOrObject.name.toLowerCase();
     const hasAdminAccess = roleIdOrObject.admin_access;
-    
-    console.log('🔍 getRoleType called with role object:', { 
-      roleName,
-      hasAdminAccess,
-      roleId: roleIdOrObject.id
-    });
-    
+
     // Check by admin_access flag first (most reliable)
     if (hasAdminAccess === true) {
       return 'administrator';
     }
-    
+
     // Check by name patterns
     if (roleName.includes('admin')) return 'administrator';
     if (roleName.includes('editor') || roleName.includes('edit')) return 'editor';
     if (roleName.includes('cliente') || roleName.includes('client') || roleName.includes('customer')) return 'cliente';
-    
+
     console.warn('⚠️ Unknown role name:', roleName);
     return null;
   }
-  
+
   // Handle if passed a role ID string
   const roleId = roleIdOrObject as string;
-  
-  console.log('🔍 getRoleType called with ID:', { 
-    roleId, 
-    ADMIN_ROLE_ID, 
-    EDITOR_ROLE_ID, 
-    CLIENTE_ROLE_ID,
-    matches: {
-      admin: roleId === ADMIN_ROLE_ID,
-      editor: roleId === EDITOR_ROLE_ID,
-      cliente: roleId === CLIENTE_ROLE_ID
-    }
-  });
-  
+
+  // First check environment variable IDs
   if (roleId === ADMIN_ROLE_ID) return 'administrator';
   if (roleId === EDITOR_ROLE_ID) return 'editor';
   if (roleId === CLIENTE_ROLE_ID) return 'cliente';
-  
-  console.warn('⚠️ Unknown role ID:', roleId);
+
+  // If not found in env vars, check if we can infer from the user's role data
+  // This is a fallback for when role IDs don't match environment variables
+  console.warn('⚠️ Role ID not found in environment variables:', roleId);
+  console.warn('💡 You may need to update your .env file with the correct role IDs from Directus');
+
+  // Return null and let DirectusService.getCurrentUser handle the fallback
   return null;
 };
 
@@ -108,11 +96,10 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
           const isValid = await DirectusService.verifyToken();
           if (isValid) {
             const userInfo = await DirectusService.getCurrentUser();
-            console.log('📋 User info retrieved:', { 
-              hasUser: !!userInfo, 
+            console.log('📋 User info retrieved:', {
+              hasUser: !!userInfo,
               hasRoleId: !!userInfo?.roleId,
-              roleId: userInfo?.roleId,
-              email: userInfo?.email 
+              roleId: userInfo?.roleId
             });
             
             if (userInfo && userInfo.roleId) {
@@ -211,7 +198,7 @@ export const UnifiedAuthProvider: React.FC<UnifiedAuthProviderProps> = ({ childr
             authenticated: true,
           });
           setIsAuthenticated(true);
-          console.log('✅ Login successful:', { email, role: roleType });
+          console.log('✅ Login successful:', { role: roleType });
           return true;
         }
       }

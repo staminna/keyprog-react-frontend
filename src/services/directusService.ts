@@ -249,8 +249,7 @@ export class DirectusService {
         return false;
       }
 
-      console.log('Authentication successful, token stored');
-      console.log('🔑 Token preview:', token.substring(0, 20) + '...');
+      console.log('✅ Authentication successful, token stored');
       
       // Verify the token works by making a test request
       try {
@@ -354,7 +353,6 @@ export class DirectusService {
         const result = await response.json();
         if (result && result.data) {
           console.log('📋 User data from Directus:', {
-            email: result.data.email,
             hasRole: !!result.data.role,
             roleId: result.data.role?.id,
             roleName: result.data.role?.name,
@@ -366,7 +364,8 @@ export class DirectusService {
           // In Directus 11+, users can have EITHER roles OR policies
           let roleId = result.data.role?.id;
           let roleName = result.data.role?.name;
-          
+          let roleObject = result.data.role;
+
           if (!roleId && result.data.policies && result.data.policies.length > 0) {
             // User has policies but no role - this is a policy-based permission user
             // Default to Editor role for backward compatibility with frontend logic
@@ -374,12 +373,13 @@ export class DirectusService {
             console.log('📋 User policies:', result.data.policies.map(p => ({ id: p.id, name: p.name })));
             roleId = '97ef35d8-3d16-458d-8c93-78e35b7105a4'; // Editor role ID for compatibility
             roleName = 'editor';
+            roleObject = { id: roleId, name: roleName };
           }
-          
+
           // CRITICAL FIX: If user has neither role nor policies, assign default role based on email
           if (!roleId && (!result.data.policies || result.data.policies.length === 0)) {
             console.warn('⚠️ User has neither role nor policies - assigning default role based on email');
-            
+
             // Check if this is the admin/editor user from environment variables
             const envEmail = import.meta.env.VITE_DIRECTUS_EMAIL;
             if (result.data.email === envEmail) {
@@ -393,15 +393,16 @@ export class DirectusService {
               roleName = 'cliente';
               console.log('✅ Assigned Cliente role to user');
             }
+            roleObject = { id: roleId, name: roleName };
           }
-          
+
           return {
             id: result.data.id,
             email: result.data.email,
             firstName: result.data.first_name,
             lastName: result.data.last_name,
-            role: roleName || 'editor',
-            roleId: roleId,
+            role: roleName || roleObject?.name || 'unknown',
+            roleId: roleObject || roleId, // Pass role object if available, fallback to ID
             status: result.data.status,
             authenticated: true
           };
@@ -605,10 +606,9 @@ export class DirectusService {
       });
       
       if (!response.ok) {
-        // Only use fallback for server errors (500+) or network issues
-        // For auth errors (401, 403), throw so we know auth is broken
-        if (response.status >= 500) {
-          console.error(`Server error ${response.status}, using fallback`);
+        // For 403/401 errors or server errors, use fallback since hero should be publicly readable
+        if (response.status === 403 || response.status === 401 || response.status >= 500) {
+          console.warn(`⚠️ Hero data not accessible (${response.status}), using fallback. Check Directus permissions for 'hero' collection.`);
           return fallback;
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -617,14 +617,14 @@ export class DirectusService {
       const result = await response.json();
       return result.data;
     } catch (error) {
-      // Only use fallback for network errors (Directus down)
-      // Re-throw auth and other errors so they're visible
+      // Use fallback for network errors or any other unexpected errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('❌ Network error - Directus appears to be down, using fallback:', error);
+        console.warn('⚠️ Network error - Directus appears to be down, using fallback');
         return fallback;
       }
-      console.error('❌ Error fetching hero data:', error);
-      throw error; // Re-throw so calling code knows there's a problem
+      // For any other error, warn and use fallback to prevent UI breakage
+      console.warn('⚠️ Error fetching hero data, using fallback:', error instanceof Error ? error.message : String(error));
+      return fallback;
     }
   }
 
@@ -1459,7 +1459,7 @@ export class DirectusService {
       if ('logout' in sessionDirectus && typeof sessionDirectus.logout === 'function') {
         await (sessionDirectus as { logout: () => Promise<void> }).logout();
       }
-      
+
       // Reset internal authentication state
       this.isAuthenticated = false;
       this.useStaticToken = false;
@@ -1467,10 +1467,11 @@ export class DirectusService {
       this.editorDirectusClient = null;
       this.authPromise = null;
       this.initPromise = null;
-      
-      // Clear stored session token and credentials
+
+      // Clear stored authentication data (updated key)
       if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('directus_session_token');
+        localStorage.removeItem('directus_auth_data'); // New key
+        localStorage.removeItem('directus_session_token'); // Legacy key (keep for backward compatibility)
         localStorage.removeItem('directus_auth_email');
         localStorage.removeItem('directus_auth_password');
       }
@@ -1481,10 +1482,11 @@ export class DirectusService {
       this.useStaticToken = false;
       this.parentToken = null;
       this.editorDirectusClient = null;
-      
+
       // Force clear localStorage even on error
       if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('directus_session_token');
+        localStorage.removeItem('directus_auth_data'); // New key
+        localStorage.removeItem('directus_session_token'); // Legacy key (keep for backward compatibility)
         localStorage.removeItem('directus_auth_email');
         localStorage.removeItem('directus_auth_password');
       }
