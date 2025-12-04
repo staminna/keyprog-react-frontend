@@ -38,15 +38,19 @@ const Loja = () => {
   }, []);
 
   // Helper function to get category ID
-  const getCategoryId = (category: number | { id: number; title: string } | undefined): string => {
+  const getCategoryId = (category: number | string | { id: number; title: string } | undefined): string => {
     if (!category) return '';
-    return typeof category === 'number' ? category.toString() : category.id.toString();
+    if (typeof category === 'number') return category.toString();
+    if (typeof category === 'string') return category;
+    return category.id?.toString() || '';
   };
 
   // Helper function to get category name
-  const getCategoryName = (category: number | { id: number; title: string } | undefined): string => {
+  const getCategoryName = (category: number | string | { id: number; title: string } | undefined): string => {
     if (!category) return '';
-    return typeof category === 'number' ? category.toString() : category.title;
+    if (typeof category === 'number') return category.toString();
+    if (typeof category === 'string') return category;
+    return category.title || '';
   };
 
   // Helper function to get product image URL (handles both single image and images array)
