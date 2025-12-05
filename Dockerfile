@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install dependencies using npm (more stable for production)
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev --legacy-peer-deps
 
 # Copy the application
 COPY . .
