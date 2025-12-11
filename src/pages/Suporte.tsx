@@ -10,7 +10,7 @@ const Suporte = () => {
   const faqItems = [
     {
       question: "Como posso contactar o suporte técnico?",
-      answer: "Pode contactar-nos através do email suporte@keyprog.pt, telefone +351 XXX XXX XXX, ou através do formulário de contacto no nosso website."
+      answer: "Pode contactar-nos através do email suporte@keyprog.pt, telefone +351 964 463 161, ou através do formulário de contacto no nosso website."
     },
     {
       question: "Qual é o horário de funcionamento do suporte?",
@@ -87,7 +87,7 @@ const Suporte = () => {
                     <Phone className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Telefone</p>
-                      <p className="text-sm text-muted-foreground">+351 XXX XXX XXX</p>
+                      <p className="text-sm text-muted-foreground">+351 964 463 161</p>
                     </div>
                   </div>
                   

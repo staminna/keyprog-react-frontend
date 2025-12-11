@@ -200,7 +200,7 @@ async function createContactInfoCollection() {
     await axios.post(`${DIRECTUS_URL}/items/contact_info`, {
       title: 'Como Podemos Ajudar?',
       email: 'suporte@keyprog.pt',
-      phone: '+351 XXX XXX XXX',
+      phone: '+351 964 463 161',
       chat_hours: 'Seg-Sex: 9h-18h',
       contact_form_text: 'Formulário de Contacto',
       contact_form_link: '/contactos'

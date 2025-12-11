@@ -814,21 +814,84 @@ export class DirectusService {
     const fallback: DirectusServices[] = [
       {
         id: "1",
-        title: "Reprogramação de Centralinas",
-        description: "Otimização e personalização do desempenho do seu veículo",
-        slug: "reprogramacao-centralinas"
+        title: "Reprogramação ECU",
+        description: "Serviço especializado de reprogramação de centralinas para otimização de desempenho. Aumento de potência, torque e economia de combustível.",
+        slug: "servico-reprogramacao-ecu",
+        category: "Reprogramação",
+        price: 150,
+        features: ["Stage 1, 2 e 3", "Backup completo", "Mapas personalizados", "Garantia incluída"]
       },
       {
-        id: "2", 
+        id: "2",
         title: "Diagnóstico Avançado",
-        description: "Identificação precisa de problemas eletrónicos",
-        slug: "diagnostico-avancado"
+        description: "Serviço especializado de diagnóstico para veículos de todas as marcas. Identificação precisa de problemas em centralinas e sistemas eletrónicos.",
+        slug: "diagnostico",
+        category: "Diagnóstico",
+        price: 50,
+        features: ["Leitura de códigos de erro", "Análise completa", "Relatório detalhado", "Todas as marcas"]
       },
       {
         id: "3",
-        title: "Clonagem de Centralinas", 
-        description: "Duplicação segura de configurações",
-        slug: "clonagem-centralinas"
+        title: "Clonagem de Centralinas",
+        description: "Serviço de clonagem de centralinas e módulos eletrónicos. Backup completo de dados e configurações.",
+        slug: "clonagem",
+        category: "Clonagem",
+        price: 120,
+        features: ["Backup completo", "Transferência de dados", "Preservação de chaves", "Restauração rápida"]
+      },
+      {
+        id: "4",
+        title: "Desbloqueio",
+        description: "Serviço de desbloqueio de centralinas e módulos eletrónicos. Remoção de limitações e acesso a funções avançadas.",
+        slug: "desbloqueio",
+        category: "Desbloqueio",
+        price: 100,
+        features: ["Funções ocultas", "Remoção de limitações", "Desbloqueio de imobilizador", "Rádios e multimédia"]
+      },
+      {
+        id: "5",
+        title: "Reparação de Centralinas",
+        description: "Serviços especializados de reparação e recuperação de centralinas danificadas para todos os tipos de veículos.",
+        slug: "reparacao",
+        category: "Reparação",
+        price: 200,
+        features: ["Reparação de danos elétricos", "Recuperação de software", "Substituição de componentes", "Garantia incluída"]
+      },
+      {
+        id: "6",
+        title: "Airbag Reset",
+        description: "Serviço especializado de reset e reparação de módulos de airbag. Limpeza de crash data após acidentes.",
+        slug: "airbag",
+        category: "Airbag",
+        price: 80,
+        features: ["Reset de crash data", "Reparação de módulos", "Eliminação de luz de airbag", "Programação de novos módulos"]
+      },
+      {
+        id: "7",
+        title: "Soluções AdBlue",
+        description: "Serviços especializados para sistemas AdBlue e SCR. Diagnóstico, reparação e emulação de sistemas.",
+        slug: "adblue",
+        category: "AdBlue",
+        price: 150,
+        features: ["Diagnóstico SCR", "Reset de contadores", "Emulação AdBlue", "Reparação de componentes"]
+      },
+      {
+        id: "8",
+        title: "Programação de Chaves",
+        description: "Serviço especializado de programação e duplicação de chaves automóveis. Todas as marcas e modelos.",
+        slug: "chaves",
+        category: "Chaves",
+        price: 80,
+        features: ["Programação de chaves", "Duplicação", "Chaves perdidas (All Keys Lost)", "Keyless Entry"]
+      },
+      {
+        id: "9",
+        title: "Reparação de Quadrantes",
+        description: "Serviço especializado de reparação e programação de quadrantes e painéis de instrumentos.",
+        slug: "quadrantes",
+        category: "Quadrantes",
+        price: 100,
+        features: ["Reparação de pixéis", "Substituição de displays", "Reparação de iluminação", "Programação"]
       }
     ];
 

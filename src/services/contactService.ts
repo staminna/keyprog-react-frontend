@@ -66,7 +66,7 @@ export class ContactService {
         id: 'contact_info',
         title: 'Contact Us',
         email: 'contact@example.com',
-        phone: '+351 XXX XXX XXX',
+        phone: '+351 964 463 161',
         chat_hours: 'Seg-Sex: 9h-18h',
         contact_form_text: 'Contact Form',
         contact_form_link: '/contact'
@@ -79,7 +79,7 @@ export class ContactService {
         id: 'contact_info',
         title: 'Contact Us',
         email: 'contact@example.com',
-        phone: '+351 XXX XXX XXX',
+        phone: '+351 964 463 161',
         chat_hours: 'Seg-Sex: 9h-18h',
         contact_form_text: 'Contact Form',
         contact_form_link: '/contact'
